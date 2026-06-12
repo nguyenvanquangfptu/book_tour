@@ -79,6 +79,7 @@ public class Tour {
     @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation;
 
+
     // Many-to-Many with Utilities
     @ManyToMany
     @JoinTable(
@@ -97,4 +98,4 @@ public class Tour {
     @ElementCollection
     @CollectionTable(name = "tour_itineraries", joinColumns = @JoinColumn(name = "tour_id"))
     private java.util.List<TourItinerary> itinerary = new java.util.ArrayList<>();
-}
+}
