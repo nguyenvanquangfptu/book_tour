@@ -1,0 +1,231 @@
+/* navbar.css */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+/* Sticky effect */
+.navbar-scrolled {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+  height: 70px;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.navbar-brand:hover {
+  opacity: 0.9;
+}
+
+/* Menu links with hover underline animation */
+.navbar-menu {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-link {
+  font-weight: 500;
+  color: var(--text-primary);
+  position: relative;
+  padding: 8px 0;
+}
+
+.navbar-scrolled .nav-link {
+  color: var(--text-primary);
+}
+
+.navbar:not(.navbar-scrolled) .nav-link {
+  color: white; /* Contrast against hero image */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+.nav-link:hover {
+  color: var(--primary) !important;
+}
+
+/* Search Bar in Navbar */
+.navbar-search {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.navbar-scrolled .navbar-search {
+  background: var(--bg-alt);
+  border-color: var(--border-color);
+}
+
+.navbar-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  width: 150px;
+  transition: width 0.3s ease;
+}
+
+.navbar-scrolled .navbar-search input {
+  color: var(--text-primary);
+}
+
+.navbar-search input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.navbar-scrolled .navbar-search input::placeholder {
+  color: var(--text-secondary);
+}
+
+.navbar-search input:focus {
+  width: 200px;
+}
+
+.navbar-search-icon {
+  color: white;
+  margin-right: 8px;
+}
+
+.navbar-scrolled .navbar-search-icon {
+  color: var(--text-secondary);
+}
+
+/* Auth Section */
+.navbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.cart-icon-wrapper {
+  position: relative;
+  font-size: 1.25rem;
+  color: white;
+  transition: color 0.3s ease;
+}
+
+.navbar-scrolled .cart-icon-wrapper {
+  color: var(--text-primary);
+}
+
+.cart-icon-wrapper:hover {
+  color: var(--primary);
+}
+
+/* Avatar Dropdown */
+.avatar-dropdown {
+  position: relative;
+}
+
+.avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.3s;
+}
+
+.avatar-btn:hover {
+  border-color: var(--primary);
+}
+
+.avatar-btn img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  width: 200px;
+  padding: 8px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-alt);
+  color: var(--primary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px 0;
+}

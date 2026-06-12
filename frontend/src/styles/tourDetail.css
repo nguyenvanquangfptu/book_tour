@@ -1,0 +1,434 @@
+/* Tour Detail Layout */
+.tour-detail-page {
+  background-color: var(--background);
+  padding-bottom: 80px;
+}
+
+/* Container Adjustments */
+.detail-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  margin-top: 40px;
+}
+
+/* Title & Meta Section (Moved out of hero) */
+.detail-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 24px 20px;
+}
+
+.detail-title {
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.badge svg {
+  color: var(--primary);
+}
+
+.detail-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.review-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Masonry Photo Grid (Airbnb Style) */
+.photo-grid-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 450px;
+}
+
+.photo-main {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  cursor: pointer;
+  display: block;
+}
+
+.photo-grid-left {
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+}
+
+.photo-grid-right {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.photo-small {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  cursor: pointer;
+  display: block;
+  min-height: 0;
+  min-width: 0;
+}
+
+.photo-main:hover, .photo-small:hover {
+  transform: scale(1.03);
+}
+
+.view-all-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 48px;
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.view-all-btn:hover {
+  background: var(--surface-dim);
+}
+
+/* Main Content Styling */
+.detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.detail-section {
+  background: transparent;
+}
+
+.section-heading {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.detail-desc {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* Inclusions & Exclusions */
+.inclusions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.inclusion-list, .exclusion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inclusion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.inclusion-item.yes svg {
+  color: #10b981; /* Green */
+  margin-top: 3px;
+}
+
+.inclusion-item.no svg {
+  color: #ef4444; /* Red */
+  margin-top: 3px;
+}
+
+/* Timeline Itinerary */
+.itinerary-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.itinerary-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -30px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid white;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.timeline-content {
+  background: var(--surface-color);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.timeline-day {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.timeline-desc {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Sticky Booking Card */
+.detail-sidebar {
+  position: sticky;
+  top: 100px;
+  height: max-content;
+}
+
+.booking-card {
+  background: var(--surface-color);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.fomo-badge {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fomo-badge svg {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.price-header {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+}
+
+.price-header span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: var(--primary);
+}
+
+.price-breakdown {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.breakdown-row.total {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  margin-bottom: 0;
+}
+
+.btn-book {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: opacity 0.2s;
+}
+
+.btn-book:hover {
+  opacity: 0.9;
+}
+
+.btn-cart {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.btn-cart:hover {
+  background: var(--surface-dim);
+}
+
+/* Related Tours Section */
+.related-tours {
+  max-width: 1200px;
+  margin: 60px auto 0;
+  padding: 0 24px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 40px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .detail-container {
+    grid-template-columns: 1fr;
+  }
+  .photo-grid {
+    height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
+  .photo-grid-right {
+    display: none;
+  }
+  .inclusions-grid {
+    grid-template-columns: 1fr;
+  }
+}

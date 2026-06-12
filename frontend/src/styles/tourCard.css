@@ -1,0 +1,168 @@
+.tour-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
+.tour-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-hover);
+}
+
+.tour-img-container {
+  position: relative;
+  height: 240px; /* Approximately 55% of card */
+  overflow: hidden;
+}
+
+.tour-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.tour-card:hover .tour-img {
+  transform: scale(1.05);
+}
+
+.tour-discount-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--danger);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tour-price-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  color: var(--primary-dark);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.tour-price-old {
+  font-size: 0.8rem;
+  text-decoration: line-through;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.tour-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.tour-destination {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 3.75rem; /* 2 lines * 1.5 * 1.25rem */
+}
+
+.tour-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.tour-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-stat-item.rating {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.tour-stat-item.rating span {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.tour-services {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.service-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.tour-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.btn-book {
+  background: var(--warning);
+  color: white;
+  border: none;
+}
+
+.btn-book:hover {
+  background: #d97706; /* darker orange */
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Fallback loading skeleton style could be added here */

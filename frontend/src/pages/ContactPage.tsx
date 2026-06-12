@@ -1,0 +1,86 @@
+import React from 'react';
+import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from 'react-icons/fa';
+import '../styles/pages.css';
+
+const ContactPage: React.FC = () => {
+  return (
+    <div className="page-wrapper">
+      <div className="page-header" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&w=1920&q=80')" }}>
+        <div className="page-overlay"></div>
+        <h1 className="page-title animate-fade-in">Liên Hệ Với Chúng Tôi</h1>
+      </div>
+
+      <div className="contact-section container">
+        <div className="contact-grid">
+          {/* Contact Info */}
+          <div className="contact-info-card animate-slide-up">
+            <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--primary-dark)' }}>Thông Tin Liên Hệ</h2>
+            
+            <div className="contact-item">
+              <FaMapMarkerAlt className="contact-icon" />
+              <div>
+                <h4>Địa chỉ văn phòng</h4>
+                <p>123 Đường Du Lịch, Phường 1, Quận 1<br/>TP. Hồ Chí Minh, Việt Nam</p>
+              </div>
+            </div>
+
+            <div className="contact-item">
+              <FaPhoneAlt className="contact-icon" />
+              <div>
+                <h4>Hotline</h4>
+                <p>+84 123 456 789<br/>+84 987 654 321</p>
+              </div>
+            </div>
+
+            <div className="contact-item">
+              <FaEnvelope className="contact-icon" />
+              <div>
+                <h4>Email</h4>
+                <p>support@bookingtour.com<br/>info@bookingtour.com</p>
+              </div>
+            </div>
+
+            {/* Google Map Mock */}
+            <div style={{ marginTop: '40px', height: '250px', background: '#e2e8f0', borderRadius: '15px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80" alt="Map" style={{width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8}} />
+            </div>
+          </div>
+
+          {/* Contact Form */}
+          <div className="contact-form animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            <h2 style={{ fontSize: '2rem', marginBottom: '16px', color: 'var(--primary-dark)' }}>Gửi Tin Nhắn</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Vui lòng điền thông tin bên dưới, chúng tôi sẽ liên hệ lại với bạn trong thời gian sớm nhất.</p>
+
+            <form onSubmit={(e) => { e.preventDefault(); alert('Tin nhắn của bạn đã được gửi thành công!'); }}>
+              <div className="form-group">
+                <label>Họ và Tên</label>
+                <input type="text" className="form-control" placeholder="Nhập họ tên của bạn" required />
+              </div>
+
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" className="form-control" placeholder="Nhập địa chỉ email" required />
+              </div>
+
+              <div className="form-group">
+                <label>Chủ đề</label>
+                <input type="text" className="form-control" placeholder="Bạn muốn hỏi về vấn đề gì?" required />
+              </div>
+
+              <div className="form-group">
+                <label>Nội dung tin nhắn</label>
+                <textarea className="form-control" placeholder="Nhập chi tiết lời nhắn của bạn..." required></textarea>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}>
+                Gửi Tin Nhắn
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ContactPage;

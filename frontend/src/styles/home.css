@@ -1,0 +1,286 @@
+/* home.css */
+
+.home-page {
+  width: 100%;
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  height: 80vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('https://images.unsplash.com/photo-1555921015-5532091f6026?auto=format&fit=crop&w=1920&q=80'); /* Ha Long Bay / Beach */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin-top: -80px; /* Offset fixed navbar */
+  text-align: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4); /* 40% black overlay */
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  padding: 0 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  margin-top: 50px;
+}
+
+.hero-title {
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 48px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Search Box in Hero */
+.hero-search-box {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-hover);
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.search-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.search-icon {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.search-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.search-input-wrapper label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.search-input {
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 4px 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.3s;
+  background: transparent;
+  width: 100%;
+}
+
+.search-input:focus {
+  border-bottom-color: var(--primary);
+}
+
+.search-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border-color);
+}
+
+.search-btn {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  min-width: 150px;
+}
+
+/* Popular Destinations */
+.destinations-section {
+  padding: 80px 0;
+  background-color: var(--bg-color);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  color: var(--primary-dark);
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.destination-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 300px;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+
+.destination-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.destination-card:hover .destination-img {
+  transform: scale(1.1);
+}
+
+.destination-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  padding: 24px;
+  color: white;
+  transition: padding-bottom 0.3s;
+}
+
+.destination-card:hover .destination-overlay {
+  padding-bottom: 32px;
+}
+
+.destination-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.destination-tours {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tours Grid */
+.tours-section {
+  padding: 80px 0;
+  background-color: var(--bg-alt);
+}
+
+.tours-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px; /* Increased from 16px to 32px */
+}
+
+/* Testimonials */
+.testimonials-section {
+  padding: 80px 0;
+  background-color: var(--bg-color);
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.testimonial-card {
+  background: var(--bg-alt);
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-8px);
+}
+
+.stars {
+  color: var(--warning);
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+}
+
+.quote {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.author {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+  .destinations-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tours-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  .hero-search-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-divider {
+    display: none;
+  }
+  .destinations-grid, .tours-grid, .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+}
