@@ -3,8 +3,8 @@ import api from '../api/axiosConfig';
 export const VoucherService = {
   getAllVouchers: async () => {
     try {
-      const response = await api.get('/vouchers');
-      return response.data.data;
+      const response: any = await api.get('/vouchers');
+      return response.data || response;
     } catch (error) {
       console.error('Error fetching vouchers:', error);
       throw error;

@@ -20,13 +20,24 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const getCartKey = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return 'cart_' + (user.id || user.username || 'guest');
+      } catch (e) {}
+    }
+    return 'cart_guest';
+  };
+
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = localStorage.getItem(getCartKey());
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem(getCartKey(), JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (newItem: CartItem) => {

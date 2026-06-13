@@ -18,12 +18,15 @@ interface Booking {
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get('/bookings'); // Admin endpoint fetches all
-      if (response.data && response.data.data) {
-        setBookings(response.data.data);
+      const response: any = await api.get('/bookings'); // Admin endpoint fetches all
+      if (response.data) {
+        setBookings(response.data);
+      } else if (Array.isArray(response)) {
+        setBookings(response);
       }
     } catch (error) {
       console.error('Failed to fetch bookings', error);
@@ -80,10 +83,29 @@ const BookingManagement: React.FC = () => {
     }
   };
 
+  const filteredBookings = bookings.filter(b => {
+    if (filterStatus === 'ALL') return true;
+    return b.status === filterStatus;
+  });
+
   return (
     <div className="admin-panel">
-      <div className="admin-header">
+      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Quản lý Đơn Đặt Tour</h2>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold' }}>Lọc theo trạng thái:</label>
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+          >
+            <option value="ALL">Tất cả</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="CONFIRMED">Đã xác nhận</option>
+            <option value="PAID">Đã thanh toán</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -103,7 +125,7 @@ const BookingManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {bookings.length > 0 ? bookings.map(b => (
+            {filteredBookings.length > 0 ? filteredBookings.map(b => (
               <tr key={b.id}>
                 <td>#{b.id}</td>
                 <td>{new Date(b.bookingDate).toLocaleDateString('vi-VN')}</td>

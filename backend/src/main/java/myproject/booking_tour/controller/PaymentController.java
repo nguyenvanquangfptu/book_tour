@@ -49,6 +49,9 @@ public class PaymentController {
             @RequestParam Long bookingId,
             jakarta.servlet.http.HttpServletRequest request) {
         String paymentUrl = paymentService.createPaymentUrl(bookingId, request);
+        if (paymentUrl != null && paymentUrl.startsWith("ERROR:")) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, paymentUrl, null));
+        }
         return ResponseEntity.ok(new ApiResponse<>(true, "VNPay URL generated successfully!", paymentUrl));
     }
 

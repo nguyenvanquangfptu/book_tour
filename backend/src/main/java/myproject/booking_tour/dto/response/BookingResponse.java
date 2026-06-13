@@ -20,4 +20,9 @@ public class BookingResponse {
     private BigDecimal totalPrice;
     private String status;
     private LocalDateTime bookingDate;
+    
+    private boolean isReviewed;
+    private Long reviewId;
+    private Integer reviewRating;
+    private String reviewComment;
 }
