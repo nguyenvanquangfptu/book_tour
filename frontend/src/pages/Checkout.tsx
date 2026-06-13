@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { FaChevronLeft, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { BookingService } from '../services/BookingService';
+import { VoucherService } from '../services/VoucherService';
 import '../styles/checkout.css';
 
 interface LocationState {
@@ -24,6 +26,12 @@ const Checkout: React.FC = () => {
     note: ''
   });
   const [loading, setLoading] = useState(false);
+  
+  // Voucher states
+  const [voucherCode, setVoucherCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [voucherMessage, setVoucherMessage] = useState('');
+  const [appliedVoucherId, setAppliedVoucherId] = useState<number | null>(null);
 
   // Nếu truy cập trực tiếp trang checkout mà không có data từ Tour Detail
   if (!state) {
@@ -41,23 +49,65 @@ const Checkout: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleApplyVoucher = async () => {
+    if (!voucherCode) return;
+    try {
+      setVoucherMessage('');
+      const voucher = await VoucherService.getVoucherByCode(voucherCode);
+      if (!voucher || !voucher.isActive) {
+        setVoucherMessage('Voucher không hợp lệ hoặc đã hết hạn.');
+        setDiscountAmount(0);
+        setAppliedVoucherId(null);
+        return;
+      }
+      if (state.totalPrice < (voucher.minOrderValue || 0)) {
+        setVoucherMessage(`Đơn hàng phải từ ${voucher.minOrderValue.toLocaleString()} ₫ để áp dụng.`);
+        setDiscountAmount(0);
+        setAppliedVoucherId(null);
+        return;
+      }
+      
+      let discount = 0;
+      if (voucher.discountAmount) {
+        discount = voucher.discountAmount;
+      } else if (voucher.discountPercentage) {
+        discount = state.totalPrice * (voucher.discountPercentage / 100);
+        if (voucher.maxDiscount && discount > voucher.maxDiscount) {
+          discount = voucher.maxDiscount;
+        }
+      }
+      
+      setDiscountAmount(discount);
+      setAppliedVoucherId(voucher.id);
+      setVoucherMessage('Áp dụng mã giảm giá thành công!');
+    } catch (error) {
+      setVoucherMessage('Mã giảm giá không tồn tại.');
+      setDiscountAmount(0);
+      setAppliedVoucherId(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       // 1. Gửi request tạo Booking
-      const bookingRequest = {
+      const bookingRequest: any = {
         tourId: state.tourId,
         bookingDate: new Date().toISOString(),
         travelDate: state.startDate,
         numberOfPeople: state.guests,
-        totalPrice: state.totalPrice,
+        totalPrice: Math.max(0, state.totalPrice - discountAmount),
         customerName: formData.fullName,
         customerEmail: formData.email,
         customerPhone: formData.phone,
         note: formData.note
       };
+      
+      if (appliedVoucherId) {
+        bookingRequest.voucherId = appliedVoucherId;
+      }
 
       const bookingResponse = await BookingService.createBooking(bookingRequest);
       
@@ -69,22 +119,29 @@ const Checkout: React.FC = () => {
         
         // 3. Chuyển hướng sang VNPay
         const paymentData = paymentResponse?.data || paymentResponse;
-        if (paymentData && typeof paymentData === 'string' && paymentData.startsWith('http')) {
-          window.location.href = paymentData;
-        } else if (paymentData && paymentData.paymentUrl) {
-          window.location.href = paymentData.paymentUrl;
+        const vnpayUrl = typeof paymentData === 'string' ? paymentData : paymentData?.paymentUrl;
+        
+        if (vnpayUrl) {
+          window.location.href = vnpayUrl;
         } else {
-          alert('Đã tạo booking nhưng không thể tạo VNPay URL. Vui lòng liên hệ Admin.');
-          navigate('/profile');
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi thanh toán',
+            text: 'Đã tạo booking nhưng không thể tạo VNPay URL. Vui lòng liên hệ Admin.',
+            confirmButtonColor: '#3b82f6'
+          });
         }
       }
     } catch (error) {
       console.error('Checkout failed', error);
-      alert('Đã xảy ra lỗi trong quá trình xử lý. Đang mô phỏng giao dịch thành công...');
-      // Fallback mô phỏng cho UI
-      setTimeout(() => {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Đã xảy ra lỗi trong quá trình xử lý. Đang mô phỏng giao dịch thành công...',
+        confirmButtonColor: '#3b82f6'
+      }).then(() => {
         navigate('/');
-      }, 1500);
+      });
     } finally {
       setLoading(false);
     }
@@ -178,6 +235,28 @@ const Checkout: React.FC = () => {
 
           <div className="summary-divider"></div>
 
+          <div className="voucher-section">
+            <div className="voucher-input-wrapper">
+              <input 
+                type="text" 
+                className="voucher-input" 
+                placeholder="Nhập mã giảm giá" 
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+              />
+              <button type="button" className="voucher-btn" onClick={handleApplyVoucher}>
+                Áp dụng
+              </button>
+            </div>
+            {voucherMessage && (
+              <p style={{ marginTop: '12px', fontSize: '0.9rem', fontWeight: 500, color: discountAmount > 0 ? '#16a34a' : '#dc2626' }}>
+                {voucherMessage}
+              </p>
+            )}
+          </div>
+
+          <div className="summary-divider"></div>
+
           <div className="price-details">
             <div className="price-row">
               <span>Giá vé ({state.guests} người)</span>
@@ -187,9 +266,15 @@ const Checkout: React.FC = () => {
               <span>Thuế và phí</span>
               <span>0 ₫</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="price-row" style={{ color: 'var(--success)' }}>
+                <span>Giảm giá</span>
+                <span>-{discountAmount.toLocaleString()} ₫</span>
+              </div>
+            )}
             <div className="price-row total">
               <span>Tổng thanh toán</span>
-              <span className="total-amount">{state.totalPrice.toLocaleString()} ₫</span>
+              <span className="total-amount">{Math.max(0, state.totalPrice - discountAmount).toLocaleString()} ₫</span>
             </div>
           </div>
 

@@ -18,9 +18,6 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
 
   // Mock data for missing fields
   const mockOldPrice = tour.price * 1.25; // 20% discount
-  const mockRating = (4.0 + Math.random() * 1.0).toFixed(1); // 4.0 to 5.0
-  const mockReviews = Math.floor(Math.random() * 200) + 50;
-  const mockBooked = Math.floor(Math.random() * 500) + 100;
 
   return (
     <div className="tour-card animate-fade-up">

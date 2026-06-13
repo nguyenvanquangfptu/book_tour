@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaWallet } from 'react-icons/fa';
 import TourCard from '../components/TourCard';
 import { TourService } from '../services/TourService';
+import { ReviewService, type ReviewResponse } from '../services/ReviewService';
+import '../styles/pages.css';
 import '../styles/home.css';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [tours, setTours] = useState<any[]>([]);
+  const [popularDestinations, setPopularDestinations] = useState<any[]>([]);
+  const [recentReviews, setRecentReviews] = useState<ReviewResponse[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Search States
@@ -15,36 +19,35 @@ const Home: React.FC = () => {
   const [duration, setDuration] = useState('');
   const [budget, setBudget] = useState('');
 
-  const fetchTours = async () => {
-    try {
-      setLoading(true);
-      // Fetch top 6 tours for homepage
-      const data = await TourService.getTours(0, 6, '', '', '', '');
-      if (data && data.content) {
-        setTours(data.content);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tours', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchTours();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch popular destinations
+        const destData = await TourService.getPopularDestinations(4);
+        if (destData) {
+          setPopularDestinations(destData);
+        }
+
+        // Using getTours as a placeholder for getFeaturedTours
+        const toursData = await TourService.getTours(0, 6, '', '', '', '', undefined, 'id', 'DESC');
+        setTours(toursData.content || []);
+        
+        const reviewsData = await ReviewService.getRecentReviews();
+        setRecentReviews(reviewsData || []);
+      } catch (error) {
+        console.error('Failed to fetch data for home page:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const handleSearchClick = () => {
     // Navigate to ToursPage with query params
     navigate(`/tours?dest=${destination}`);
   };
-
-  const destinations = [
-    { name: 'Đà Nẵng', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80', count: 120 },
-    { name: 'Hạ Long', image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80', count: 85 },
-    { name: 'Đà Lạt', image: 'https://images.unsplash.com/photo-1596700055745-f0bbbb3d2b0e?auto=format&fit=crop&w=800&q=80', count: 96 },
-    { name: 'Phú Quốc', image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80', count: 150 }
-  ];
 
   return (
     <div className="home-page">
@@ -132,15 +135,26 @@ const Home: React.FC = () => {
           </div>
           
           <div className="destinations-grid">
-            {destinations.map((dest, index) => (
+            {popularDestinations.length > 0 ? popularDestinations.map((dest, index) => (
               <div className="destination-card animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }} key={index} onClick={() => navigate(`/tours?dest=${dest.name}`)}>
-                <img src={dest.image} alt={dest.name} className="destination-img" />
+                <img 
+                  src={dest.image || 'https://images.unsplash.com/photo-1596700055745-f0bbbb3d2b0e?auto=format&fit=crop&w=800&q=80'} 
+                  alt={dest.name} 
+                  className="destination-img" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596700055745-f0bbbb3d2b0e?auto=format&fit=crop&w=800&q=80';
+                  }}
+                />
                 <div className="destination-overlay">
                   <h3 className="destination-name">{dest.name}</h3>
                   <span className="destination-tours">{dest.count} Tours</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '40px 0' }}>
+                <p>No popular destinations found.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -190,21 +204,33 @@ const Home: React.FC = () => {
           </div>
           
           <div className="testimonials-grid">
-            <div className="testimonial-card animate-fade-up">
-              <div className="stars">⭐⭐⭐⭐⭐</div>
-              <p className="quote">"What an amazing experience! The guide was extremely knowledgeable and the views in Ha Long Bay were breathtaking. Highly recommended!"</p>
-              <h4 className="author">- Nguyễn Văn A</h4>
-            </div>
-            <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.1s' }}>
-              <div className="stars">⭐⭐⭐⭐⭐</div>
-              <p className="quote">"Dịch vụ 5 sao tuyệt vời. Mọi thứ từ đưa đón, khách sạn đến ăn uống đều được chuẩn bị chu đáo. BookingTour làm việc rất chuyên nghiệp."</p>
-              <h4 className="author">- Trần Thị B</h4>
-            </div>
-            <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.2s' }}>
-              <div className="stars">⭐⭐⭐⭐⭐</div>
-              <p className="quote">"My family had the best vacation ever in Phu Quoc. The booking process was seamless and the support team was very helpful."</p>
-              <h4 className="author">- John Doe</h4>
-            </div>
+            {recentReviews.length > 0 ? (
+              recentReviews.slice(0, 3).map((review, idx) => (
+                <div key={review.id} className="testimonial-card animate-fade-up" style={{ animationDelay: `${idx * 0.1}s` }}>
+                  <div className="stars">{'⭐'.repeat(review.rating)}</div>
+                  <p className="quote">"{review.comment}"</p>
+                  <h4 className="author">- {review.username}</h4>
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="testimonial-card animate-fade-up">
+                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <p className="quote">"What an amazing experience! The guide was extremely knowledgeable and the views in Ha Long Bay were breathtaking. Highly recommended!"</p>
+                  <h4 className="author">- Nguyễn Văn A</h4>
+                </div>
+                <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <p className="quote">"Dịch vụ 5 sao tuyệt vời. Mọi thứ từ đưa đón, khách sạn đến ăn uống đều được chuẩn bị chu đáo. BookingTour làm việc rất chuyên nghiệp."</p>
+                  <h4 className="author">- Trần Thị B</h4>
+                </div>
+                <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <p className="quote">"My family had the best vacation ever in Phu Quoc. The booking process was seamless and the support team was very helpful."</p>
+                  <h4 className="author">- John Doe</h4>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

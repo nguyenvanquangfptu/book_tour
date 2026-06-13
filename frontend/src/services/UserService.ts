@@ -14,5 +14,10 @@ export const UserService = {
   changePassword: async (data: any) => {
     const response = await api.put('/users/profile/change-password', data);
     return response.data?.data || response.data;
+  },
+
+  updateAvatar: async (avatarUrl: string) => {
+    const response = await api.put('/users/profile/avatar', null, { params: { avatarUrl } });
+    return response.data?.data || response.data;
   }
 };

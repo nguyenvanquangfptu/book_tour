@@ -1,9 +1,14 @@
 import api from '../api/axiosConfig';
 
 export const VoucherService = {
-  getVouchers: async () => {
-    const response = await api.get('/vouchers');
-    return response.data;
+  getAllVouchers: async () => {
+    try {
+      const response = await api.get('/vouchers');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching vouchers:', error);
+      throw error;
+    }
   },
 
   getVoucherById: async (id: string | number) => {
@@ -12,8 +17,13 @@ export const VoucherService = {
   },
 
   getVoucherByCode: async (code: string) => {
-    const response = await api.get(`/vouchers/code/${code}`);
-    return response.data;
+    try {
+      const response = await api.get(`/vouchers/code/${code}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching voucher by code:', error);
+      throw error;
+    }
   },
 
   createVoucher: async (voucherData: any) => {

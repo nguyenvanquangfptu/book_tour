@@ -1,6 +1,11 @@
 import api from '../api/axiosConfig';
 
 export const TourService = {
+  getPopularDestinations: async (limit = 4) => {
+    const response = await api.get(`/tours/popular-destinations?limit=${limit}`);
+    return response.data?.data || response.data;
+  },
+
   getTours: async (page = 0, size = 12, keyword = '', destination = '', startDate = '', endDate = '', maxPrice?: number, sortBy = 'id', sortDir = 'ASC', tourTypes: string[] = [], transports: string[] = []) => {
     let url = `/tours/search?page=${page}&size=${size}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;

@@ -1,8 +1,45 @@
-import React from 'react';
-import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+import Swal from 'sweetalert2';
+import api from '../api/axiosConfig';
 import '../styles/pages.css';
 
 const ContactPage: React.FC = () => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/contacts', formData);
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Tin nhắn của bạn đã được gửi thành công!',
+        confirmButtonColor: '#3b82f6'
+      });
+      setFormData({ fullName: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Đã có lỗi xảy ra. Vui lòng thử lại sau.',
+        confirmButtonColor: '#ef4444'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="page-wrapper">
       <div className="page-header" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&w=1920&q=80')" }}>
@@ -51,29 +88,29 @@ const ContactPage: React.FC = () => {
             <h2 style={{ fontSize: '2rem', marginBottom: '16px', color: 'var(--primary-dark)' }}>Gửi Tin Nhắn</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Vui lòng điền thông tin bên dưới, chúng tôi sẽ liên hệ lại với bạn trong thời gian sớm nhất.</p>
 
-            <form onSubmit={(e) => { e.preventDefault(); alert('Tin nhắn của bạn đã được gửi thành công!'); }}>
+            <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Họ và Tên</label>
-                <input type="text" className="form-control" placeholder="Nhập họ tên của bạn" required />
+                <input type="text" name="fullName" className="form-control" placeholder="Nhập họ tên của bạn" value={formData.fullName} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" className="form-control" placeholder="Nhập địa chỉ email" required />
+                <input type="email" name="email" className="form-control" placeholder="Nhập địa chỉ email" value={formData.email} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Chủ đề</label>
-                <input type="text" className="form-control" placeholder="Bạn muốn hỏi về vấn đề gì?" required />
+                <input type="text" name="subject" className="form-control" placeholder="Bạn muốn hỏi về vấn đề gì?" value={formData.subject} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Nội dung tin nhắn</label>
-                <textarea className="form-control" placeholder="Nhập chi tiết lời nhắn của bạn..." required></textarea>
+                <textarea name="message" className="form-control" placeholder="Nhập chi tiết lời nhắn của bạn..." value={formData.message} onChange={handleChange} required></textarea>
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}>
-                Gửi Tin Nhắn
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }} disabled={loading}>
+                {loading ? 'Đang gửi...' : 'Gửi Tin Nhắn'}
               </button>
             </form>
           </div>

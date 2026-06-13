@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaLock, FaHistory, FaCheckCircle, FaTimesCircle, FaEye, FaEyeSlash, FaSignOutAlt, FaFileInvoiceDollar, FaStar } from 'react-icons/fa';
+import { FaUser, FaLock, FaHistory, FaCheckCircle, FaTimesCircle, FaEye, FaEyeSlash, FaSignOutAlt, FaFileInvoiceDollar, FaStar, FaDownload } from 'react-icons/fa';
 import api from '../api/axiosConfig';
 import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import { useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
+import TicketTemplate from '../components/TicketTemplate';
+import { useRef } from 'react';
 import '../styles/tourDetail.css';
 
 const ProfilePage: React.FC = () => {
@@ -13,7 +16,8 @@ const ProfilePage: React.FC = () => {
   const [message, setMessage] = useState({ text: '', type: '' });
   
   // Profile State
-  const [profile, setProfile] = useState({ fullName: '', email: '', phone: '' });
+  const [profile, setProfile] = useState({ fullName: '', email: '', phone: '', avatar: '' });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   // Password State
   const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
@@ -29,6 +33,22 @@ const ProfilePage: React.FC = () => {
   const [showReviewForm, setShowReviewForm] = useState<number | null>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
 
+  // Print State
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const [printingBooking, setPrintingBooking] = useState<any>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: ticketRef,
+    documentTitle: 'E-Ticket_BookingTour',
+  });
+
+  const triggerPrint = (booking: any) => {
+    setPrintingBooking(booking);
+    setTimeout(() => {
+      handlePrint();
+    }, 100);
+  };
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -36,7 +56,8 @@ const ProfilePage: React.FC = () => {
         setProfile({
           fullName: userProfile.fullName || '',
           email: userProfile.email || '',
-          phone: userProfile.phone || ''
+          phone: userProfile.phone || '',
+          avatar: userProfile.avatar || ''
         });
 
         const myBookings = await BookingService.getMyBookings();
@@ -49,6 +70,36 @@ const ProfilePage: React.FC = () => {
     };
     fetchInitialData();
   }, []);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingAvatar(true);
+    try {
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const url = res.data?.data?.url || res.data?.url || res.data;
+      if (typeof url === 'string') {
+        await UserService.updateAvatar(url);
+        setProfile({ ...profile, avatar: url });
+        setMessage({ text: 'Cập nhật ảnh đại diện thành công!', type: 'success' });
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          user.avatar = url;
+          localStorage.setItem('user', JSON.stringify(user));
+          window.dispatchEvent(new Event('storage'));
+        }
+      }
+    } catch (err: any) {
+      setMessage({ text: 'Lỗi tải ảnh lên!', type: 'error' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,6 +200,22 @@ const ProfilePage: React.FC = () => {
           {activeTab === 'profile' && (
             <div>
               <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>Hồ Sơ Của Bạn</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: '#f1f5f9', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <FaUser style={{ fontSize: '3rem', color: '#cbd5e1' }} />
+                  )}
+                </div>
+                <div>
+                  <input type="file" id="avatar-upload" style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} />
+                  <label htmlFor="avatar-upload" style={{ cursor: 'pointer', display: 'inline-block', padding: '8px 16px', background: '#f1f5f9', color: '#334155', borderRadius: '6px', fontWeight: 500, border: '1px solid #e2e8f0', transition: 'all 0.2s' }}>
+                    {uploadingAvatar ? 'Đang tải...' : 'Thay đổi ảnh'}
+                  </label>
+                  <p style={{ margin: '5px 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>Chấp nhận JPG, PNG hoặc GIF</p>
+                </div>
+              </div>
               <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div className="input-group">
                   <label className="input-label">Họ và tên</label>
@@ -256,14 +323,24 @@ const ProfilePage: React.FC = () => {
                           Xem chi tiết
                         </button>
                         {booking.status === 'CONFIRMED' && (
-                          <button 
-                            onClick={() => { setShowReviewForm(booking.id); setReviewData({ rating: 5, comment: '' }); }}
-                            style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#d97706'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#f59e0b'}
-                          >
-                            Đánh giá tour
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              onClick={() => triggerPrint(booking)}
+                              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '5px' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#1d4ed8'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = '#2563eb'}
+                            >
+                              <FaDownload /> Tải Vé
+                            </button>
+                            <button 
+                              onClick={() => { setShowReviewForm(booking.id); setReviewData({ rating: 5, comment: '' }); }}
+                              style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#d97706'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = '#f59e0b'}
+                            >
+                              Đánh giá tour
+                            </button>
+                          </div>
                         )}
                       </div>
                       
@@ -352,7 +429,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
                 <span style={{ color: '#64748b', fontWeight: '500' }}>Trạng thái:</span>
-                <span style={{ color: '#0f172a', fontWeight: 'bold', color: selectedBooking.status === 'PENDING' ? '#b45309' : selectedBooking.status === 'CONFIRMED' ? '#15803d' : '#b91c1c' }}>
+                <span style={{ fontWeight: 'bold', color: selectedBooking.status === 'PENDING' ? '#b45309' : selectedBooking.status === 'CONFIRMED' ? '#15803d' : '#b91c1c' }}>
                   {selectedBooking.status}
                 </span>
               </div>
@@ -378,6 +455,11 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Hidden Print Area */}
+      <div style={{ display: 'none' }}>
+        <TicketTemplate ref={ticketRef} booking={printingBooking} profile={profile} />
+      </div>
     </div>
   );
 };

@@ -55,7 +55,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getCartCount = () => {
-    return cart.reduce((total, item) => total + item.guests, 0); // or just cart.length
+    return cart.length;
   };
 
   return (
