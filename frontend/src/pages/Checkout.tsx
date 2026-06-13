@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { FaChevronLeft, FaShieldAlt, FaCreditCard } from 'react-icons/fa';
+import { FaChevronLeft, FaShieldAlt, FaCreditCard, FaCheckCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { BookingService } from '../services/BookingService';
 import { VoucherService } from '../services/VoucherService';
@@ -114,33 +114,22 @@ const Checkout: React.FC = () => {
       const bookingData = bookingResponse?.data || bookingResponse;
       
       if (bookingData && bookingData.id) {
-        // 2. Gọi API tạo VNPay URL
-        const paymentResponse = await BookingService.createVNPayUrl(bookingData.id);
-        
-        // 3. Chuyển hướng sang VNPay
-        const paymentData = paymentResponse?.data || paymentResponse;
-        const vnpayUrl = typeof paymentData === 'string' ? paymentData : paymentData?.paymentUrl;
-        
-        if (vnpayUrl) {
-          window.location.href = vnpayUrl;
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Lỗi thanh toán',
-            text: 'Đã tạo booking nhưng không thể tạo VNPay URL. Vui lòng liên hệ Admin.',
-            confirmButtonColor: '#3b82f6'
-          });
-        }
+        Swal.fire({
+          icon: 'success',
+          title: 'Đặt Tour Thành Công!',
+          text: 'Đơn đặt của bạn đã được ghi nhận. Vui lòng chờ Admin duyệt để tiến hành thanh toán.',
+          confirmButtonColor: '#3b82f6'
+        }).then(() => {
+          navigate('/profile');
+        });
       }
     } catch (error) {
       console.error('Checkout failed', error);
       Swal.fire({
-        icon: 'warning',
-        title: 'Cảnh báo',
-        text: 'Đã xảy ra lỗi trong quá trình xử lý. Đang mô phỏng giao dịch thành công...',
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử lại sau.',
         confirmButtonColor: '#3b82f6'
-      }).then(() => {
-        navigate('/');
       });
     } finally {
       setLoading(false);
@@ -281,16 +270,19 @@ const Checkout: React.FC = () => {
           <button 
             type="submit" 
             form="checkout-form" 
-            className="btn btn-primary vnpay-btn"
+            className="btn btn-primary"
+            style={{ backgroundColor: '#3b82f6', borderColor: '#3b82f6', width: '100%', padding: '15px', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             disabled={loading}
           >
             {loading ? 'Đang xử lý...' : (
               <>
-                <FaCreditCard /> Thanh toán qua VNPay
+                <FaCheckCircle style={{ marginRight: '8px' }} /> Xác nhận Đặt Tour
               </>
             )}
           </button>
-          <p className="vnpay-notice">Bạn sẽ được chuyển hướng tới cổng thanh toán an toàn của VNPay.</p>
+          <p className="vnpay-notice" style={{ color: '#64748b', textAlign: 'center', marginTop: '12px' }}>
+            Hệ thống sẽ ghi nhận đơn đặt và chờ Admin duyệt trước khi thanh toán.
+          </p>
         </div>
       </div>
     </div>

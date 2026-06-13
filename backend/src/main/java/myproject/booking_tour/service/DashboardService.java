@@ -35,9 +35,9 @@ public class DashboardService {
 
         List<Booking> allBookings = bookingRepository.findAll();
         
-        // Calculate Total Revenue (Only PAID bookings)
+        // Calculate Total Revenue (PAID or CONFIRMED bookings)
         BigDecimal totalRevenue = allBookings.stream()
-                .filter(b -> "PAID".equals(b.getStatus()))
+                .filter(b -> "PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus()))
                 .map(Booking::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -45,7 +45,7 @@ public class DashboardService {
         Map<String, BigDecimal> revenueMap = new TreeMap<>();
         
         for (Booking b : allBookings) {
-            if ("PAID".equals(b.getStatus()) && b.getBookingDate() != null) {
+            if (("PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus())) && b.getBookingDate() != null) {
                 String month = b.getBookingDate().format(DateTimeFormatter.ofPattern("yyyy-MM"));
                 revenueMap.put(month, revenueMap.getOrDefault(month, BigDecimal.ZERO).add(b.getTotalPrice()));
             }
@@ -69,7 +69,7 @@ public class DashboardService {
         // Compute Top Tours
         Map<Long, TopTour> tourStatsMap = new HashMap<>();
         for (Booking b : allBookings) {
-            if ("PAID".equals(b.getStatus()) && b.getTour() != null) {
+            if (("PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus())) && b.getTour() != null) {
                 Long tId = b.getTour().getId();
                 TopTour topTour = tourStatsMap.getOrDefault(tId, new TopTour(tId, b.getTour().getTitle(), 0, BigDecimal.ZERO));
                 topTour.setTotalBookings(topTour.getTotalBookings() + 1);

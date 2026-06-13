@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setDropdownOpen(false);
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const getInitials = (name: string) => {

@@ -1,15 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaSearch, FaFilter } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
-import '../../styles/admin.css';
 
 const TourManagement: React.FC = () => {
   const [tours, setTours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingTour, setEditingTour] = useState<any>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [priceFilter, setPriceFilter] = useState('ALL');
+  const [destinationFilter, setDestinationFilter] = useState('ALL');
+
+  // Lấy danh sách địa điểm độc nhất từ tours
+  const uniqueDestinations = Array.from(new Set(tours.map(tour => tour.destination).filter(d => d))).sort();
+
+  const filteredTours = tours.filter(tour => {
+    const matchSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchPrice = true;
+    if (priceFilter === 'UNDER_5M') matchPrice = tour.price < 5000000;
+    else if (priceFilter === '5M_TO_10M') matchPrice = tour.price >= 5000000 && tour.price <= 10000000;
+    else if (priceFilter === 'OVER_10M') matchPrice = tour.price > 10000000;
+
+    let matchDestination = true;
+    if (destinationFilter !== 'ALL') {
+      matchDestination = tour.destination === destinationFilter;
+    }
+
+    return matchSearch && matchPrice && matchDestination;
+  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -108,10 +130,14 @@ const TourManagement: React.FC = () => {
       text: "Bạn có chắc chắn muốn xóa Tour này?",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
       confirmButtonText: 'Xóa',
-      cancelButtonText: 'Hủy'
+      cancelButtonText: 'Hủy',
+      customClass: {
+        confirmButton: 'rounded-button',
+        cancelButton: 'rounded-button'
+      }
     });
 
     if (result.isConfirmed) {
@@ -155,99 +181,292 @@ const TourManagement: React.FC = () => {
   };
 
   return (
-    <div className="admin-panel">
-      <div className="admin-header">
-        <h2>Quản lý Tour Du Lịch</h2>
-        <button className="btn btn-primary" onClick={handleAddNew}>
+    <div className="admin-panel" style={{ background: '#f8fafc', minHeight: '100vh', padding: '30px' }}>
+      <style>
+        {`
+          .tour-row {
+            transition: all 0.2s ease;
+          }
+          .tour-row:hover {
+            background-color: #f1f5f9;
+            transform: scale(1.002);
+            box-shadow: inset 4px 0 0 0 #3b82f6;
+          }
+          .action-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+          }
+          .btn-edit-modern {
+            background: #eff6ff;
+            color: #2563eb;
+          }
+          .btn-edit-modern:hover {
+            background: #2563eb;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+          }
+          .btn-delete-modern {
+            background: #fef2f2;
+            color: #dc2626;
+          }
+          .btn-delete-modern:hover {
+            background: #dc2626;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+          }
+          .btn-add-modern {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+          }
+          .btn-add-modern:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 20px -3px rgba(59, 130, 246, 0.5);
+          }
+          .gradient-text {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+          .rounded-button {
+            border-radius: 8px !important;
+          }
+          .modern-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: #f8fafc;
+          }
+          .modern-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+        `}
+      </style>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <div>
+          <h2 className="gradient-text" style={{ fontSize: '2rem', fontWeight: '800', margin: 0 }}>Quản lý Tour Du Lịch</h2>
+          <p style={{ color: '#64748b', marginTop: '8px' }}>Tạo, chỉnh sửa và quản lý danh sách các Tour trên hệ thống.</p>
+        </div>
+        <button className="btn-add-modern" onClick={handleAddNew}>
           <FaPlus /> Thêm Tour Mới
         </button>
       </div>
 
       {loading ? (
-        <p>Đang tải dữ liệu...</p>
+        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: '1.2rem' }}>Đang tải dữ liệu...</div>
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Hình ảnh</th>
-              <th>Tên Tour</th>
-              <th>Giá</th>
-              <th>Thời gian</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tours.map(tour => (
-              <tr key={tour.id}>
-                <td>{tour.id}</td>
-                <td>
-                  <img 
-                    src={tour.imageUrl || 'https://images.unsplash.com/photo-1504280390467-33923018e6d0?auto=format&fit=crop&w=100&q=80'} 
-                    alt="Tour" 
-                    style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = 'https://images.unsplash.com/photo-1504280390467-33923018e6d0?auto=format&fit=crop&w=100&q=80';
-                    }}
-                  />
-                </td>
-                <td>{tour.title}</td>
-                <td>{tour.price.toLocaleString()} VNĐ</td>
-                <td>{tour.duration || 'N/A'}</td>
-                <td>
-                  <div className="action-btns">
-                    <button className="btn-edit" onClick={() => handleEdit(tour)}><FaEdit /> Sửa</button>
-                    <button className="btn-delete" onClick={() => handleDelete(tour.id)}><FaTrash /> Xóa</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Bộ lọc */}
+          <div style={{ display: 'flex', gap: '16px', background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <FaSearch style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm theo tên Tour..." 
+                className="modern-input" 
+                style={{ paddingLeft: '44px' }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div style={{ width: '220px', position: 'relative' }}>
+              <FaMapMarkerAlt style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} />
+              <select 
+                className="modern-input" 
+                style={{ paddingLeft: '44px', cursor: 'pointer', appearance: 'none' }}
+                value={destinationFilter}
+                onChange={(e) => setDestinationFilter(e.target.value)}
+              >
+                <option value="ALL">Tất cả địa điểm</option>
+                {uniqueDestinations.map((dest: any) => (
+                  <option key={dest} value={dest}>{dest}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ width: '250px', position: 'relative' }}>
+              <FaFilter style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} />
+              <select 
+                className="modern-input" 
+                style={{ paddingLeft: '44px', cursor: 'pointer', appearance: 'none' }}
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value)}
+              >
+                <option value="ALL">Tất cả mức giá</option>
+                <option value="UNDER_5M">Dưới 5.000.000 VNĐ</option>
+                <option value="5M_TO_10M">5.000.000 - 10.000.000 VNĐ</option>
+                <option value="OVER_10M">Trên 10.000.000 VNĐ</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Mã</th>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Hình ảnh</th>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Tên Tour</th>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Giá</th>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Thời gian</th>
+                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTours.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                        Không tìm thấy Tour nào phù hợp với bộ lọc.
+                      </td>
+                    </tr>
+                  ) : filteredTours.map(tour => (
+                  <tr key={tour.id} className="tour-row" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '20px', color: '#64748b', fontWeight: 500 }}>#{tour.id}</td>
+                    <td style={{ padding: '20px' }}>
+                      <div style={{ width: '100px', height: '65px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                        <img 
+                          src={tour.imageUrl || 'https://images.unsplash.com/photo-1504280390467-33923018e6d0?auto=format&fit=crop&w=200&q=80'} 
+                          alt="Tour" 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'https://images.unsplash.com/photo-1504280390467-33923018e6d0?auto=format&fit=crop&w=200&q=80';
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ padding: '20px' }}>
+                      <div style={{ maxWidth: '300px' }}>
+                        <h4 style={{ margin: 0, color: '#1e293b', fontSize: '1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={tour.title}>
+                          {tour.title}
+                        </h4>
+                        {tour.destination && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b', fontSize: '0.85rem', marginTop: '6px' }}>
+                            <FaMapMarkerAlt /> {tour.destination}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f172a', fontWeight: 'bold' }}>
+                        <FaMoneyBillWave style={{ color: '#10b981' }} />
+                        {tour.price.toLocaleString()} VNĐ
+                      </div>
+                    </td>
+                    <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, background: '#f1f5f9', padding: '6px 12px', borderRadius: '20px', display: 'inline-flex' }}>
+                        <FaClock style={{ color: '#3b82f6' }} />
+                        {tour.duration || 'N/A'}
+                      </div>
+                    </td>
+                    <td style={{ padding: '20px' }}>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button className="action-btn btn-edit-modern" onClick={() => handleEdit(tour)}>
+                          <FaEdit /> Sửa
+                        </button>
+                        <button className="action-btn btn-delete-modern" onClick={() => handleDelete(tour.id)}>
+                          <FaTrash /> Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal Thêm/Sửa */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{editingTour ? 'Sửa thông tin Tour' : 'Thêm Tour Mới'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Tên Tour</label>
-                <input type="text" name="title" className="input-field" value={formData.title} onChange={handleInputChange} required />
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ padding: '24px 30px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                {editingTour ? 'Chỉnh sửa Tour' : 'Tạo Tour Mới'}
+              </h3>
+              <button 
+                onClick={() => setShowModal(false)}
+                style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} style={{ padding: '30px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Tên Tour <span style={{color: '#ef4444'}}>*</span></label>
+                <input type="text" name="title" className="modern-input" placeholder="VD: Tour Đà Nẵng - Hội An" value={formData.title} onChange={handleInputChange} required />
               </div>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Giá (VNĐ)</label>
-                <input type="number" name="price" className="input-field" value={formData.price} onChange={handleInputChange} required />
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Giá (VNĐ) <span style={{color: '#ef4444'}}>*</span></label>
+                  <input type="number" name="price" className="modern-input" value={formData.price} onChange={handleInputChange} required />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Thời gian</label>
+                  <input type="text" name="duration" className="modern-input" placeholder="VD: 3 Ngày 2 Đêm" value={formData.duration} onChange={handleInputChange} />
+                </div>
               </div>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Thời gian (VD: 3 Ngày 2 Đêm)</label>
-                <input type="text" name="duration" className="input-field" value={formData.duration} onChange={handleInputChange} />
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>
+                <input type="text" name="destination" className="modern-input" placeholder="VD: Đà Nẵng" value={formData.destination} onChange={handleInputChange} />
               </div>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Mô tả chi tiết</label>
-                <textarea name="description" className="input-field" rows={4} value={formData.description} onChange={handleInputChange}></textarea>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Mô tả chi tiết</label>
+                <textarea name="description" className="modern-input" rows={4} placeholder="Nhập mô tả về lịch trình, dịch vụ..." value={formData.description} onChange={handleInputChange}></textarea>
               </div>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Ảnh bìa chính (URL)</label>
-                <input type="url" name="imageUrl" className="input-field" value={formData.imageUrl} onChange={handleInputChange} />
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Ảnh bìa chính (URL)</label>
+                <input type="url" name="imageUrl" className="modern-input" placeholder="https://..." value={formData.imageUrl} onChange={handleInputChange} />
               </div>
-              <div className="input-group" style={{ marginBottom: '16px' }}>
-                <label>Thư viện ảnh Tour (Tải lên nhiều ảnh)</label>
-                <input type="file" multiple accept="image/*" className="input-field" onChange={handleFileChange} disabled={uploading} />
-                {uploading && <p style={{fontSize: '0.9em', color: '#007bff', marginTop: '5px'}}>Đang tải ảnh lên Cloudinary...</p>}
+
+              <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Thư viện ảnh Tour (Tải lên nhiều ảnh)</label>
+                <input type="file" multiple accept="image/*" style={{ width: '100%', padding: '10px 0' }} onChange={handleFileChange} disabled={uploading} />
+                {uploading && <p style={{fontSize: '0.9em', color: '#3b82f6', marginTop: '5px', fontWeight: 500}}>Đang tải ảnh lên Cloudinary, vui lòng chờ...</p>}
                 
                 {formData.images.length > 0 && (
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
                     {formData.images.map((img, idx) => (
-                      <div key={idx} style={{ position: 'relative' }}>
-                        <img src={img} alt={`tour-img-${idx}`} style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        <img src={img} alt={`tour-img-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <button 
                           type="button" 
                           onClick={() => removeImage(idx)}
-                          style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                          style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', transition: 'all 0.2s' }}
                         >
                           &times;
                         </button>
@@ -256,9 +475,14 @@ const TourManagement: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Hủy</button>
-                <button type="submit" className="btn btn-primary">Lưu</button>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '30px' }}>
+                <button type="button" onClick={() => setShowModal(false)} style={{ padding: '12px 24px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" className="btn-add-modern" style={{ padding: '12px 30px' }}>
+                  {editingTour ? 'Lưu Thay Đổi' : 'Tạo Tour Mới'}
+                </button>
               </div>
             </form>
           </div>

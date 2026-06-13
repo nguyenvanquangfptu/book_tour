@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { TourService } from '../services/TourService';
 import { useCart } from '../context/CartContext';
 import TourCard from '../components/TourCard';
+import api from '../api/axiosConfig';
 import '../styles/tourDetail.css';
 
 const TourDetail: React.FC = () => {
@@ -15,6 +16,14 @@ const TourDetail: React.FC = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { cart, addToCart } = useCart();
+  
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editReviewData, setEditReviewData] = useState({ rating: 5, comment: '' });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
   
   // Booking Form State
   const [guests, setGuests] = useState(1);
@@ -271,7 +280,7 @@ const TourDetail: React.FC = () => {
                   <span style={{color: '#64748b', fontSize: '1.1rem'}}>• {reviews.length} đánh giá</span>
                 </div>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px'}}>
-                  {reviews.map((review: any) => (
+                  {(showAllReviews ? reviews : reviews.slice(0, 4)).map((review: any) => (
                     <div key={review.id} style={{padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px'}}>
                       <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px'}}>
                         <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'white'}}>
@@ -283,14 +292,84 @@ const TourDetail: React.FC = () => {
                             {new Date(review.createdAt || Date.now()).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
-                        <div style={{marginLeft: 'auto', color: '#f59e0b'}}>
-                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                        <div style={{marginLeft: 'auto', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                          <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+                          {currentUser && currentUser.username === review.username && (
+                            <button 
+                              onClick={() => {
+                                setEditingReviewId(review.id);
+                                setEditReviewData({ rating: review.rating, comment: review.comment });
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.9rem', textDecoration: 'underline' }}
+                            >
+                              Chỉnh sửa
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <p style={{color: '#475569', fontSize: '0.95rem'}}>{review.comment}</p>
+                      
+                      {editingReviewId === review.id ? (
+                        <div style={{ marginTop: '10px' }}>
+                          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <FaStar 
+                                key={star} 
+                                onClick={() => setEditReviewData({...editReviewData, rating: star})}
+                                style={{ cursor: 'pointer', color: star <= editReviewData.rating ? '#f59e0b' : '#cbd5e1', fontSize: '1.2rem' }} 
+                              />
+                            ))}
+                          </div>
+                          <textarea 
+                            value={editReviewData.comment}
+                            onChange={(e) => setEditReviewData({...editReviewData, comment: e.target.value})}
+                            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', minHeight: '60px', marginBottom: '10px' }}
+                          />
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button 
+                              disabled={isSubmittingReview}
+                              onClick={async () => {
+                                try {
+                                  setIsSubmittingReview(true);
+                                  await api.put(`/reviews/${review.id}`, { tourId: tour.id, rating: editReviewData.rating, comment: editReviewData.comment });
+                                  setEditingReviewId(null);
+                                  setReviews(reviews.map(r => r.id === review.id ? { ...r, rating: editReviewData.rating, comment: editReviewData.comment } : r));
+                                  Swal.fire({ icon: 'success', title: 'Cập nhật thành công', showConfirmButton: false, timer: 1500 });
+                                } catch (e) {
+                                  Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Cập nhật thất bại' });
+                                } finally {
+                                  setIsSubmittingReview(false);
+                                }
+                              }}
+                              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                            >
+                              {isSubmittingReview ? 'Đang lưu...' : 'Lưu lại'}
+                            </button>
+                            <button 
+                              onClick={() => setEditingReviewId(null)}
+                              style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{color: '#475569', fontSize: '0.95rem'}}>{review.comment}</p>
+                      )}
                     </div>
                   ))}
                 </div>
+                {reviews.length > 4 && (
+                  <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <button 
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      style={{ background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', padding: '8px 24px', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2563eb'; }}
+                    >
+                      {showAllReviews ? 'Thu gọn' : `Xem tất cả ${reviews.length} đánh giá`}
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <p style={{color: '#64748b'}}>Chưa có đánh giá nào cho tour này. Hãy là người đầu tiên trải nghiệm và đánh giá!</p>

@@ -4,7 +4,8 @@ import api from '../api/axiosConfig';
 import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import { useNavigate } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import TicketTemplate from '../components/TicketTemplate';
 import { useRef } from 'react';
 import '../styles/tourDetail.css';
@@ -36,17 +37,38 @@ const ProfilePage: React.FC = () => {
   // Print State
   const ticketRef = useRef<HTMLDivElement>(null);
   const [printingBooking, setPrintingBooking] = useState<any>(null);
-
-  const handlePrint = useReactToPrint({
-    contentRef: ticketRef,
-    documentTitle: 'E-Ticket_BookingTour',
-  });
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const triggerPrint = (booking: any) => {
     setPrintingBooking(booking);
-    setTimeout(() => {
-      handlePrint();
-    }, 100);
+    setIsGeneratingPDF(true);
+    
+    // Đợi DOM render xong booking mới
+    setTimeout(async () => {
+      if (ticketRef.current) {
+        try {
+          const canvas = await html2canvas(ticketRef.current, { scale: 2 });
+          const imgData = canvas.toDataURL('image/png');
+          
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          });
+          
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          pdf.save(`Ve_E_Ticket_${booking.id}.pdf`);
+        } catch (error) {
+          console.error("Lỗi khi tạo PDF:", error);
+          alert("Có lỗi xảy ra khi tạo vé. Vui lòng thử lại!");
+        } finally {
+          setIsGeneratingPDF(false);
+        }
+      }
+    }, 500);
   };
 
   useEffect(() => {
@@ -309,10 +331,10 @@ const ProfilePage: React.FC = () => {
                           borderRadius: '20px', 
                           fontSize: '0.85rem', 
                           fontWeight: '600',
-                          background: booking.status === 'PENDING' ? '#fef3c7' : booking.status === 'CONFIRMED' ? '#dcfce7' : '#fee2e2',
-                          color: booking.status === 'PENDING' ? '#b45309' : booking.status === 'CONFIRMED' ? '#15803d' : '#b91c1c'
+                          background: booking.status === 'PENDING' ? '#fef3c7' : booking.status === 'CONFIRMED' ? '#e0e7ff' : booking.status === 'PAID' ? '#dcfce7' : '#fee2e2',
+                          color: booking.status === 'PENDING' ? '#b45309' : booking.status === 'CONFIRMED' ? '#3730a3' : booking.status === 'PAID' ? '#15803d' : '#b91c1c'
                         }}>
-                          {booking.status}
+                          {booking.status === 'PENDING' ? 'Chờ Duyệt' : booking.status === 'CONFIRMED' ? 'Chưa Thanh Toán' : booking.status === 'PAID' ? 'Đã Thanh Toán' : 'Đã Hủy'}
                         </span>
                         <button 
                           onClick={() => setSelectedBooking(booking)}
@@ -323,22 +345,52 @@ const ProfilePage: React.FC = () => {
                           Xem chi tiết
                         </button>
                         {booking.status === 'CONFIRMED' && (
+                          <button 
+                            onClick={async () => {
+                              try {
+                                const res = await BookingService.createVNPayUrl(booking.id);
+                                const paymentData = res?.data || res;
+                                const url = typeof paymentData === 'string' ? paymentData : paymentData?.paymentUrl;
+                                if (url) {
+                                  window.location.href = url;
+                                } else {
+                                  alert('Không tìm thấy đường dẫn thanh toán từ máy chủ');
+                                }
+                              } catch(e: any) {
+                                console.error('Lỗi tạo link thanh toán:', e);
+                                const errorMsg = e.response?.data?.message || 'Lỗi tạo link thanh toán';
+                                alert(errorMsg);
+                              }
+                            }}
+                            style={{ background: '#10b981', border: 'none', padding: '6px 12px', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}
+                          >
+                            Thanh Toán Ngay
+                          </button>
+                        )}
+                        {booking.status === 'PAID' && (
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button 
                               onClick={() => triggerPrint(booking)}
-                              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '5px' }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#1d4ed8'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#2563eb'}
+                              disabled={isGeneratingPDF}
+                              style={{ background: isGeneratingPDF ? '#94a3b8' : '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: isGeneratingPDF ? 'not-allowed' : 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '5px' }}
+                              onMouseEnter={(e) => { if(!isGeneratingPDF) e.currentTarget.style.background = '#1d4ed8' }}
+                              onMouseLeave={(e) => { if(!isGeneratingPDF) e.currentTarget.style.background = '#2563eb' }}
                             >
-                              <FaDownload /> Tải Vé
+                              <FaDownload /> {isGeneratingPDF ? 'Đang tạo...' : 'Tải Vé PDF'}
                             </button>
                             <button 
-                              onClick={() => { setShowReviewForm(booking.id); setReviewData({ rating: 5, comment: '' }); }}
-                              style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#d97706'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#f59e0b'}
+                              onClick={() => { 
+                                setShowReviewForm(booking.id); 
+                                setReviewData({ 
+                                  rating: booking.reviewed ? booking.reviewRating : 5, 
+                                  comment: booking.reviewed ? booking.reviewComment : '' 
+                                }); 
+                              }}
+                              style={{ background: booking.reviewed ? '#10b981' : '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = booking.reviewed ? '#059669' : '#d97706'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = booking.reviewed ? '#10b981' : '#f59e0b'}
                             >
-                              Đánh giá tour
+                              {booking.reviewed ? 'Chỉnh sửa đánh giá' : 'Đánh giá tour'}
                             </button>
                           </div>
                         )}
@@ -368,8 +420,19 @@ const ProfilePage: React.FC = () => {
                               onClick={async () => {
                                 try {
                                   setLoading(true);
-                                  await api.post('/reviews', { tourId: booking.tourId, rating: reviewData.rating, comment: reviewData.comment });
-                                  setMessage({ text: 'Cảm ơn bạn đã đánh giá!', type: 'success' });
+                                  if (booking.reviewed) {
+                                    await api.put(`/reviews/${booking.reviewId}`, { tourId: booking.tourId, rating: reviewData.rating, comment: reviewData.comment });
+                                    setMessage({ text: 'Cập nhật đánh giá thành công!', type: 'success' });
+                                    booking.reviewRating = reviewData.rating;
+                                    booking.reviewComment = reviewData.comment;
+                                  } else {
+                                    const res = await api.post('/reviews', { tourId: booking.tourId, rating: reviewData.rating, comment: reviewData.comment });
+                                    setMessage({ text: 'Cảm ơn bạn đã đánh giá!', type: 'success' });
+                                    booking.reviewed = true;
+                                    booking.reviewId = res.data.data.id;
+                                    booking.reviewRating = reviewData.rating;
+                                    booking.reviewComment = reviewData.comment;
+                                  }
                                   setShowReviewForm(null);
                                 } catch(e: any) {
                                   setMessage({ text: e.response?.data?.message || 'Gửi đánh giá thất bại!', type: 'error' });
@@ -382,7 +445,7 @@ const ProfilePage: React.FC = () => {
                               style={{ padding: '8px 20px', fontSize: '0.9rem' }}
                               disabled={loading}
                             >
-                              {loading ? 'Đang gửi...' : 'Gửi Đánh Giá'}
+                              {loading ? 'Đang gửi...' : (booking.reviewed ? 'Lưu Thay Đổi' : 'Gửi Đánh Giá')}
                             </button>
                             <button 
                               onClick={() => setShowReviewForm(null)}
@@ -457,8 +520,10 @@ const ProfilePage: React.FC = () => {
       )}
 
       {/* Hidden Print Area */}
-      <div style={{ display: 'none' }}>
-        <TicketTemplate ref={ticketRef} booking={printingBooking} profile={profile} />
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '800px' }}>
+        <div ref={ticketRef}>
+          <TicketTemplate booking={printingBooking} profile={profile} />
+        </div>
       </div>
     </div>
   );

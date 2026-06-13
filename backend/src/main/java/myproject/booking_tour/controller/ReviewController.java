@@ -8,6 +8,7 @@ import myproject.booking_tour.dto.response.ReviewResponse;
 import myproject.booking_tour.service.ReviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,10 +21,19 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ReviewResponse>> addReview(@Valid @RequestBody ReviewRequest request, Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<ApiResponse<ReviewResponse>> addReview(@Valid @RequestBody ReviewRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         ReviewResponse response = reviewService.addReview(request, username);
         return ResponseEntity.ok(new ApiResponse<>(true, "Review added successfully!", response));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
+            @PathVariable Long id,
+            @Valid @RequestBody ReviewRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        ReviewResponse response = reviewService.updateReview(id, request, username);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Review updated successfully!", response));
     }
 
     @GetMapping("/tour/{tourId}")
