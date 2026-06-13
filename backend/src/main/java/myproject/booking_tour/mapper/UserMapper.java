@@ -31,6 +31,7 @@ public class UserMapper {
         response.setEmail(user.getEmail());
         response.setFullName(user.getFullName());
         response.setPhone(user.getPhone());
+        response.setAvatar(user.getAvatar());
         if (user.getRole() != null) {
             response.setRole(user.getRole().getName());
         }

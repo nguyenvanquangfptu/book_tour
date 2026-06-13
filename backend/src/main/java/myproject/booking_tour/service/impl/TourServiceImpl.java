@@ -4,6 +4,7 @@ import myproject.booking_tour.dto.request.TourRequest;
 import myproject.booking_tour.dto.response.PageResponse;
 import myproject.booking_tour.dto.response.PageResponse;
 import myproject.booking_tour.dto.response.TourResponse;
+import myproject.booking_tour.dto.response.PopularDestinationResponse;
 import myproject.booking_tour.entity.Accommodation;
 import myproject.booking_tour.entity.Tour;
 import myproject.booking_tour.entity.Utility;
@@ -33,6 +34,11 @@ public class TourServiceImpl implements TourService {
 
     @Autowired
     private TourRepository tourRepository;
+
+    @Override
+    public List<PopularDestinationResponse> getPopularDestinations(int limit) {
+        return tourRepository.findPopularDestinations(PageRequest.of(0, limit));
+    }
 
     @Autowired
     private AccommodationRepository accommodationRepository;

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Cảm ơn bạn đã liên hệ</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #0056b3; text-align: center;">Cảm ơn bạn đã liên hệ Booking Tour!</h2>
+        <p>Xin chào <strong th:text="${customerName}">Khách hàng</strong>,</p>
+        <p>Chúng tôi đã nhận được yêu cầu liên hệ của bạn với chủ đề: <strong><span th:text="${subject}">Chủ đề</span></strong>.</p>
+        <p>Đội ngũ hỗ trợ khách hàng của chúng tôi đang xem xét yêu cầu của bạn và sẽ phản hồi lại trong thời gian sớm nhất có thể (thông thường trong vòng 24 giờ làm việc).</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #0056b3; margin-top: 20px; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.9em; color: #555;">
+                <em>Lưu ý: Đây là email tự động từ hệ thống. Vui lòng không trả lời trực tiếp email này. Nếu có việc gấp, bạn có thể gọi cho hotline của chúng tôi.</em>
+            </p>
+        </div>
+
+        <p style="margin-top: 20px;">Chúc bạn một ngày tốt lành!</p>
+        <p>Trân trọng,<br>Đội ngũ Booking Tour</p>
+    </div>
+</body>
+</html>

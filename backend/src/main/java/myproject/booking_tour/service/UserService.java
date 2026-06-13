@@ -12,5 +12,8 @@ public interface UserService {
     UserResponse getMyProfile(Long userId);
     UserResponse updateProfile(Long userId, RegisterRequest request);
     void changePassword(Long userId, ChangePasswordRequest request);
+
+    UserResponse updateAvatar(Long userId, String avatarUrl);
+
     void deleteUser(Long id);
 }

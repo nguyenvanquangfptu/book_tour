@@ -68,6 +68,14 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getRecentReviews() {
+        return reviewRepository.findTop10ByOrderByCreatedAtDesc().stream()
+                .map(reviewMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void deleteReview(Long id, String username) {
         Review review = reviewRepository.findById(id)
