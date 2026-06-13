@@ -32,6 +32,12 @@ public class ReviewController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Reviews retrieved successfully!", response));
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<ApiResponse<List<ReviewResponse>>> getRecentReviews() {
+        List<ReviewResponse> response = reviewService.getRecentReviews();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Recent reviews retrieved successfully!", response));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();

@@ -6,6 +6,7 @@ import myproject.booking_tour.dto.request.TourRequest;
 import myproject.booking_tour.dto.response.ApiResponse;
 import myproject.booking_tour.dto.response.TourResponse;
 import myproject.booking_tour.dto.response.PageResponse;
+import myproject.booking_tour.dto.response.PopularDestinationResponse;
 import myproject.booking_tour.service.TourService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,13 @@ public class TourController {
     public ResponseEntity<ApiResponse<List<TourResponse>>> getAllTours() {
         List<TourResponse> tours = tourService.getAllTours();
         return ResponseEntity.ok(new ApiResponse<>(true, "Tours retrieved successfully!", tours));
+    }
+
+    @GetMapping("/popular-destinations")
+    public ResponseEntity<ApiResponse<List<PopularDestinationResponse>>> getPopularDestinations(
+            @RequestParam(defaultValue = "4") int limit) {
+        List<PopularDestinationResponse> destinations = tourService.getPopularDestinations(limit);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Popular destinations retrieved successfully!", destinations));
     }
 
     @GetMapping("/{id}")

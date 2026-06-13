@@ -8,5 +8,6 @@ import java.util.List;
 public interface ReviewService {
     ReviewResponse addReview(ReviewRequest request, String username);
     List<ReviewResponse> getReviewsByTourId(Long tourId);
+    List<ReviewResponse> getRecentReviews();
     void deleteReview(Long id, String username);
 }
