@@ -24,9 +24,11 @@ const VoucherManagement: React.FC = () => {
 
   const fetchVouchers = async () => {
     try {
-      const data = await VoucherService.getAllVouchers();
+      const data: any = await VoucherService.getAllVouchers();
       if (data && data.data) {
         setVouchers(data.data);
+      } else if (Array.isArray(data)) {
+        setVouchers(data);
       }
     } catch (error) {
       console.error('Failed to fetch vouchers', error);

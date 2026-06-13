@@ -60,7 +60,26 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
+    public ReviewResponse updateReview(Long id, ReviewRequest request, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+
+        if (!review.getUser().getId().equals(user.getId()) && !user.getRole().getName().equals("ADMIN")) {
+            throw new BadRequestException("You don't have permission to edit this review");
+        }
+
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+        
+        Review savedReview = reviewRepository.save(review);
+        return reviewMapper.toResponse(savedReview);
+    }
+
+    @Override
     public List<ReviewResponse> getReviewsByTourId(Long tourId) {
         return reviewRepository.findByTourId(tourId).stream()
                 .map(reviewMapper::toResponse)

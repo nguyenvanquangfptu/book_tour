@@ -82,17 +82,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .collect(Collectors.toList());
     }
 
-    @org.springframework.beans.factory.annotation.Value("${vnpay.tmnCode}")
-    private String vnp_TmnCode;
+    @Autowired
+    private vn.payos.PayOS payOS;
 
-    @org.springframework.beans.factory.annotation.Value("${vnpay.hashSecret}")
-    private String vnp_HashSecret;
-
-    @org.springframework.beans.factory.annotation.Value("${vnpay.url}")
-    private String vnp_PayUrl;
-
-    @org.springframework.beans.factory.annotation.Value("${vnpay.returnUrl}")
-    private String vnp_ReturnUrl;
+    @org.springframework.beans.factory.annotation.Value("${frontend.url}/payment-result")
+    private String returnUrl;
 
     @Override
     @Transactional
@@ -100,94 +94,70 @@ public class PaymentServiceImpl implements PaymentService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        String vnp_Version = "2.1.0";
-        String vnp_Command = "pay";
-        String vnp_TxnRef = myproject.booking_tour.config.VNPayConfig.getRandomNumber(8) + "_" + bookingId;
-        String vnp_IpAddr = myproject.booking_tour.config.VNPayConfig.getIpAddress(request);
-        
-        long amount = booking.getTotalPrice().longValue() * 100;
-        java.util.Map<String, String> vnp_Params = new java.util.HashMap<>();
-        vnp_Params.put("vnp_Version", vnp_Version);
-        vnp_Params.put("vnp_Command", vnp_Command);
-        vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount));
-        vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang: " + bookingId);
-        vnp_Params.put("vnp_OrderType", "other");
-        vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
-        vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+        try {
+            // Append 4 random digits to bookingId to make orderCode unique
+            int randomSuffix = new java.util.Random().nextInt(9000) + 1000;
+            long orderCode = Long.parseLong(bookingId.toString() + String.valueOf(randomSuffix));
+            int amount = booking.getTotalPrice().intValue();
 
-        java.util.Calendar cld = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
-        formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-        String vnp_CreateDate = formatter.format(cld.getTime());
-        vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
-        
-        cld.add(java.util.Calendar.MINUTE, 15);
-        String vnp_ExpireDate = formatter.format(cld.getTime());
-        vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
+            vn.payos.type.ItemData item = vn.payos.type.ItemData.builder()
+                    .name("Thanh toan Booking #" + bookingId)
+                    .quantity(1)
+                    .price(amount)
+                    .build();
 
-        java.util.List<String> fieldNames = new java.util.ArrayList<>(vnp_Params.keySet());
-        java.util.Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
-        java.util.Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = (String) itr.next();
-            String fieldValue = (String) vnp_Params.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                //Build hash data
-                hashData.append(fieldName);
-                hashData.append('=');
-                try {
-                    hashData.append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString()));
-                    //Build query
-                    query.append(java.net.URLEncoder.encode(fieldName, java.nio.charset.StandardCharsets.US_ASCII.toString()));
-                    query.append('=');
-                    query.append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString()));
-                } catch (java.io.UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-                if (itr.hasNext()) {
-                    query.append('&');
-                    hashData.append('&');
-                }
-            }
+            vn.payos.type.PaymentData paymentData = vn.payos.type.PaymentData.builder()
+                    .orderCode(orderCode)
+                    .amount(amount)
+                    .description("Thanh toan don " + bookingId)
+                    .returnUrl(returnUrl)
+                    .cancelUrl(returnUrl)
+                    .item(item)
+                    .build();
+
+            vn.payos.type.CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            return data.getCheckoutUrl();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "ERROR:" + e.getMessage();
         }
-        String queryUrl = query.toString();
-        String vnp_SecureHash = myproject.booking_tour.config.VNPayConfig.hmacSHA512(vnp_HashSecret, hashData.toString());
-        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        return vnp_PayUrl + "?" + queryUrl;
     }
 
     @Override
     @Transactional
     public PaymentResponse processVnPayCallback(java.util.Map<String, String> params) {
-        String vnp_TxnRef = params.get("vnp_TxnRef");
-        String vnp_ResponseCode = params.get("vnp_ResponseCode");
-        String vnp_TransactionNo = params.get("vnp_TransactionNo");
+        String orderCodeStr = params.get("orderCode");
+        String status = params.get("status");
         
-        Long bookingId = Long.parseLong(vnp_TxnRef.split("_")[1]);
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+        if (orderCodeStr != null && orderCodeStr.length() > 4) {
+            Long bookingId = Long.parseLong(orderCodeStr.substring(0, orderCodeStr.length() - 4));
+            Booking booking = bookingRepository.findById(bookingId).orElse(null);
+            
+            if (booking != null) {
+                if ("PAID".equals(status) || "CONFIRMED".equals(booking.getStatus())) {
+                    booking.setStatus("CONFIRMED");
+                    bookingRepository.save(booking);
 
-        Payment payment = new Payment();
-        payment.setBooking(booking);
-        payment.setAmount(booking.getTotalPrice());
-        payment.setPaymentMethod("VNPAY");
-        payment.setPaymentDate(LocalDateTime.now());
-
-        if ("00".equals(vnp_ResponseCode)) {
-            payment.setPaymentStatus("SUCCESS");
-            booking.setStatus("CONFIRMED"); // update booking status
-        } else {
-            payment.setPaymentStatus("FAILED");
+                    Payment payment = paymentRepository.findAll().stream()
+                        .filter(p -> p.getBooking().getId().equals(bookingId))
+                        .findFirst().orElseGet(() -> {
+                            Payment newPayment = new Payment();
+                            newPayment.setBooking(booking);
+                            newPayment.setAmount(booking.getTotalPrice());
+                            newPayment.setPaymentMethod("PAYOS_BANK_TRANSFER");
+                            return newPayment;
+                        });
+                    
+                    payment.setPaymentStatus("SUCCESS");
+                    payment.setPaymentDate(LocalDateTime.now());
+                    Payment saved = paymentRepository.save(payment);
+                    return paymentMapper.toResponse(saved);
+                }
+            }
         }
         
-        bookingRepository.save(booking);
-        Payment saved = paymentRepository.save(payment);
-        return paymentMapper.toResponse(saved);
+        Payment dummy = new Payment();
+        dummy.setPaymentStatus("FAILED");
+        return paymentMapper.toResponse(dummy);
     }
 }
