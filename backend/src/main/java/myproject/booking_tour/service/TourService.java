@@ -3,6 +3,7 @@ package myproject.booking_tour.service;
 import myproject.booking_tour.dto.request.TourRequest;
 import myproject.booking_tour.dto.response.PageResponse;
 import myproject.booking_tour.dto.response.TourResponse;
+import myproject.booking_tour.dto.response.PopularDestinationResponse;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ public interface TourService {
     TourResponse createTour(TourRequest request);
     TourResponse updateTour(Long id, TourRequest request);
     void deleteTour(Long id);
+    List<PopularDestinationResponse> getPopularDestinations(int limit);
 }

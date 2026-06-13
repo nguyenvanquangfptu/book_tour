@@ -62,6 +62,13 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Password changed successfully!", null));
     }
 
+    @PutMapping("/profile/avatar")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyAvatar(@RequestParam String avatarUrl) {
+        Long userId = getAuthenticatedUserId();
+        UserResponse user = userService.updateAvatar(userId, avatarUrl);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Avatar updated successfully!", user));
+    }
+
     // --- Admin APIs ---
 
     @PutMapping("/{id}")

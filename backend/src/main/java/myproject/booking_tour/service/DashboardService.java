@@ -3,7 +3,9 @@ package myproject.booking_tour.service;
 import lombok.RequiredArgsConstructor;
 import myproject.booking_tour.dto.response.DashboardStatsResponse;
 import myproject.booking_tour.dto.response.DashboardStatsResponse.MonthlyRevenue;
+import myproject.booking_tour.dto.response.DashboardStatsResponse.TopTour;
 import myproject.booking_tour.entity.Booking;
+import myproject.booking_tour.entity.Tour;
 import myproject.booking_tour.repository.BookingRepository;
 import myproject.booking_tour.repository.TourRepository;
 import myproject.booking_tour.repository.UserRepository;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -63,12 +66,29 @@ public class DashboardService {
             monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-06", new BigDecimal("28000000")));
         }
 
+        // Compute Top Tours
+        Map<Long, TopTour> tourStatsMap = new HashMap<>();
+        for (Booking b : allBookings) {
+            if ("PAID".equals(b.getStatus()) && b.getTour() != null) {
+                Long tId = b.getTour().getId();
+                TopTour topTour = tourStatsMap.getOrDefault(tId, new TopTour(tId, b.getTour().getTitle(), 0, BigDecimal.ZERO));
+                topTour.setTotalBookings(topTour.getTotalBookings() + 1);
+                topTour.setRevenue(topTour.getRevenue().add(b.getTotalPrice()));
+                tourStatsMap.put(tId, topTour);
+            }
+        }
+        List<TopTour> topTours = tourStatsMap.values().stream()
+                .sorted((t1, t2) -> t2.getRevenue().compareTo(t1.getRevenue()))
+                .limit(5)
+                .collect(Collectors.toList());
+
         return new DashboardStatsResponse(
                 totalRevenue,
                 totalBookings,
                 totalTours,
                 totalUsers,
-                monthlyRevenues
+                monthlyRevenues,
+                topTours
         );
     }
 }
