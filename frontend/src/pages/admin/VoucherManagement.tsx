@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { VoucherService } from '../../services/VoucherService';
 
 const VoucherManagement: React.FC = () => {
@@ -23,7 +24,7 @@ const VoucherManagement: React.FC = () => {
 
   const fetchVouchers = async () => {
     try {
-      const data = await VoucherService.getVouchers();
+      const data = await VoucherService.getAllVouchers();
       if (data && data.data) {
         setVouchers(data.data);
       }
@@ -76,13 +77,30 @@ const VoucherManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa Voucher này?')) {
+    const result = await Swal.fire({
+      title: 'Xác nhận xóa?',
+      text: "Bạn có chắc chắn muốn xóa Voucher này?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
       try {
         await VoucherService.deleteVoucher(id);
         fetchVouchers();
+        Swal.fire('Thành công!', 'Voucher đã bị xóa.', 'success');
       } catch (error) {
         console.error('Lỗi khi xóa voucher', error);
-        alert('Xóa thất bại');
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Xóa thất bại',
+          confirmButtonColor: '#3b82f6'
+        });
       }
     }
   };
@@ -99,14 +117,21 @@ const VoucherManagement: React.FC = () => {
       
       if (editingVoucher) {
         await VoucherService.updateVoucher(editingVoucher.id, submitData);
+        Swal.fire('Thành công!', 'Cập nhật Voucher thành công.', 'success');
       } else {
         await VoucherService.createVoucher(submitData);
+        Swal.fire('Thành công!', 'Tạo Voucher mới thành công.', 'success');
       }
       setShowModal(false);
       fetchVouchers();
     } catch (error: any) {
       console.error('Lỗi khi lưu Voucher', error);
-      alert(error.response?.data?.message || 'Lưu thất bại. Kiểm tra mã Voucher đã tồn tại chưa.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: error.response?.data?.message || 'Lưu thất bại. Kiểm tra mã Voucher đã tồn tại chưa.',
+        confirmButtonColor: '#3b82f6'
+      });
     }
   };
 

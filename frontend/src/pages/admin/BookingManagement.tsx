@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaTimesCircle, FaEye } from 'react-icons/fa';
+import { FaCheckCircle } from 'react-icons/fa';
 import api from '../../api/axiosConfig';
+import Swal from 'sweetalert2';
 
 interface Booking {
   id: number;
@@ -36,13 +37,30 @@ const BookingManagement: React.FC = () => {
   }, []);
 
   const handleConfirm = async (id: number) => {
-    if (window.confirm('Xác nhận duyệt đơn hàng này?')) {
+    const result = await Swal.fire({
+      title: 'Xác nhận duyệt đơn hàng?',
+      text: "Bạn có chắc chắn muốn duyệt đơn hàng này không?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Duyệt',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
       try {
         await api.put(`/bookings/${id}/confirm`);
-        fetchBookings();
+        setBookings(bookings.map(b => b.id === id ? { ...b, status: 'CONFIRMED' } : b));
+        Swal.fire('Thành công', 'Đơn hàng đã được duyệt', 'success');
       } catch (error) {
         console.error('Failed to confirm booking', error);
-        alert('Có lỗi xảy ra khi xác nhận đơn hàng.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Có lỗi xảy ra khi xác nhận đơn hàng.',
+          confirmButtonColor: '#3b82f6'
+        });
       }
     }
   };

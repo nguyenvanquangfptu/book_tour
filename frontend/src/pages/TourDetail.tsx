@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaCalendarAlt, FaStar, FaRegClock, FaCheckCircle, FaTimesCircle, FaUserFriends, FaShoppingCart, FaHeart, FaFire } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaStar, FaRegClock, FaCheckCircle, FaTimesCircle, FaUserFriends, FaShoppingCart, FaHeart, FaFire } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { TourService } from '../services/TourService';
 import { useCart } from '../context/CartContext';
 import TourCard from '../components/TourCard';
@@ -13,7 +14,7 @@ const TourDetail: React.FC = () => {
   const [relatedTours, setRelatedTours] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
   
   // Booking Form State
   const [guests, setGuests] = useState(1);
@@ -63,7 +64,12 @@ const TourDetail: React.FC = () => {
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate) {
-      alert('Vui lòng chọn ngày khởi hành');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Lỗi',
+        text: 'Vui lòng chọn ngày khởi hành',
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
     navigate(`/checkout/${id}`, { 
@@ -79,9 +85,15 @@ const TourDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!startDate) {
-      alert('Vui lòng chọn ngày khởi hành để thêm vào giỏ hàng');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn ngày',
+        text: 'Vui lòng chọn ngày khởi hành để thêm vào giỏ hàng',
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
+    
     addToCart({
       tourId: tour.id,
       tourTitle: tour.title,
@@ -90,7 +102,16 @@ const TourDetail: React.FC = () => {
       guests: guests,
       startDate: startDate
     });
-    alert('Đã thêm tour vào giỏ hàng thành công!');
+    
+    const isExisting = cart.some(item => item.tourId === tour.id && item.startDate === startDate);
+    const newCount = isExisting ? cart.length : cart.length + 1;
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Thành công!',
+      html: `Đã thêm tour vào giỏ hàng thành công!<br><br><b>Giỏ hàng của bạn hiện đang có ${newCount} tour</b>`,
+      confirmButtonColor: '#3b82f6'
+    });
   };
 
   if (loading) {

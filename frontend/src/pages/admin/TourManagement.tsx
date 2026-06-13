@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
+import '../../styles/admin.css';
 
 const TourManagement: React.FC = () => {
   const [tours, setTours] = useState<any[]>([]);
@@ -83,7 +85,12 @@ const TourManagement: React.FC = () => {
       }));
     } catch (error) {
       console.error('Lỗi khi tải ảnh lên:', error);
-      alert('Tải ảnh thất bại. Vui lòng kiểm tra lại cấu hình Cloudinary trên server.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Tải ảnh thất bại. Vui lòng kiểm tra lại cấu hình Cloudinary trên server.',
+        confirmButtonColor: '#3b82f6'
+      });
     } finally {
       setUploading(false);
     }
@@ -96,13 +103,30 @@ const TourManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa Tour này?')) {
+    const result = await Swal.fire({
+      title: 'Xác nhận xóa?',
+      text: "Bạn có chắc chắn muốn xóa Tour này?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
       try {
         await TourService.deleteTour(id);
         fetchTours();
+        Swal.fire('Thành công!', 'Tour đã bị xóa.', 'success');
       } catch (error) {
         console.error('Lỗi khi xóa', error);
-        alert('Xóa thất bại');
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Xóa thất bại',
+          confirmButtonColor: '#3b82f6'
+        });
       }
     }
   };
@@ -112,14 +136,21 @@ const TourManagement: React.FC = () => {
     try {
       if (editingTour) {
         await TourService.updateTour(editingTour.id, formData);
+        Swal.fire('Thành công!', 'Cập nhật Tour thành công.', 'success');
       } else {
         await TourService.createTour(formData);
+        Swal.fire('Thành công!', 'Tạo Tour mới thành công.', 'success');
       }
       setShowModal(false);
       fetchTours();
     } catch (error) {
       console.error('Lỗi khi lưu Tour', error);
-      alert('Lưu thất bại. Kiểm tra dữ liệu nhập.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lưu thất bại. Kiểm tra dữ liệu nhập.',
+        confirmButtonColor: '#3b82f6'
+      });
     }
   };
 

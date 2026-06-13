@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaSuitcase, FaShoppingCart, FaSearch, FaUser, FaHistory, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
 import '../styles/navbar.css';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { getCartCount } = useCart();
+  
+  // These pages have a hero image at the top, so navbar can be transparent initially
+  const transparentNavPaths = ['/', '/tours', '/about', '/contact'];
+  const isTransparentNavPage = transparentNavPaths.includes(location.pathname);
   
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -20,8 +25,15 @@ const Navbar: React.FC = () => {
       setScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
+    
+    // Check initial scroll position
+    handleScroll();
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  
+  // Determine if navbar should be solid based on scroll or page type
+  const isSolidNav = scrolled || !isTransparentNavPage;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -47,7 +59,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
+    <nav className={`navbar ${isSolidNav ? 'navbar-scrolled' : ''}`}>
       <div className="container navbar-container">
         {/* Brand */}
         <Link to="/" className="navbar-brand">
@@ -78,14 +90,16 @@ const Navbar: React.FC = () => {
             />
           </div>
 
-          <Link to="/cart" className="cart-icon-wrapper">
-            <FaShoppingCart />
-            {getCartCount() > 0 && (
-              <span className="badge" style={{ position: 'absolute', top: '-10px', right: '-12px', background: 'var(--danger)', color: '#fff', fontSize: '0.7rem', padding: '2px 6px' }}>
-                {getCartCount()}
-              </span>
-            )}
-          </Link>
+          {token && user && (
+            <Link to="/cart" className="cart-icon-wrapper">
+              <FaShoppingCart />
+              {getCartCount() > 0 && (
+                <span className="badge" style={{ position: 'absolute', top: '-10px', right: '-12px', background: '#f97316', color: '#fff', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '50%', minWidth: '18px', textAlign: 'center' }}>
+                  {getCartCount()}
+                </span>
+              )}
+            </Link>
+          )}
 
           {token && user ? (
             <div className="avatar-dropdown" ref={dropdownRef}>
@@ -125,7 +139,7 @@ const Navbar: React.FC = () => {
             </div>
           ) : (
             <>
-              <Link to="/login" className="nav-link" style={{color: scrolled ? 'var(--text-primary)' : 'white'}}>Login</Link>
+              <Link to="/login" className="nav-link" style={{color: isSolidNav ? 'var(--text-primary)' : 'white'}}>Login</Link>
               <Link to="/register" className="btn btn-primary" style={{ padding: '8px 20px' }}>Sign up</Link>
             </>
           )}

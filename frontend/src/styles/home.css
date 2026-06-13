@@ -34,7 +34,7 @@
   z-index: 1;
   color: white;
   padding: 0 20px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   margin-top: 50px;
 }
@@ -65,7 +65,7 @@
   gap: 20px;
   box-shadow: var(--shadow-hover);
   text-align: left;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .search-input-group {
@@ -73,7 +73,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .search-icon {
@@ -190,6 +190,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 8px;
+  color: #ffffff;
 }
 
 .destination-tours {

@@ -2,6 +2,7 @@
   padding-top: 120px;
   padding-bottom: 80px;
   min-height: 80vh;
+  background-color: #f8fafc;
 }
 
 .checkout-header {
@@ -15,22 +16,30 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: transparent;
-  border: none;
-  font-size: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color var(--transition-fast);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .btn-back:hover {
   color: var(--primary);
+  border-color: var(--primary);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(37,99,235,0.1);
 }
 
 .checkout-header h1 {
-  font-size: 2rem;
-  color: var(--text-primary);
+  font-size: 2.25rem;
+  color: var(--primary-dark);
+  font-weight: 800;
+  margin: 0;
 }
 
 .checkout-grid {
@@ -42,16 +51,31 @@
 
 .checkout-form-section,
 .checkout-summary {
-  padding: 32px;
-  background: white !important;
+  padding: 40px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+  border: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .section-title {
-  font-size: 1.25rem;
-  margin-bottom: 24px;
+  font-size: 1.5rem;
+  margin-bottom: 32px;
   color: var(--primary-dark);
-  border-bottom: 1px solid var(--border-color);
   padding-bottom: 16px;
+  font-weight: 700;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
 }
 
 .form-row {
@@ -63,38 +87,91 @@
 .security-notice {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 32px;
-  padding: 16px;
-  background: var(--surface-dim);
-  border-radius: 8px;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  gap: 16px;
+  margin-top: 40px;
+  padding: 20px;
+  background: #f0fdf4;
+  border-radius: 12px;
+  color: #166534;
+  font-size: 0.95rem;
+  border: 1px solid #bbf7d0;
 }
 
 .shield-icon {
-  color: var(--secondary);
-  font-size: 1.5rem;
+  color: #22c55e;
+  font-size: 1.8rem;
 }
 
 /* Summary Box */
 .summary-tour-info h3 {
-  font-size: 1.2rem;
-  margin-bottom: 12px;
+  font-size: 1.4rem;
+  margin-bottom: 16px;
   line-height: 1.4;
+  color: var(--primary-dark);
 }
 
 .summary-meta p {
   color: var(--text-secondary);
-  margin-bottom: 8px;
-  font-size: 0.95rem;
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+  display: flex;
+  justify-content: space-between;
+}
+.summary-meta p strong {
+  color: var(--text-primary);
 }
 
 .summary-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 24px 0;
-  border-style: dashed;
+  border-bottom: 2px dashed #cbd5e1;
+  margin: 28px 0;
+}
+
+/* Voucher */
+.voucher-section {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.voucher-input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.voucher-input {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+  background: white;
+}
+
+.voucher-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.voucher-btn {
+  background: var(--primary-dark);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.voucher-btn:hover {
+  background: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .price-details {
@@ -108,52 +185,67 @@
   display: flex;
   justify-content: space-between;
   color: var(--text-secondary);
+  font-size: 1.05rem;
 }
 
 .price-row.total {
-  border-top: 2px solid var(--border-color);
-  padding-top: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-size: 1.1rem;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 24px;
+  margin-top: 8px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-size: 1.25rem;
+  align-items: center;
 }
 
 .total-amount {
   color: var(--primary);
-  font-size: 1.5rem;
+  font-size: 1.8rem;
 }
 
 .vnpay-btn {
   width: 100%;
-  padding: 16px !important;
-  font-size: 1.1rem !important;
-  background: linear-gradient(135deg, #005a9e, #0078d4); /* VNPay colors approx */
-  box-shadow: 0 4px 14px 0 rgba(0, 90, 158, 0.3);
+  padding: 18px !important;
+  font-size: 1.15rem !important;
+  background: linear-gradient(135deg, #005a9e, #0078d4);
+  box-shadow: 0 8px 24px rgba(0, 90, 158, 0.25);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .vnpay-btn:hover {
   background: linear-gradient(135deg, #004a8e, #005a9e);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 90, 158, 0.35);
 }
 
 .vnpay-notice {
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .checkout-empty {
   text-align: center;
-  padding-top: 120px;
+  padding-top: 160px;
+  padding-bottom: 100px;
 }
 
 .checkout-empty h2 {
   margin-bottom: 16px;
+  font-size: 2rem;
+  color: var(--primary-dark);
 }
 
 .checkout-empty p {
   color: var(--text-secondary);
   margin-bottom: 32px;
+  font-size: 1.1rem;
 }
 
 /* Responsive */
@@ -171,5 +263,8 @@
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+  .checkout-form-section, .checkout-summary {
+    padding: 24px;
   }
 }
