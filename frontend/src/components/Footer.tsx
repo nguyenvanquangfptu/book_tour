@@ -33,10 +33,10 @@ const Footer: React.FC = () => {
           <div className="footer-col">
             <h3>Support</h3>
             <ul className="footer-links">
-              <li><Link to="#">FAQ</Link></li>
-              <li><Link to="#">Privacy Policy</Link></li>
-              <li><Link to="#">Terms of Service</Link></li>
-              <li><Link to="#">Refund Policy</Link></li>
+              <li><Link to="/faq">FAQ</Link></li>
+              <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service">Terms of Service</Link></li>
+              <li><Link to="/refund-policy">Refund Policy</Link></li>
             </ul>
           </div>
 

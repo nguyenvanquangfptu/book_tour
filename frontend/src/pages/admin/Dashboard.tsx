@@ -11,6 +11,7 @@ interface DashboardStats {
   totalTours: number;
   totalUsers: number;
   revenueByMonth: { month: string; revenue: number }[];
+  topTours: { tourId: number; tourTitle: string; totalBookings: number; revenue: number }[];
 }
 
 const Dashboard: React.FC = () => {
@@ -116,6 +117,46 @@ const Dashboard: React.FC = () => {
               <Bar dataKey="revenue" name="Doanh Thu" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Top Tours Table */}
+      <div style={{ marginTop: '40px', background: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '24px', color: '#1e293b', fontSize: '1.25rem', borderBottom: '2px solid #f1f5f9', paddingBottom: '16px' }}>
+          Top 5 Tour Bán Chạy Nhất
+        </h3>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.9rem', textTransform: 'uppercase' }}>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', borderRadius: '8px 0 0 0' }}>Tên Tour</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>Số Lượt Đặt</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', textAlign: 'right', borderRadius: '0 8px 0 0' }}>Doanh Thu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.topTours && stats.topTours.length > 0 ? (
+                stats.topTours.map((tour, index) => (
+                  <tr key={tour.tourId} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
+                    <td style={{ padding: '16px', color: '#334155', fontWeight: 500 }}>
+                      <span style={{ display: 'inline-block', width: '24px', height: '24px', background: index < 3 ? '#fef08a' : '#f1f5f9', color: index < 3 ? '#ca8a04' : '#64748b', borderRadius: '50%', textAlign: 'center', lineHeight: '24px', marginRight: '12px', fontSize: '0.85rem', fontWeight: 'bold' }}>{index + 1}</span>
+                      {tour.tourTitle}
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'center', color: '#475569' }}>
+                      <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 600 }}>{tour.totalBookings}</span>
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right', color: '#0f172a', fontWeight: 'bold' }}>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Chưa có dữ liệu Tour bán chạy</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
