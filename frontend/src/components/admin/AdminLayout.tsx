@@ -17,8 +17,7 @@ const AdminLayout: React.FC = () => {
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-logo">
-          <h2>Admin Panel</h2>
+        <div className="admin-logo" style={{ borderBottom: 'none', padding: '10px' }}>
         </div>
         <nav className="admin-nav">
           <Link 

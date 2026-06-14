@@ -12,14 +12,14 @@ export const VoucherService = {
   },
 
   getVoucherById: async (id: string | number) => {
-    const response = await api.get(`/vouchers/${id}`);
-    return response.data;
+    const response: any = await api.get(`/vouchers/${id}`);
+    return response.data || response;
   },
 
   getVoucherByCode: async (code: string) => {
     try {
-      const response = await api.get(`/vouchers/code/${code}`);
-      return response.data.data;
+      const response: any = await api.get(`/vouchers/code/${code}`);
+      return response.data || response;
     } catch (error) {
       console.error('Error fetching voucher by code:', error);
       throw error;
@@ -27,17 +27,17 @@ export const VoucherService = {
   },
 
   createVoucher: async (voucherData: any) => {
-    const response = await api.post('/vouchers', voucherData);
-    return response.data;
+    const response: any = await api.post('/vouchers', voucherData);
+    return response.data || response;
   },
 
   updateVoucher: async (id: string | number, voucherData: any) => {
-    const response = await api.put(`/vouchers/${id}`, voucherData);
-    return response.data;
+    const response: any = await api.put(`/vouchers/${id}`, voucherData);
+    return response.data || response;
   },
 
   deleteVoucher: async (id: string | number) => {
-    const response = await api.delete(`/vouchers/${id}`);
-    return response.data;
+    const response: any = await api.delete(`/vouchers/${id}`);
+    return response.data || response;
   }
 };

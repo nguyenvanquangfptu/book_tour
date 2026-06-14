@@ -3,6 +3,7 @@ import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaSe
 import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
+import { formatPrice } from '../../utils/formatPrice';
 
 const TourManagement: React.FC = () => {
   const [tours, setTours] = useState<any[]>([]);
@@ -160,11 +161,15 @@ const TourManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const submitData = {
+        ...formData
+      };
+      
       if (editingTour) {
-        await TourService.updateTour(editingTour.id, formData);
+        await TourService.updateTour(editingTour.id, submitData);
         Swal.fire('Thành công!', 'Cập nhật Tour thành công.', 'success');
       } else {
-        await TourService.createTour(formData);
+        await TourService.createTour(submitData);
         Swal.fire('Thành công!', 'Tạo Tour mới thành công.', 'success');
       }
       setShowModal(false);
@@ -377,7 +382,7 @@ const TourManagement: React.FC = () => {
                     <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f172a', fontWeight: 'bold' }}>
                         <FaMoneyBillWave style={{ color: '#10b981' }} />
-                        {tour.price.toLocaleString()} VNĐ
+                        {formatPrice(tour.price)}
                       </div>
                     </td>
                     <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
