@@ -14,6 +14,10 @@
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
   z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
 }
 
 .admin-logo {
@@ -55,7 +59,7 @@
 }
 
 .admin-sidebar-footer {
-  padding: 24px;
+  padding: 24px 24px 12px 24px;
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -85,6 +89,8 @@
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  margin-left: 250px;
+  min-height: 100vh;
 }
 
 .admin-topbar {
@@ -96,6 +102,8 @@
   justify-content: flex-end;
   padding: 0 32px;
   z-index: 5;
+  position: sticky;
+  top: 0;
 }
 
 .admin-content {
@@ -181,7 +189,7 @@
   border-radius: 12px;
   padding: 32px;
   width: 100%;
-  max-width: 500px;
+  max-width: 650px;
   max-height: 90vh;
   overflow-y: auto;
 }

@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { FaPlane, FaCalendarAlt, FaUserFriends, FaMapMarkerAlt, FaQrcode } from 'react-icons/fa';
+import { formatPrice } from '../utils/formatPrice';
 
 interface TicketProps {
   booking: any;
@@ -77,7 +78,7 @@ const TicketTemplate = forwardRef<HTMLDivElement, TicketProps>(({ booking, profi
               Tổng Tiền
             </p>
             <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: '#16a34a' }}>
-              {booking.totalPrice?.toLocaleString()} VNĐ
+              {formatPrice(booking.totalPrice)}
             </p>
           </div>
         </div>

@@ -12,6 +12,8 @@ import Register from './pages/Register';
 import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
 import PaymentResult from './pages/PaymentResult';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import FAQPage from './pages/FAQPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
@@ -43,6 +45,8 @@ function App() {
               <Route path="/cart" element={<><Navbar /><CartPage /><Footer /></>} />
               <Route path="/profile" element={<><Navbar /><ProfilePage /><Footer /></>} />
               <Route path="/payment-result" element={<><Navbar /><PaymentResult /><Footer /></>} />
+              <Route path="/payment/success" element={<><Navbar /><PaymentSuccess /><Footer /></>} />
+              <Route path="/payment/cancel" element={<><Navbar /><PaymentCancel /><Footer /></>} />
               <Route path="/login" element={<><Navbar /><Login /><Footer /></>} />
               <Route path="/register" element={<><Navbar /><Register /><Footer /></>} />
               <Route path="/faq" element={<><Navbar /><FAQPage /><Footer /></>} />

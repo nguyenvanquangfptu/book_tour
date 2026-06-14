@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import api from '../../api/axiosConfig';
 import Swal from 'sweetalert2';
+import { formatPrice } from '../../utils/formatPrice';
 
 interface Booking {
   id: number;
@@ -132,7 +133,7 @@ const BookingManagement: React.FC = () => {
                 <td>{b.customerName || `User #${b.userId}`}</td>
                 <td>{b.tourName || `Tour #${b.tourId}`}</td>
                 <td>{b.numberOfPeople}</td>
-                <td>{b.totalPrice.toLocaleString()} VNĐ</td>
+                <td>{formatPrice(b.totalPrice)}</td>
                 <td>{getStatusBadge(b.status)}</td>
                 <td>
                   <div className="action-btns">

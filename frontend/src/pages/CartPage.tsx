@@ -2,6 +2,7 @@ import React from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaShoppingCart } from 'react-icons/fa';
+import { formatPrice } from '../utils/formatPrice';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, getCartCount } = useCart();
@@ -74,9 +75,9 @@ const CartPage: React.FC = () => {
 
               <div style={{ textAlign: 'right', minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: '#64748b' }}>Đơn giá: {item.price.toLocaleString()} đ</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: '#64748b' }}>Đơn giá: {formatPrice(item.price)}</p>
                   <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#e11d48' }}>
-                    {(item.price * item.guests).toLocaleString()} đ
+                    {formatPrice(item.price * item.guests)}
                   </p>
                 </div>
                 
@@ -107,7 +108,7 @@ const CartPage: React.FC = () => {
               <p style={{ margin: '5px 0 0', color: '#64748b' }}>Bao gồm tất cả các tour đã chọn</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <h2 style={{ margin: 0, color: '#e11d48', fontSize: '2.5rem', fontWeight: 800 }}>{calculateTotal().toLocaleString()} VNĐ</h2>
+              <h2 style={{ margin: 0, color: '#e11d48', fontSize: '2.5rem', fontWeight: 800 }}>{formatPrice(calculateTotal())}</h2>
               <p style={{ margin: '5px 0 0', color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>Đã bao gồm thuế (VAT)</p>
             </div>
           </div>

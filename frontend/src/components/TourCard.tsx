@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaStar, FaUsers, FaBus, FaHotel, FaUtensils } from 'react-icons/fa';
+import { formatPrice } from '../utils/formatPrice';
 import '../styles/tourCard.css';
 
 interface TourProps {
@@ -41,10 +42,10 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
         {/* Price Badge */}
         <div className="tour-price-badge">
           <span className="tour-price-old">
-            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(mockOldPrice)}
+            {formatPrice(mockOldPrice)}
           </span>
           <span>
-            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.price)}
+            {formatPrice(tour.price)}
           </span>
         </div>
       </div>
