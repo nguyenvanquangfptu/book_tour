@@ -16,4 +16,9 @@ public class BookingRequest {
     @NotNull(message = "Number of people is required")
     @Min(value = 1, message = "Number of people must be at least 1")
     private Integer numberOfPeople;
+
+    private String customerName;
+    private String customerEmail;
+    private String customerPhone;
+    private String note;
 }
