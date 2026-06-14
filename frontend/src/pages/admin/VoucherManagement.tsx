@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { VoucherService } from '../../services/VoucherService';
+import { formatPrice } from '../../utils/formatPrice';
 
 const VoucherManagement: React.FC = () => {
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -111,8 +112,10 @@ const VoucherManagement: React.FC = () => {
     e.preventDefault();
     try {
       const submitData = { ...formData };
+
       if (submitData.discountType === 'fixed') {
         submitData.discountPercentage = 0;
+        submitData.maxDiscount = 0;
       } else {
         submitData.discountAmount = 0;
       }
@@ -166,8 +169,8 @@ const VoucherManagement: React.FC = () => {
               <tr key={v.id}>
                 <td>{v.id}</td>
                 <td><strong>{v.code}</strong></td>
-                <td>{v.discountAmount ? `${v.discountAmount.toLocaleString()} đ` : `${v.discountPercentage}% (Tối đa ${v.maxDiscount}đ)`}</td>
-                <td>{v.minOrderValue ? `${v.minOrderValue.toLocaleString()} đ` : '0 đ'}</td>
+                <td>{v.discountAmount ? formatPrice(v.discountAmount) : `${v.discountPercentage}% (Tối đa ${formatPrice(v.maxDiscount)})`}</td>
+                <td>{v.minOrderValue ? formatPrice(v.minOrderValue) : '0 VNĐ'}</td>
                 <td>{v.usedCount} / {v.usageLimit}</td>
                 <td>
                   <span className={`badge ${v.isActive ? 'badge-success' : 'badge-danger'}`} style={{ padding: '4px 8px', borderRadius: '12px', background: v.isActive ? '#dcfce7' : '#fee2e2', color: v.isActive ? '#166534' : '#991b1b', fontSize: '0.8rem' }}>
@@ -198,11 +201,11 @@ const VoucherManagement: React.FC = () => {
             <h3>{editingVoucher ? 'Sửa Voucher' : 'Thêm Voucher Mới'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
-                <div className="input-group" style={{ marginBottom: '16px' }}>
+                <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                   <label>Mã Voucher (Code)</label>
                   <input type="text" name="code" className="input-field" value={formData.code} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} required />
                 </div>
-                <div className="input-group" style={{ marginBottom: '16px' }}>
+                <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                   <label>Loại giảm giá</label>
                   <select name="discountType" className="input-field" value={formData.discountType} onChange={handleInputChange}>
                     <option value="fixed">Giảm số tiền cố định</option>
@@ -218,11 +221,11 @@ const VoucherManagement: React.FC = () => {
                 </div>
               ) : (
                 <div className="form-row">
-                  <div className="input-group" style={{ marginBottom: '16px' }}>
+                  <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                     <label>Phần trăm giảm (%)</label>
                     <input type="number" name="discountPercentage" className="input-field" value={formData.discountPercentage} onChange={handleInputChange} min="1" max="100" required />
                   </div>
-                  <div className="input-group" style={{ marginBottom: '16px' }}>
+                  <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                     <label>Giảm tối đa (VNĐ)</label>
                     <input type="number" name="maxDiscount" className="input-field" value={formData.maxDiscount} onChange={handleInputChange} required />
                   </div>
@@ -235,11 +238,11 @@ const VoucherManagement: React.FC = () => {
               </div>
 
               <div className="form-row">
-                <div className="input-group" style={{ marginBottom: '16px' }}>
+                <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                   <label>Có hiệu lực từ</label>
                   <input type="datetime-local" name="validFrom" className="input-field" value={formData.validFrom} onChange={handleInputChange} required />
                 </div>
-                <div className="input-group" style={{ marginBottom: '16px' }}>
+                <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
                   <label>Hết hạn lúc</label>
                   <input type="datetime-local" name="validUntil" className="input-field" value={formData.validUntil} onChange={handleInputChange} required />
                 </div>

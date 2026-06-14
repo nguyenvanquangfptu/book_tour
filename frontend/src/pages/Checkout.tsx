@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { FaChevronLeft, FaShieldAlt, FaCreditCard, FaCheckCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+import { formatPrice } from '../utils/formatPrice';
 import { BookingService } from '../services/BookingService';
 import { VoucherService } from '../services/VoucherService';
 import '../styles/checkout.css';
@@ -61,7 +62,7 @@ const Checkout: React.FC = () => {
         return;
       }
       if (state.totalPrice < (voucher.minOrderValue || 0)) {
-        setVoucherMessage(`Đơn hàng phải từ ${voucher.minOrderValue.toLocaleString()} ₫ để áp dụng.`);
+        setVoucherMessage(`Đơn hàng phải từ ${formatPrice(voucher.minOrderValue)} để áp dụng.`);
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
@@ -249,21 +250,21 @@ const Checkout: React.FC = () => {
           <div className="price-details">
             <div className="price-row">
               <span>Giá vé ({state.guests} người)</span>
-              <span>{state.totalPrice.toLocaleString()} ₫</span>
+              <span>{formatPrice(state.totalPrice)}</span>
             </div>
             <div className="price-row">
               <span>Thuế và phí</span>
-              <span>0 ₫</span>
+              <span>0 VNĐ</span>
             </div>
             {discountAmount > 0 && (
               <div className="price-row" style={{ color: 'var(--success)' }}>
                 <span>Giảm giá</span>
-                <span>-{discountAmount.toLocaleString()} ₫</span>
+                <span>-{formatPrice(discountAmount)}</span>
               </div>
             )}
             <div className="price-row total">
               <span>Tổng thanh toán</span>
-              <span className="total-amount">{Math.max(0, state.totalPrice - discountAmount).toLocaleString()} ₫</span>
+              <span className="total-amount">{formatPrice(Math.max(0, state.totalPrice - discountAmount))}</span>
             </div>
           </div>
 

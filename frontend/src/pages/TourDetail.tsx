@@ -6,6 +6,7 @@ import { TourService } from '../services/TourService';
 import { useCart } from '../context/CartContext';
 import TourCard from '../components/TourCard';
 import api from '../api/axiosConfig';
+import { formatPrice } from '../utils/formatPrice';
 import '../styles/tourDetail.css';
 
 const TourDetail: React.FC = () => {
@@ -393,7 +394,7 @@ const TourDetail: React.FC = () => {
             </div>
 
             <div className="price-header">
-              {tour.price.toLocaleString()} VNĐ <span>/ người</span>
+              {formatPrice(tour.price)} <span>/ người</span>
             </div>
             
             <form onSubmit={handleBooking} className="booking-form">
@@ -427,7 +428,7 @@ const TourDetail: React.FC = () => {
               <div className="price-breakdown">
                 <div className="breakdown-row">
                   <span>Giá ({guests} người)</span>
-                  <span>{(tour.price * guests).toLocaleString()} VNĐ</span>
+                  <span>{formatPrice(tour.price * guests)}</span>
                 </div>
                 <div className="breakdown-row">
                   <span>Thuế & Phí dịch vụ</span>
@@ -435,7 +436,7 @@ const TourDetail: React.FC = () => {
                 </div>
                 <div className="breakdown-row total">
                   <span>Tổng tiền</span>
-                  <span>{(tour.price * guests).toLocaleString()} VNĐ</span>
+                  <span>{formatPrice(tour.price * guests)}</span>
                 </div>
               </div>
               

@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { FaMoneyBillWave, FaMapMarkedAlt, FaUsers, FaShoppingCart, FaTrophy } from 'react-icons/fa';
 import api from '../../api/axiosConfig';
+import { formatPrice } from '../../utils/formatPrice';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -110,7 +111,7 @@ const Dashboard: React.FC = () => {
           <div>
             <h3 style={{ margin: 0, fontSize: '0.95rem', opacity: 0.9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tổng Doanh Thu</h3>
             <p style={{ margin: '8px 0 0', fontSize: '1.8rem', fontWeight: 'bold' }}>
-              {stats.totalRevenue.toLocaleString()} <span style={{ fontSize: '1rem', opacity: 0.8 }}>VNĐ</span>
+              {formatPrice(stats.totalRevenue)}
             </p>
           </div>
         </div>
@@ -194,7 +195,7 @@ const Dashboard: React.FC = () => {
                   dx={-10}
                 />
                 <Tooltip 
-                  formatter={(value: any) => [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value), 'Doanh thu']}
+                  formatter={(value: any) => [formatPrice(value), 'Doanh thu']}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '12px' }}
                   cursor={{ fill: 'rgba(241, 245, 249, 0.4)' }}
                 />
@@ -248,7 +249,7 @@ const Dashboard: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right', color: '#0f172a', fontWeight: 'bold', borderBottom: '1px solid #f8fafc' }}>
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
+                        {formatPrice(tour.revenue)}
                       </td>
                     </tr>
                   ))
