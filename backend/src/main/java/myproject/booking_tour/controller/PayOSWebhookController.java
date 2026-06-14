@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.payos.PayOS;
-import vn.payos.type.Webhook;
-import vn.payos.type.WebhookData;
+import vn.payos.model.webhooks.Webhook;
+import vn.payos.model.webhooks.WebhookData;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class PayOSWebhookController {
             String jsonBody = mapper.writeValueAsString(body);
             
             Webhook webhookBody = mapper.readValue(jsonBody, Webhook.class);
-            WebhookData data = payOS.verifyPaymentWebhookData(webhookBody);
+            WebhookData data = payOS.webhooks().verify(webhookBody);
             
             // data.getOrderCode() returns long
             long orderCode = data.getOrderCode();
@@ -46,7 +46,7 @@ public class PayOSWebhookController {
                 
                 Booking booking = bookingRepository.findById(bookingId).orElse(null);
                 if (booking != null) {
-                    booking.setStatus("CONFIRMED");
+                    booking.setStatus("PAID");
                     bookingRepository.save(booking);
                     
                     Payment payment = new Payment();
@@ -63,6 +63,41 @@ public class PayOSWebhookController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.ok(Map.of("success", "false"));
+        }
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<Map<String, String>> verifyPayment(@RequestParam String orderCode) {
+        try {
+            long orderCodeLong = Long.parseLong(orderCode);
+            vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCodeLong);
+
+            if ("PAID".equals(paymentLink.getStatus().name())) {
+                String orderCodeStr = String.valueOf(orderCodeLong);
+                if (orderCodeStr.length() > 4) {
+                    Long bookingId = Long.parseLong(orderCodeStr.substring(0, orderCodeStr.length() - 4));
+                    
+                    Booking booking = bookingRepository.findById(bookingId).orElse(null);
+                    if (booking != null && !"PAID".equals(booking.getStatus())) {
+                        booking.setStatus("PAID");
+                        bookingRepository.save(booking);
+                        
+                        Payment payment = new Payment();
+                        payment.setBooking(booking);
+                        payment.setAmount(booking.getTotalPrice());
+                        payment.setPaymentMethod("PAYOS_BANK_TRANSFER");
+                        payment.setPaymentStatus("SUCCESS");
+                        payment.setPaymentDate(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                    }
+                }
+                return ResponseEntity.ok(Map.of("success", "true", "status", "PAID"));
+            } else {
+                return ResponseEntity.ok(Map.of("success", "false", "status", paymentLink.getStatus().name()));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(Map.of("success", "false", "error", e.getMessage()));
         }
     }
 }

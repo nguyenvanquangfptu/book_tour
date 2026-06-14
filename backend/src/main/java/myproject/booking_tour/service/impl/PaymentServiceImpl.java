@@ -85,8 +85,11 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private vn.payos.PayOS payOS;
 
-    @org.springframework.beans.factory.annotation.Value("${frontend.url}/payment-result")
+    @org.springframework.beans.factory.annotation.Value("${payos.return-url}")
     private String returnUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${payos.cancel-url}")
+    private String cancelUrl;
 
     @Override
     @Transactional
@@ -98,24 +101,25 @@ public class PaymentServiceImpl implements PaymentService {
             // Append 4 random digits to bookingId to make orderCode unique
             int randomSuffix = new java.util.Random().nextInt(9000) + 1000;
             long orderCode = Long.parseLong(bookingId.toString() + String.valueOf(randomSuffix));
+            // Giá trong database đã được bỏ 3 số 0 (VD: 2500000 -> 2500), đủ điều kiện >= 2000đ của PayOS
             int amount = booking.getTotalPrice().intValue();
 
-            vn.payos.type.ItemData item = vn.payos.type.ItemData.builder()
+            vn.payos.model.v2.paymentRequests.PaymentLinkItem item = vn.payos.model.v2.paymentRequests.PaymentLinkItem.builder()
                     .name("Thanh toan Booking #" + bookingId)
                     .quantity(1)
-                    .price(amount)
+                    .price(Long.valueOf(amount))
                     .build();
 
-            vn.payos.type.PaymentData paymentData = vn.payos.type.PaymentData.builder()
+            vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest paymentData = vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest.builder()
                     .orderCode(orderCode)
-                    .amount(amount)
+                    .amount(Long.valueOf(amount))
                     .description("Thanh toan don " + bookingId)
                     .returnUrl(returnUrl)
-                    .cancelUrl(returnUrl)
-                    .item(item)
+                    .cancelUrl(cancelUrl)
+                    .items(java.util.List.of(item))
                     .build();
 
-            vn.payos.type.CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse data = payOS.paymentRequests().create(paymentData);
             return data.getCheckoutUrl();
         } catch (Exception e) {
             e.printStackTrace();
@@ -134,8 +138,8 @@ public class PaymentServiceImpl implements PaymentService {
             Booking booking = bookingRepository.findById(bookingId).orElse(null);
             
             if (booking != null) {
-                if ("PAID".equals(status) || "CONFIRMED".equals(booking.getStatus())) {
-                    booking.setStatus("CONFIRMED");
+                if ("PAID".equals(status) || "PAID".equals(booking.getStatus())) {
+                    booking.setStatus("PAID");
                     bookingRepository.save(booking);
 
                     Payment payment = paymentRepository.findAll().stream()
