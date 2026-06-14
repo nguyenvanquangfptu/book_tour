@@ -13,6 +13,7 @@ import myproject.booking_tour.repository.TourRepository;
 import myproject.booking_tour.repository.UserRepository;
 import myproject.booking_tour.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,9 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     private EmailService emailService;
 
+    @Value("${app.admin.email}")
+    private String adminEmail;
+
     @Override
     @Transactional
     public BookingResponse createBooking(BookingRequest request, Long userId) {
@@ -64,7 +68,7 @@ public class BookingServiceImpl implements BookingService {
         BigDecimal price = tour.getPrice();
         BigDecimal totalPrice = price.multiply(BigDecimal.valueOf(request.getNumberOfPeople()));
 
-        // 6. status = PENDING
+        // 6. status = PENDING, set customer info
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setTour(tour);
@@ -72,6 +76,11 @@ public class BookingServiceImpl implements BookingService {
         booking.setTotalPrice(totalPrice);
         booking.setStatus("PENDING");
         booking.setBookingDate(LocalDateTime.now());
+        
+        booking.setCustomerName(request.getCustomerName() != null ? request.getCustomerName() : user.getFullName());
+        booking.setCustomerEmail(request.getCustomerEmail() != null ? request.getCustomerEmail() : user.getEmail());
+        booking.setCustomerPhone(request.getCustomerPhone());
+        booking.setNote(request.getNote());
 
         // 7. save
         Booking savedBooking = bookingRepository.save(booking);
@@ -79,12 +88,18 @@ public class BookingServiceImpl implements BookingService {
         // 8. Send Email
         try {
             Map<String, Object> templateModel = new HashMap<>();
-            templateModel.put("customerName", user.getFullName());
+            templateModel.put("customerName", savedBooking.getCustomerName());
+            templateModel.put("customerEmail", savedBooking.getCustomerEmail());
             templateModel.put("bookingId", "#" + savedBooking.getId());
             templateModel.put("tourName", tour.getTitle());
             templateModel.put("numberOfPeople", savedBooking.getNumberOfPeople());
             templateModel.put("totalPrice", savedBooking.getTotalPrice().toString());
-            emailService.sendMessageUsingThymeleafTemplate(user.getEmail(), "Xác nhận đặt tour thành công - #" + savedBooking.getId(), "booking-confirmation", templateModel);
+            
+            // Send to customer
+            emailService.sendMessageUsingThymeleafTemplate(savedBooking.getCustomerEmail(), "Xác nhận đặt tour thành công - #" + savedBooking.getId(), "booking-confirmation", templateModel);
+            
+            // Notify Admin
+            emailService.sendMessageUsingThymeleafTemplate(adminEmail, "Có đơn đặt tour mới - #" + savedBooking.getId(), "admin-booking-notification", templateModel);
         } catch (Exception e) {
             // Log exception, don't fail booking if email fails
             System.err.println("Failed to send email: " + e.getMessage());
@@ -147,6 +162,21 @@ public class BookingServiceImpl implements BookingService {
 
         // 4. save
         Booking updated = bookingRepository.save(booking);
+
+        // 5. Send Payment Reminder Email
+        try {
+            Map<String, Object> templateModel = new HashMap<>();
+            templateModel.put("customerName", updated.getCustomerName() != null ? updated.getCustomerName() : updated.getUser().getFullName());
+            templateModel.put("bookingId", "#" + updated.getId());
+            templateModel.put("tourName", tour != null ? tour.getTitle() : "Tour");
+            templateModel.put("totalPrice", updated.getTotalPrice().toString());
+            
+            String emailTo = updated.getCustomerEmail() != null ? updated.getCustomerEmail() : updated.getUser().getEmail();
+            emailService.sendMessageUsingThymeleafTemplate(emailTo, "Thông báo: Đơn đặt tour đã được duyệt - Vui lòng thanh toán", "payment-reminder", templateModel);
+        } catch (Exception e) {
+            System.err.println("Failed to send payment reminder email: " + e.getMessage());
+        }
+
         return bookingMapper.toResponse(updated);
     }
 

@@ -42,4 +42,16 @@ Booking {
 
     @Column(length = 50)
     private String status;
+
+    @Column(name = "customer_name", length = 100)
+    private String customerName;
+
+    @Column(name = "customer_email", length = 100)
+    private String customerEmail;
+
+    @Column(name = "customer_phone", length = 20)
+    private String customerPhone;
+
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
 }
