@@ -56,7 +56,27 @@ const Checkout: React.FC = () => {
       setVoucherMessage('');
       const voucher = await VoucherService.getVoucherByCode(voucherCode);
       if (!voucher || !voucher.isActive) {
-        setVoucherMessage('Voucher không hợp lệ hoặc đã hết hạn.');
+        setVoucherMessage('Voucher không hợp lệ hoặc đã bị vô hiệu hóa.');
+        setDiscountAmount(0);
+        setAppliedVoucherId(null);
+        return;
+      }
+      
+      const now = new Date();
+      if (voucher.validFrom && now < new Date(voucher.validFrom)) {
+        setVoucherMessage('Voucher chưa đến thời gian bắt đầu sử dụng.');
+        setDiscountAmount(0);
+        setAppliedVoucherId(null);
+        return;
+      }
+      if (voucher.validUntil && now > new Date(voucher.validUntil)) {
+        setVoucherMessage('Voucher đã hết hạn sử dụng.');
+        setDiscountAmount(0);
+        setAppliedVoucherId(null);
+        return;
+      }
+      if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
+        setVoucherMessage('Voucher đã hết lượt sử dụng.');
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;

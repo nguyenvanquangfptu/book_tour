@@ -22,4 +22,9 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
            "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' " +
            "GROUP BY t.destination ORDER BY COUNT(t.id) DESC")
     List<PopularDestinationResponse> findPopularDestinations(Pageable pageable);
+
+    boolean existsByAccommodation_Id(Long accommodationId);
+
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM Tour t JOIN t.utilities u WHERE u.id = :utilityId")
+    boolean existsByUtilityId(@org.springframework.data.repository.query.Param("utilityId") Long utilityId);
 }

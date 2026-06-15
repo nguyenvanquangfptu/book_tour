@@ -25,10 +25,12 @@ import ScrollToTop from './components/ScrollToTop';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import TourManagement from './pages/admin/TourManagement';
-import VoucherManagement from './pages/admin/VoucherManagement';
 import BookingManagement from './pages/admin/BookingManagement';
+import VoucherManagement from './pages/admin/VoucherManagement';
+import AccommodationManagement from './pages/admin/AccommodationManagement';
+import UtilityManagement from './pages/admin/UtilityManagement';
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
@@ -60,6 +62,8 @@ function App() {
                 <Route path="tours" element={<TourManagement />} />
                 <Route path="bookings" element={<BookingManagement />} />
                 <Route path="vouchers" element={<VoucherManagement />} />
+                <Route path="accommodations" element={<AccommodationManagement />} />
+                <Route path="utilities" element={<UtilityManagement />} />
               </Route>
 
               {/* Fallback route */}

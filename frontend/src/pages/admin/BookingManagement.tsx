@@ -14,6 +14,7 @@ interface Booking {
   totalPrice: number;
   status: string;
   bookingDate: string;
+  travelDate?: string;
 }
 
 const BookingManagement: React.FC = () => {
@@ -117,6 +118,7 @@ const BookingManagement: React.FC = () => {
             <tr>
               <th>Mã Đơn</th>
               <th>Ngày Đặt</th>
+              <th>Ngày Đi (Travel Date)</th>
               <th>Khách Hàng</th>
               <th>Tour</th>
               <th>Số Lượng</th>
@@ -130,6 +132,7 @@ const BookingManagement: React.FC = () => {
               <tr key={b.id}>
                 <td>#{b.id}</td>
                 <td>{new Date(b.bookingDate).toLocaleDateString('vi-VN')}</td>
+                <td>{b.travelDate ? new Date(b.travelDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
                 <td>{b.customerName || `User #${b.userId}`}</td>
                 <td>{b.tourName || `Tour #${b.tourId}`}</td>
                 <td>{b.numberOfPeople}</td>
@@ -150,7 +153,7 @@ const BookingManagement: React.FC = () => {
               </tr>
             )) : (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center' }}>Chưa có đơn hàng nào</td>
+                <td colSpan={9} style={{ textAlign: 'center' }}>Chưa có đơn hàng nào</td>
               </tr>
             )}
           </tbody>

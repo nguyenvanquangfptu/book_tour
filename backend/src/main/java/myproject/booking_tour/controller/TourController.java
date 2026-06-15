@@ -39,6 +39,14 @@ public class TourController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Tour details retrieved successfully!", tour));
     }
 
+    @GetMapping("/{id}/schedules")
+    public ResponseEntity<ApiResponse<Integer>> getAvailableSlots(
+            @PathVariable Long id,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        Integer availableSlots = tourService.getAvailableSlots(id, date);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Available slots retrieved successfully!", availableSlots));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<TourResponse>>> searchAndFilterTours(
             @RequestParam(required = false) String keyword,

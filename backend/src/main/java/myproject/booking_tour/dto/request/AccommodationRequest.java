@@ -18,4 +18,6 @@ public class AccommodationRequest {
     private String address;
 
     private String description;
+
+    private Boolean isActive = true;
 }

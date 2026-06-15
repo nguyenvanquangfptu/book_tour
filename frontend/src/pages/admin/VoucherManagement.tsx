@@ -173,9 +173,21 @@ const VoucherManagement: React.FC = () => {
                 <td>{v.minOrderValue ? formatPrice(v.minOrderValue) : '0 VNĐ'}</td>
                 <td>{v.usedCount} / {v.usageLimit}</td>
                 <td>
-                  <span className={`badge ${v.isActive ? 'badge-success' : 'badge-danger'}`} style={{ padding: '4px 8px', borderRadius: '12px', background: v.isActive ? '#dcfce7' : '#fee2e2', color: v.isActive ? '#166534' : '#991b1b', fontSize: '0.8rem' }}>
-                    {v.isActive ? 'Hoạt động' : 'Đã khóa'}
-                  </span>
+                  {(() => {
+                    if (!v.isActive) {
+                      return <span className="badge badge-danger" style={{ padding: '4px 8px', borderRadius: '12px', background: '#fee2e2', color: '#991b1b', fontSize: '0.8rem' }}>Đã khóa</span>;
+                    }
+                    if (v.usageLimit && v.usedCount >= v.usageLimit) {
+                      return <span className="badge badge-warning" style={{ padding: '4px 8px', borderRadius: '12px', background: '#fef3c7', color: '#92400e', fontSize: '0.8rem' }}>Hết lượt</span>;
+                    }
+                    if (v.validUntil && new Date() > new Date(v.validUntil)) {
+                      return <span className="badge badge-danger" style={{ padding: '4px 8px', borderRadius: '12px', background: '#fee2e2', color: '#991b1b', fontSize: '0.8rem' }}>Hết hạn</span>;
+                    }
+                    if (v.validFrom && new Date() < new Date(v.validFrom)) {
+                      return <span className="badge badge-info" style={{ padding: '4px 8px', borderRadius: '12px', background: '#e0f2fe', color: '#075985', fontSize: '0.8rem' }}>Sắp diễn ra</span>;
+                    }
+                    return <span className="badge badge-success" style={{ padding: '4px 8px', borderRadius: '12px', background: '#dcfce7', color: '#166534', fontSize: '0.8rem' }}>Hoạt động</span>;
+                  })()}
                 </td>
                 <td>
                   <div className="action-btns">

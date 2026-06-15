@@ -17,6 +17,9 @@ public class AccommodationMapper {
         accommodation.setType(request.getType());
         accommodation.setAddress(request.getAddress());
         accommodation.setDescription(request.getDescription());
+        if (request.getIsActive() != null) {
+            accommodation.setIsActive(request.getIsActive());
+        }
         return accommodation;
     }
 
@@ -30,6 +33,7 @@ public class AccommodationMapper {
         response.setType(accommodation.getType());
         response.setAddress(accommodation.getAddress());
         response.setDescription(accommodation.getDescription());
+        response.setIsActive(accommodation.getIsActive());
         return response;
     }
 }

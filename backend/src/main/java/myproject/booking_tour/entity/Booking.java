@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,6 +34,9 @@ Booking {
     @CreationTimestamp
     @Column(name = "booking_date")
     private LocalDateTime bookingDate;
+
+    @Column(name = "travel_date", nullable = false)
+    private LocalDate travelDate;
 
     @Column(name = "number_of_people", nullable = false)
     private Integer numberOfPeople;

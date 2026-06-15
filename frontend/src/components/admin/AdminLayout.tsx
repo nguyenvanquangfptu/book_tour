@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { FaMapMarkedAlt, FaTicketAlt, FaSignOutAlt, FaTachometerAlt, FaHome } from 'react-icons/fa';
+import { FaMapMarkedAlt, FaTicketAlt, FaSignOutAlt, FaTachometerAlt, FaHome, FaHotel, FaStar } from 'react-icons/fa';
 import { AuthService } from '../../services/AuthService';
 import '../../styles/admin.css';
 
@@ -38,6 +38,18 @@ const AdminLayout: React.FC = () => {
             className={`admin-nav-item ${location.pathname.includes('/admin/tours') ? 'active' : ''}`}
           >
             <FaMapMarkedAlt /> Quản lý Tour
+          </Link>
+          <Link 
+            to="/admin/accommodations" 
+            className={`admin-nav-item ${location.pathname.includes('/admin/accommodations') ? 'active' : ''}`}
+          >
+            <FaHotel /> Quản lý Nơi lưu trú
+          </Link>
+          <Link 
+            to="/admin/utilities" 
+            className={`admin-nav-item ${location.pathname.includes('/admin/utilities') ? 'active' : ''}`}
+          >
+            <FaStar /> Quản lý Tiện ích
           </Link>
           <Link 
             to="/admin/bookings" 
