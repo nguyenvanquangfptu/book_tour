@@ -15,6 +15,9 @@ public class UtilityMapper {
         Utility utility = new Utility();
         utility.setName(request.getName());
         utility.setDescription(request.getDescription());
+        if (request.getIsActive() != null) {
+            utility.setIsActive(request.getIsActive());
+        }
         return utility;
     }
 
@@ -26,6 +29,7 @@ public class UtilityMapper {
         response.setId(utility.getId());
         response.setName(utility.getName());
         response.setDescription(utility.getDescription());
+        response.setIsActive(utility.getIsActive());
         return response;
     }
 }

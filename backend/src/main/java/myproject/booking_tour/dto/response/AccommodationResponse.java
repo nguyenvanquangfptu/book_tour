@@ -13,4 +13,5 @@ public class AccommodationResponse {
     private String type;
     private String address;
     private String description;
+    private Boolean isActive;
 }

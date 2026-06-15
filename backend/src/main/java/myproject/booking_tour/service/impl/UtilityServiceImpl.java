@@ -23,6 +23,9 @@ public class UtilityServiceImpl implements UtilityService {
     @Autowired
     private UtilityMapper utilityMapper;
 
+    @Autowired
+    private myproject.booking_tour.repository.TourRepository tourRepository;
+
     @Override
     @Transactional(readOnly = true)
     public List<UtilityResponse> getAllUtilities() {
@@ -55,6 +58,9 @@ public class UtilityServiceImpl implements UtilityService {
 
         utility.setName(request.getName());
         utility.setDescription(request.getDescription());
+        if (request.getIsActive() != null) {
+            utility.setIsActive(request.getIsActive());
+        }
 
         Utility updated = utilityRepository.save(utility);
         return utilityMapper.toResponse(updated);
@@ -65,6 +71,11 @@ public class UtilityServiceImpl implements UtilityService {
     public void deleteUtility(Long id) {
         Utility utility = utilityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utility not found with id: " + id));
+        
+        if (tourRepository.existsByUtilityId(id)) {
+            throw new RuntimeException("Tiện ích này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+        }
+        
         utilityRepository.delete(utility);
     }
 }

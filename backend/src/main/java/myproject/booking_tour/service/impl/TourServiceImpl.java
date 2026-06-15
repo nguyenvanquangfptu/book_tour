@@ -8,10 +8,12 @@ import myproject.booking_tour.dto.response.PopularDestinationResponse;
 import myproject.booking_tour.entity.Accommodation;
 import myproject.booking_tour.entity.Tour;
 import myproject.booking_tour.entity.Utility;
+import myproject.booking_tour.entity.TourSchedule;
 import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.TourMapper;
 import myproject.booking_tour.repository.AccommodationRepository;
 import myproject.booking_tour.repository.TourRepository;
+import myproject.booking_tour.repository.TourScheduleRepository;
 import myproject.booking_tour.repository.UtilityRepository;
 import myproject.booking_tour.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +47,9 @@ public class TourServiceImpl implements TourService {
 
     @Autowired
     private UtilityRepository utilityRepository;
+
+    @Autowired
+    private TourScheduleRepository tourScheduleRepository;
 
     @Autowired
     private TourMapper tourMapper;
@@ -110,6 +115,10 @@ public class TourServiceImpl implements TourService {
             tour.setUtilities(utilities);
         }
 
+        if (tour.getAvailableSlots() == null) {
+            tour.setAvailableSlots(tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
+        }
+
         Tour savedTour = tourRepository.save(tour);
         return tourMapper.toResponse(savedTour);
     }
@@ -128,7 +137,12 @@ public class TourServiceImpl implements TourService {
         tour.setStartDate(request.getStartDate());
         tour.setEndDate(request.getEndDate());
         tour.setMaxPeople(request.getMaxPeople());
-        tour.setAvailableSlots(request.getAvailableSlots());
+        
+        // Only update availableSlots if explicitly provided, otherwise preserve existing or calculate
+        if (request.getAvailableSlots() != null) {
+            tour.setAvailableSlots(request.getAvailableSlots());
+        }
+        
         tour.setStatus(request.getStatus());
 
         // Map Single Accommodation
@@ -152,8 +166,19 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional
     public void deleteTour(Long id) {
+        if (!tourRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Tour not found with id: " + id);
+        }
+        tourRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getAvailableSlots(Long id, java.time.LocalDate date) {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
-        tourRepository.delete(tour);
+        return tourScheduleRepository.findByTourIdAndDepartureDate(id, date)
+                .map(TourSchedule::getAvailableSlots)
+                .orElse(tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
     }
 }

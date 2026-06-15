@@ -29,6 +29,25 @@ const TourDetail: React.FC = () => {
   // Booking Form State
   const [guests, setGuests] = useState(1);
   const [startDate, setStartDate] = useState('');
+  const [availableSlotsForDate, setAvailableSlotsForDate] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (startDate && tour?.id) {
+        try {
+          const res = await api.get(`/tours/${tour.id}/schedules?date=${startDate}`);
+          if (res.data.success) {
+            setAvailableSlotsForDate(res.data.data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch available slots', error);
+        }
+      } else {
+        setAvailableSlotsForDate(null);
+      }
+    };
+    fetchSlots();
+  }, [startDate, tour?.id]);
 
   // Gallery State
   const [showGallery, setShowGallery] = useState(false);
@@ -132,23 +151,9 @@ const TourDetail: React.FC = () => {
     return <div className="container" style={{paddingTop: '100px'}}>Không tìm thấy tour.</div>;
   }
 
-  // Fallback images for Masonry
-  const fallbacks = [
-    'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1582719478250-c89d14c77345?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80'
-  ];
-
-  const uploadedImages = tour.images ? [...tour.images] : [];
-  if (tour.imageUrl && !uploadedImages.includes(tour.imageUrl)) {
-    uploadedImages.unshift(tour.imageUrl);
-  }
-
-  const images = [...uploadedImages];
-  while (images.length < 5) {
-    images.push(fallbacks[images.length]);
+  const images = tour.images ? [...tour.images] : [];
+  if (tour.imageUrl && !images.includes(tour.imageUrl)) {
+    images.unshift(tour.imageUrl);
   }
 
   // Calculate dynamic rating based on fetched reviews
@@ -183,13 +188,13 @@ const TourDetail: React.FC = () => {
       <div className="photo-grid-container">
         <div className="photo-grid">
           <div className="photo-grid-left">
-            <img src={images[0]} alt="Main Tour" className="photo-main" />
+            {images[0] ? <img src={images[0]} alt="Main Tour" className="photo-main" /> : <div className="photo-main" style={{background: '#e2e8f0', width: '100%', height: '100%', borderRadius: '16px'}}></div>}
           </div>
           <div className="photo-grid-right">
-            <img src={images[1]} alt="Tour 2" className="photo-small" />
-            <img src={images[2]} alt="Tour 3" className="photo-small" />
-            <img src={images[3]} alt="Tour 4" className="photo-small" />
-            <img src={images[4]} alt="Tour 5" className="photo-small" />
+            {images[1] ? <img src={images[1]} alt="Tour 2" className="photo-small" /> : <div className="photo-small" style={{background: '#f1f5f9', borderRadius: '16px'}}></div>}
+            {images[2] ? <img src={images[2]} alt="Tour 3" className="photo-small" /> : <div className="photo-small" style={{background: '#f1f5f9', borderRadius: '16px'}}></div>}
+            {images[3] ? <img src={images[3]} alt="Tour 4" className="photo-small" /> : <div className="photo-small" style={{background: '#f1f5f9', borderRadius: '16px'}}></div>}
+            {images[4] ? <img src={images[4]} alt="Tour 5" className="photo-small" /> : <div className="photo-small" style={{background: '#f1f5f9', borderRadius: '16px'}}></div>}
           </div>
         </div>
         <button className="view-all-btn" onClick={() => { setShowGallery(true); setCurrentImageIndex(0); }}>
@@ -230,11 +235,15 @@ const TourDetail: React.FC = () => {
             <div className="inclusions-grid">
               <div className="inclusion-list">
                 <h3 style={{marginBottom: '16px'}}>✅ Bao gồm</h3>
-                <div className="inclusion-item yes"><FaCheckCircle /> Khách sạn lưu trú tiêu chuẩn (2-3 người/phòng)</div>
-                <div className="inclusion-item yes"><FaCheckCircle /> Các bữa ăn theo chương trình</div>
-                <div className="inclusion-item yes"><FaCheckCircle /> Phương tiện di chuyển: {tour.transport || 'Ô tô đời mới'}</div>
-                <div className="inclusion-item yes"><FaCheckCircle /> Vé tham quan các điểm du lịch</div>
-                <div className="inclusion-item yes"><FaCheckCircle /> Hướng dẫn viên nhiệt tình, kinh nghiệm</div>
+                {tour.utilities && tour.utilities.map((u: any, idx: number) => (
+                  <div key={`u-${idx}`} className="inclusion-item yes"><FaCheckCircle /> {u.name}</div>
+                ))}
+                {tour.highlights && tour.highlights.map((h: string, idx: number) => (
+                  <div key={`h-${idx}`} className="inclusion-item yes"><FaCheckCircle /> {h}</div>
+                ))}
+                {(!tour.utilities || tour.utilities.length === 0) && (!tour.highlights || tour.highlights.length === 0) && (
+                  <div className="inclusion-item yes" style={{color: '#64748b'}}>Đang cập nhật...</div>
+                )}
               </div>
               <div className="exclusion-list">
                 <h3 style={{marginBottom: '16px'}}>❌ Không bao gồm</h3>
@@ -383,7 +392,11 @@ const TourDetail: React.FC = () => {
           <div className="booking-card">
             
             <div className="fomo-badge">
-              <FaFire /> Đang bán chạy! Chỉ còn {tour.availableSlots || 5} chỗ trống
+              {startDate ? (
+                <><FaFire /> Đang bán chạy! Chuyến này còn {availableSlotsForDate !== null ? availableSlotsForDate : (tour.maxPeople || 20)} chỗ trống</>
+              ) : (
+                <><FaFire /> Đang bán chạy! Sức chứa: {tour.maxPeople || 20} chỗ / chuyến. Chọn ngày để xem số chỗ</>
+              )}
             </div>
 
             <div style={{ position: 'absolute', top: '24px', right: '24px', cursor: 'pointer' }}>
@@ -416,7 +429,7 @@ const TourDetail: React.FC = () => {
                   <input 
                     type="number" 
                     min="1" 
-                    max={tour.availableSlots || 20}
+                    max={availableSlotsForDate !== null ? availableSlotsForDate : (tour.maxPeople || 20)}
                     value={guests}
                     onChange={(e) => setGuests(parseInt(e.target.value))}
                     required

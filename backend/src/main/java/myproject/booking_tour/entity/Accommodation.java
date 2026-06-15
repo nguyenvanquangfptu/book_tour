@@ -26,4 +26,7 @@ public class Accommodation {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
+    private Boolean isActive = true;
 }
