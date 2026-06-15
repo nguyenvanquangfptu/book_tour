@@ -23,6 +23,7 @@ public class BookingMapper {
         response.setTotalPrice(booking.getTotalPrice());
         response.setStatus(booking.getStatus());
         response.setBookingDate(booking.getBookingDate());
+        response.setTravelDate(booking.getTravelDate());
 
         if (booking.getUser() != null) {
             response.setUserId(booking.getUser().getId());

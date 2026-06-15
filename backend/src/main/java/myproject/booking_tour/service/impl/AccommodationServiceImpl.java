@@ -23,6 +23,9 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Autowired
     private AccommodationMapper accommodationMapper;
 
+    @Autowired
+    private myproject.booking_tour.repository.TourRepository tourRepository;
+
     @Override
     @Transactional(readOnly = true)
     public List<AccommodationResponse> getAllAccommodations() {
@@ -57,6 +60,9 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodation.setType(request.getType());
         accommodation.setAddress(request.getAddress());
         accommodation.setDescription(request.getDescription());
+        if (request.getIsActive() != null) {
+            accommodation.setIsActive(request.getIsActive());
+        }
 
         Accommodation updated = accommodationRepository.save(accommodation);
         return accommodationMapper.toResponse(updated);
@@ -67,6 +73,11 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void deleteAccommodation(Long id) {
         Accommodation accommodation = accommodationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation not found with id: " + id));
+        
+        if (tourRepository.existsByAccommodation_Id(id)) {
+            throw new RuntimeException("Nơi lưu trú này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+        }
+        
         accommodationRepository.delete(accommodation);
     }
 }
