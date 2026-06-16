@@ -33,7 +33,12 @@ public class BookingMapper {
         if (booking.getTour() != null) {
             response.setTourId(booking.getTour().getId());
             response.setTourTitle(booking.getTour().getTitle());
+            response.setDestination(booking.getTour().getDestination());
         }
+
+        response.setCustomerEmail(booking.getCustomerEmail());
+        response.setCustomerPhone(booking.getCustomerPhone());
+        response.setNote(booking.getNote());
         
         if (booking.getUser() != null && booking.getTour() != null) {
             Review review = reviewRepository.findByTourId(booking.getTour().getId()).stream()
