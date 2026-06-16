@@ -14,5 +14,6 @@ public interface PaymentService {
     List<PaymentResponse> getAllPayments();
     List<PaymentResponse> getPaymentsByBookingId(Long bookingId);
     String createPaymentUrl(Long bookingId, HttpServletRequest request);
-    PaymentResponse processVnPayCallback(Map<String, String> params);
+    PaymentResponse processPayOSCallback(Map<String, String> params);
+    void processPayOSWebhook(vn.payos.model.webhooks.Webhook webhookBody);
 }
