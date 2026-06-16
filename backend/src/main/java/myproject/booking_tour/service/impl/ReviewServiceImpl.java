@@ -56,6 +56,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setTour(tour);
 
         Review savedReview = reviewRepository.save(review);
+        updateTourRating(tour);
         return reviewMapper.toResponse(savedReview);
     }
 
@@ -76,6 +77,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         
         Review savedReview = reviewRepository.save(review);
+        updateTourRating(review.getTour());
         return reviewMapper.toResponse(savedReview);
     }
 
@@ -107,6 +109,21 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BadRequestException("You don't have permission to delete this review");
         }
 
+        Tour tour = review.getTour();
         reviewRepository.delete(review);
+        updateTourRating(tour);
+    }
+
+    private void updateTourRating(Tour tour) {
+        List<Review> reviews = reviewRepository.findByTourId(tour.getId());
+        if (reviews == null || reviews.isEmpty()) {
+            tour.setRating(0.0);
+            tour.setReviewCount(0);
+        } else {
+            double avg = reviews.stream().mapToDouble(Review::getRating).average().orElse(0.0);
+            tour.setRating(Math.round(avg * 10.0) / 10.0);
+            tour.setReviewCount(reviews.size());
+        }
+        tourRepository.save(tour);
     }
 }

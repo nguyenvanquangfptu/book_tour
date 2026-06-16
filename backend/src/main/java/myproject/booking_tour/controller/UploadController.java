@@ -23,7 +23,8 @@ public class UploadController {
         try {
             String url = fileUploadService.uploadFile(file);
             return ResponseEntity.ok(new ApiResponse<>(true, "File uploaded successfully!", url));
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "File upload failed: " + e.getMessage(), null));
         }
     }
@@ -36,7 +37,8 @@ public class UploadController {
                 urls.add(fileUploadService.uploadFile(file));
             }
             return ResponseEntity.ok(new ApiResponse<>(true, "Files uploaded successfully!", urls));
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Files upload failed: " + e.getMessage(), null));
         }
     }
