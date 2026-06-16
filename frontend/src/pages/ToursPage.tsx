@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import TourCard from '../components/TourCard';
-import { TourService } from '../services/TourService';
+import { useTourOptions } from '../hooks/useTourOptions';
+import { useTours } from '../hooks/useTours';
 import '../styles/pages.css';
 import '../styles/toursPage.css';
 
@@ -11,44 +12,39 @@ const ToursPage: React.FC = () => {
   const initialDest = searchParams.get('dest') || '';
   const initialKeyword = searchParams.get('keyword') || '';
 
-  const [tours, setTours] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
   // Filter States
   const [keyword, setKeyword] = useState(initialKeyword);
   const [destination, setDestination] = useState(initialDest);
   const [priceRange, setPriceRange] = useState(10000000); // UI max
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [sortOption, setSortOption] = useState('id_ASC');
   
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedTransports, setSelectedTransports] = useState<string[]>([]);
 
-  const fetchTours = async () => {
-    try {
-      setLoading(true);
-      const [sortBy, sortDir] = sortOption.split('_');
-      // Fetch tours with all filters
-      const data = await TourService.getTours(page, 9, keyword, destination, '', '', priceRange, sortBy, sortDir, selectedTypes, selectedTransports);
-      if (data && data.content) {
-        setTours(data.content);
-        setTotalPages(data.totalPages || 0);
-      } else {
-        setTours([]);
-        setTotalPages(0);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tours', error);
-      setTours([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 1. Fetch Tour Options
+  const { data: optionsData } = useTourOptions();
+  const allDestinations = optionsData?.destinations || [];
+  const allTourTypes = optionsData?.tourTypes || [];
+  const allTransports = optionsData?.transports || [];
 
-  useEffect(() => {
-    fetchTours();
-  }, [page, destination, sortOption]);
+  // 2. Fetch Tours
+  const [sortBy, sortDir] = sortOption.split('_');
+  const { data: toursResponse, isLoading: loading } = useTours({
+    page,
+    size: 9,
+    keyword,
+    destination,
+    tourType: selectedTypes.join(','),
+    transport: selectedTransports.join(','),
+    minPrice: 0,
+    maxPrice: priceRange,
+    sortBy,
+    sortDir,
+  });
+
+  const tours = toursResponse?.content || [];
+  const totalPages = toursResponse?.totalPages || 0;
 
   // Handle URL changes from Navbar search
   useEffect(() => {
@@ -57,17 +53,8 @@ const ToursPage: React.FC = () => {
     if (kw !== null) {
       setKeyword(kw);
       setPage(0);
-      // Let the next render handle the fetch or fetch directly here
     }
   }, [location.search]);
-
-  // To ensure fetching happens when keyword updates from URL
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('keyword') !== null) {
-      fetchTours();
-    }
-  }, [keyword]);
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setDestination(e.target.value);
@@ -82,8 +69,6 @@ const ToursPage: React.FC = () => {
     setSelectedTypes([]);
     setSelectedTransports([]);
     setPage(0);
-    // Note: useEffect will trigger fetchTours due to page=0, but we also manually fetch to be safe
-    fetchTours();
   };
 
   const handleTypeToggle = (type: string) => {
@@ -122,8 +107,7 @@ const ToursPage: React.FC = () => {
                 className="filter-input" 
                 placeholder="Search by name..." 
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchTours()}
+                onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
               />
             </div>
 
@@ -131,14 +115,9 @@ const ToursPage: React.FC = () => {
               <div className="filter-group-title">Destination</div>
               <select className="filter-input" value={destination} onChange={handleDestinationChange}>
                 <option value="">All Destinations</option>
-                <option value="Hà Nội">Hà Nội</option>
-                <option value="Sapa">Sapa</option>
-                <option value="Hạ Long">Hạ Long</option>
-                <option value="Đà Nẵng">Đà Nẵng</option>
-                <option value="Hội An">Hội An</option>
-                <option value="Nha Trang">Nha Trang</option>
-                <option value="Đà Lạt">Đà Lạt</option>
-                <option value="Phú Quốc">Phú Quốc</option>
+                {allDestinations.map(dest => (
+                  <option key={dest} value={dest}>{dest}</option>
+                ))}
               </select>
             </div>
 
@@ -162,37 +141,25 @@ const ToursPage: React.FC = () => {
             <div className="filter-group">
               <div className="filter-group-title">Tour Type</div>
               <div className="checkbox-list">
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTypes.includes('Beach')} onChange={() => handleTypeToggle('Beach')} /> Beach
-                </label>
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTypes.includes('Mountain')} onChange={() => handleTypeToggle('Mountain')} /> Mountain
-                </label>
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTypes.includes('Adventure')} onChange={() => handleTypeToggle('Adventure')} /> Adventure
-                </label>
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTypes.includes('Cultural')} onChange={() => handleTypeToggle('Cultural')} /> Cultural
-                </label>
+                {allTourTypes.map(type => (
+                  <label key={type} className="checkbox-item">
+                    <input type="checkbox" checked={selectedTypes.includes(type)} onChange={() => handleTypeToggle(type)} /> {type}
+                  </label>
+                ))}
               </div>
             </div>
 
             <div className="filter-group">
               <div className="filter-group-title">Transport</div>
               <div className="checkbox-list">
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTransports.includes('Flight')} onChange={() => handleTransportToggle('Flight')} /> Flight
-                </label>
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTransports.includes('Bus')} onChange={() => handleTransportToggle('Bus')} /> Bus
-                </label>
-                <label className="checkbox-item">
-                  <input type="checkbox" checked={selectedTransports.includes('Train')} onChange={() => handleTransportToggle('Train')} /> Train
-                </label>
+                {allTransports.map(transport => (
+                  <label key={transport} className="checkbox-item">
+                    <input type="checkbox" checked={selectedTransports.includes(transport)} onChange={() => handleTransportToggle(transport)} /> {transport}
+                  </label>
+                ))}
               </div>
             </div>
-            
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { setPage(0); fetchTours(); }}>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { setPage(0); }}>
               Apply Filters
             </button>
           </aside>

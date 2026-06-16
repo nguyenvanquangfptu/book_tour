@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaStar, FaRegClock, FaCheckCircle, FaTimesCircle, FaUserFriends, FaShoppingCart, FaHeart, FaFire } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+import { useQuery } from '@tanstack/react-query';
 import { TourService } from '../services/TourService';
-import { useCart } from '../context/CartContext';
+import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 import TourCard from '../components/TourCard';
 import api from '../api/axiosConfig';
 import { formatPrice } from '../utils/formatPrice';
@@ -12,82 +14,58 @@ import '../styles/tourDetail.css';
 const TourDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [tour, setTour] = useState<any>(null);
-  const [relatedTours, setRelatedTours] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { cart, addToCart } = useCart();
+  
+  const { cart, addToCart } = useCartStore();
+  const currentUser = useAuthStore(state => state.user);
   
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [editReviewData, setEditReviewData] = useState({ rating: 5, comment: '' });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-
-  const userStr = localStorage.getItem('user');
-  const currentUser = userStr ? JSON.parse(userStr) : null;
   
   // Booking Form State
   const [guests, setGuests] = useState(1);
   const [startDate, setStartDate] = useState('');
-  const [availableSlotsForDate, setAvailableSlotsForDate] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchSlots = async () => {
-      if (startDate && tour?.id) {
-        try {
-          const res = await api.get(`/tours/${tour.id}/schedules?date=${startDate}`);
-          if (res.data.success) {
-            setAvailableSlotsForDate(res.data.data);
-          }
-        } catch (error) {
-          console.error('Failed to fetch available slots', error);
-        }
-      } else {
-        setAvailableSlotsForDate(null);
-      }
-    };
-    fetchSlots();
-  }, [startDate, tour?.id]);
+  // 1. Fetch Tour Detail
+  const { data: tour, isLoading: tourLoading } = useQuery({
+    queryKey: ['tour', id],
+    queryFn: () => TourService.getTourById(id!),
+    enabled: !!id,
+  });
+
+  // 2. Fetch Reviews
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: () => TourService.getTourReviews(id!),
+    enabled: !!id,
+  });
+
+  // 3. Fetch Related Tours
+  const { data: relatedToursResponse } = useQuery({
+    queryKey: ['relatedTours', tour?.destination],
+    queryFn: () => TourService.getTours(0, 4, '', tour?.destination),
+    enabled: !!tour?.destination,
+  });
+  const relatedTours = (relatedToursResponse?.content || []).filter((t: any) => t.id.toString() !== id).slice(0, 3);
+
+  // 4. Fetch Available Slots
+  const { data: availableSlotsForDate = null } = useQuery({
+    queryKey: ['tourSlots', id, startDate],
+    queryFn: async () => {
+      const res = await api.get(`/tours/${id}/schedules?date=${startDate}`);
+      return res.data.data;
+    },
+    enabled: !!(startDate && id),
+  });
 
   // Gallery State
   const [showGallery, setShowGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    const fetchTourDetail = async () => {
-      try {
-        if (!id) return;
-        const data = await TourService.getTourById(id);
-        if (data) {
-          setTour(data);
-          
-          // Fetch reviews
-          try {
-            const revs = await TourService.getTourReviews(id);
-            setReviews(revs || []);
-          } catch(e) { console.error(e) }
-
-          // Fetch related tours (same destination)
-          try {
-            const related = await TourService.getTours(0, 4, '', data.destination);
-            if (related && related.content) {
-              setRelatedTours(related.content.filter((t: any) => t.id.toString() !== id).slice(0, 3));
-            }
-          } catch(e) { console.error(e) }
-        } else {
-          setTour(null);
-        }
-      } catch (error) {
-        console.error('Failed to fetch tour detail', error);
-        setTour(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     // Scroll to top when loading new tour
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    fetchTourDetail();
   }, [id]);
 
   const handleBooking = (e: React.FormEvent) => {
@@ -143,7 +121,7 @@ const TourDetail: React.FC = () => {
     });
   };
 
-  if (loading) {
+  if (tourLoading) {
     return <div className="loading-spinner container" style={{minHeight: '60vh', paddingTop: '100px'}}>Đang tải dữ liệu...</div>;
   }
 
@@ -158,13 +136,20 @@ const TourDetail: React.FC = () => {
 
   // Calculate dynamic rating based on fetched reviews
   const avgRating = reviews.length > 0 
-    ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1) 
+    ? (reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviews.length).toFixed(1) 
     : (tour.rating || 0).toFixed(1);
   const reviewCount = reviews.length > 0 ? reviews.length : (tour.reviewCount || 0);
 
   const scrollToReviews = () => {
     document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const slotsLeft = startDate 
+    ? (availableSlotsForDate !== null ? availableSlotsForDate : (tour.availableSlots || 0))
+    : (tour.availableSlots || 0);
+
+  const isSoldOut = slotsLeft <= 0;
+
 
   return (
     <div className="tour-detail-page">
@@ -285,7 +270,7 @@ const TourDetail: React.FC = () => {
                 <div style={{display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px'}}>
                   <FaStar style={{color: '#f59e0b', fontSize: '2rem'}} />
                   <span style={{fontSize: '2rem', fontWeight: 700}}>
-                    {(reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)}
+                    {(reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviews.length).toFixed(1)}
                   </span>
                   <span style={{color: '#64748b', fontSize: '1.1rem'}}>• {reviews.length} đánh giá</span>
                 </div>
@@ -304,7 +289,7 @@ const TourDetail: React.FC = () => {
                         </div>
                         <div style={{marginLeft: 'auto', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '10px'}}>
                           <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
-                          {currentUser && currentUser.username === review.username && (
+                          {currentUser && currentUser.email === review.email && (
                             <button 
                               onClick={() => {
                                 setEditingReviewId(review.id);
@@ -342,7 +327,10 @@ const TourDetail: React.FC = () => {
                                   setIsSubmittingReview(true);
                                   await api.put(`/reviews/${review.id}`, { tourId: tour.id, rating: editReviewData.rating, comment: editReviewData.comment });
                                   setEditingReviewId(null);
-                                  setReviews(reviews.map(r => r.id === review.id ? { ...r, rating: editReviewData.rating, comment: editReviewData.comment } : r));
+                                  // Can't use setReviews with React Query easily unless we update cache. Simplest is to reload page or we should use refetch.
+                                  // Wait, since I removed refetchReviews, I should just do window.location.reload() or re-fetch.
+                                  // For simplicity:
+                                  window.location.reload();
                                   Swal.fire({ icon: 'success', title: 'Cập nhật thành công', showConfirmButton: false, timer: 1500 });
                                 } catch (e) {
                                   Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Cập nhật thất bại' });
@@ -391,11 +379,19 @@ const TourDetail: React.FC = () => {
         <div className="detail-sidebar">
           <div className="booking-card">
             
-            <div className="fomo-badge">
+            <div className="fomo-badge" style={isSoldOut ? {background: '#fee2e2', color: '#ef4444'} : {}}>
               {startDate ? (
-                <><FaFire /> Đang bán chạy! Chuyến này còn {availableSlotsForDate !== null ? availableSlotsForDate : (tour.maxPeople || 20)} chỗ trống</>
+                isSoldOut ? (
+                  <><FaTimesCircle /> Rất tiếc, chuyến này đã hết chỗ!</>
+                ) : (
+                  <><FaFire /> Đang bán chạy! Chuyến này còn {slotsLeft} chỗ trống</>
+                )
               ) : (
-                <><FaFire /> Đang bán chạy! Sức chứa: {tour.maxPeople || 20} chỗ / chuyến. Chọn ngày để xem số chỗ</>
+                isSoldOut ? (
+                  <><FaTimesCircle /> Rất tiếc, tour này tạm thời hết chỗ!</>
+                ) : (
+                  <><FaFire /> Đang bán chạy! Hiện còn {slotsLeft} chỗ. Chọn ngày để xem số chỗ chính xác</>
+                )
               )}
             </div>
 
@@ -429,11 +425,12 @@ const TourDetail: React.FC = () => {
                   <input 
                     type="number" 
                     min="1" 
-                    max={availableSlotsForDate !== null ? availableSlotsForDate : (tour.maxPeople || 20)}
+                    max={slotsLeft > 0 ? slotsLeft : 1}
                     value={guests}
                     onChange={(e) => setGuests(parseInt(e.target.value))}
                     required
-                    style={{paddingLeft: '36px', width: '100%'}}
+                    disabled={isSoldOut}
+                    style={{paddingLeft: '36px', width: '100%', ...(isSoldOut ? {backgroundColor: '#f1f5f9', cursor: 'not-allowed'} : {})}}
                   />
                 </div>
               </div>
@@ -453,10 +450,10 @@ const TourDetail: React.FC = () => {
                 </div>
               </div>
               
-              <button type="submit" className="btn-book">
-                Đặt Tour Ngay
+              <button type="submit" className="btn-book" disabled={isSoldOut} style={isSoldOut ? {opacity: 0.5, cursor: 'not-allowed'} : {}}>
+                {isSoldOut ? 'Đã Hết Chỗ' : 'Đặt Tour Ngay'}
               </button>
-              <button type="button" onClick={handleAddToCart} className="btn-cart">
+              <button type="button" onClick={handleAddToCart} className="btn-cart" disabled={isSoldOut} style={isSoldOut ? {opacity: 0.5, cursor: 'not-allowed'} : {}}>
                 <FaShoppingCart /> Thêm Vào Giỏ Hàng
               </button>
             </form>

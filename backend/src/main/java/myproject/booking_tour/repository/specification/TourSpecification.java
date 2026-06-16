@@ -45,6 +45,11 @@ public class TourSpecification {
 
             if (status != null && !status.trim().isEmpty()) {
                 predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            } else {
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.notEqual(root.get("status"), "DELETED"),
+                        criteriaBuilder.isNull(root.get("status"))
+                ));
             }
 
             if (tourTypes != null && !tourTypes.isEmpty()) {

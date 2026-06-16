@@ -37,6 +37,8 @@ public class TourMapper {
         tour.setMaxPeople(request.getMaxPeople());
         tour.setAvailableSlots(request.getAvailableSlots());
         tour.setStatus(request.getStatus());
+        tour.setTourType(request.getTourType());
+        tour.setTransport(request.getTransport());
         tour.setHighlights(request.getHighlights());
         tour.setImages(request.getImages());
         tour.setItinerary(request.getItinerary());
@@ -58,8 +60,11 @@ public class TourMapper {
         response.setImageUrl(tour.getImageUrl());
         response.setStartDate(tour.getStartDate());
         response.setEndDate(tour.getEndDate());
+        response.setMaxPeople(tour.getMaxPeople());
         response.setAvailableSlots(tour.getAvailableSlots());
         response.setStatus(tour.getStatus());
+        response.setTourType(tour.getTourType());
+        response.setTransport(tour.getTransport());
         response.setBookedCount(tour.getBookedCount());
         response.setReviewCount(tour.getReviewCount());
         response.setRating(tour.getRating());

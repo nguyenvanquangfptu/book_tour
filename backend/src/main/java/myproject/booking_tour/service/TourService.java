@@ -17,4 +17,5 @@ public interface TourService {
     void deleteTour(Long id);
     List<PopularDestinationResponse> getPopularDestinations(int limit);
     Integer getAvailableSlots(Long id, java.time.LocalDate date);
+    myproject.booking_tour.dto.response.TourOptionsResponse getTourOptions();
 }

@@ -68,11 +68,11 @@ public class Tour {
     @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = id)")
     private Integer bookedCount;
 
-    @org.hibernate.annotations.Formula("(SELECT COUNT(r.id) FROM reviews r WHERE r.tour_id = id)")
-    private Integer reviewCount;
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
 
-    @org.hibernate.annotations.Formula("(SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.tour_id = id)")
-    private Double rating;
+    @Column(name = "rating")
+    private Double rating = 0.0;
 
     // Many-to-One with Accommodation (Ref: tours.accommodation_id > accommodations.id)
     @ManyToOne(fetch = FetchType.LAZY)
