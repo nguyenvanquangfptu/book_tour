@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { FaPlane, FaCalendarAlt, FaUserFriends, FaMapMarkerAlt, FaQrcode } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
 

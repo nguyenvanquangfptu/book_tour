@@ -1,51 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaWallet } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query';
 import TourCard from '../components/TourCard';
 import { TourService } from '../services/TourService';
-import { ReviewService, type ReviewResponse } from '../services/ReviewService';
+import { ReviewService } from '../services/ReviewService';
+import { useTourOptions } from '../hooks/useTourOptions';
+import { useTours } from '../hooks/useTours';
 import '../styles/pages.css';
 import '../styles/home.css';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const [tours, setTours] = useState<any[]>([]);
-  const [popularDestinations, setPopularDestinations] = useState<any[]>([]);
-  const [recentReviews, setRecentReviews] = useState<ReviewResponse[]>([]);
-  const [loading, setLoading] = useState(true);
   
   // Search States
   const [destination, setDestination] = useState('');
   const [duration, setDuration] = useState('');
   const [budget, setBudget] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch popular destinations
-        const destData = await TourService.getPopularDestinations(4);
-        if (destData) {
-          setPopularDestinations(destData);
-        }
+  // 1. Fetch Popular Destinations
+  const { data: popularDestinations = [] } = useQuery({
+    queryKey: ['popularDestinations'],
+    queryFn: () => TourService.getPopularDestinations(4),
+  });
 
-        // Using getTours as a placeholder for getFeaturedTours
-        const toursData = await TourService.getTours(0, 6, '', '', '', '', undefined, 'id', 'DESC');
-        setTours(toursData.content || []);
-        
-        const reviewsData = await ReviewService.getRecentReviews();
-        setRecentReviews(reviewsData || []);
-      } catch (error) {
-        console.error('Failed to fetch data for home page:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  // 2. Fetch Tour Options (Cached globally)
+  const { data: tourOptions } = useTourOptions();
+  const allDestinations = tourOptions?.destinations || [];
+
+  // 3. Fetch Featured Tours
+  const { data: toursData, isLoading: toursLoading } = useTours({ page: 0, size: 6 });
+  const tours = toursData?.content || [];
+
+  // 4. Fetch Recent Reviews
+  const { data: recentReviews = [] } = useQuery({
+    queryKey: ['recentReviews'],
+    queryFn: () => ReviewService.getRecentReviews(),
+  });
 
   const handleSearchClick = () => {
-    // Navigate to ToursPage with query params
     navigate(`/tours?dest=${destination}`);
   };
 
@@ -69,14 +62,9 @@ const Home: React.FC = () => {
                   onChange={(e) => setDestination(e.target.value)}
                 >
                   <option value="">Where are you going?</option>
-                  <option value="Hà Nội">Hà Nội</option>
-                  <option value="Sapa">Sapa</option>
-                  <option value="Hạ Long">Hạ Long</option>
-                  <option value="Đà Nẵng">Đà Nẵng</option>
-                  <option value="Hội An">Hội An</option>
-                  <option value="Nha Trang">Nha Trang</option>
-                  <option value="Đà Lạt">Đà Lạt</option>
-                  <option value="Phú Quốc">Phú Quốc</option>
+                  {allDestinations.map(dest => (
+                    <option key={dest} value={dest}>{dest}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -135,7 +123,7 @@ const Home: React.FC = () => {
           </div>
           
           <div className="destinations-grid">
-            {popularDestinations.length > 0 ? popularDestinations.map((dest, index) => (
+            {popularDestinations.length > 0 ? popularDestinations.map((dest: any, index: number) => (
               <div className="destination-card animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }} key={index} onClick={() => navigate(`/tours?dest=${dest.name}`)}>
                 <img 
                   src={dest.image || 'https://images.unsplash.com/photo-1596700055745-f0bbbb3d2b0e?auto=format&fit=crop&w=800&q=80'} 
@@ -167,7 +155,7 @@ const Home: React.FC = () => {
             <p className="section-subtitle">Handpicked selection of the best tours for you</p>
           </div>
 
-          {loading ? (
+          {toursLoading ? (
             <div className="tours-grid">
               {[1, 2, 3, 4, 5, 6].map(n => (
                 <div key={n} style={{ height: '400px', background: 'var(--border-color)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>

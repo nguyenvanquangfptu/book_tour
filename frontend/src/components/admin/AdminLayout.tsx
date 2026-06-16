@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { FaMapMarkedAlt, FaTicketAlt, FaSignOutAlt, FaTachometerAlt, FaHome, FaHotel, FaStar } from 'react-icons/fa';
-import { AuthService } from '../../services/AuthService';
+import { useAuthStore } from '../../store/useAuthStore';
 import '../../styles/admin.css';
 
 const AdminLayout: React.FC = () => {
@@ -9,7 +9,7 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
 
   const handleLogout = () => {
-    AuthService.logout();
+    useAuthStore.getState().logout();
     navigate('/login');
   };
 

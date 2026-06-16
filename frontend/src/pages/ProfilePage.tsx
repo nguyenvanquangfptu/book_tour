@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaLock, FaHistory, FaCheckCircle, FaTimesCircle, FaEye, FaEyeSlash, FaSignOutAlt, FaFileInvoiceDollar, FaStar, FaDownload } from 'react-icons/fa';
+import { FaUser, FaLock, FaHistory, FaCheckCircle, FaTimesCircle, FaEye, FaEyeSlash, FaSignOutAlt, FaFileInvoiceDollar, FaStar, FaDownload, FaMapMarkerAlt, FaCalendarAlt, FaUsers, FaIdCard, FaEnvelope, FaPhone, FaStickyNote, FaMoneyBillWave, FaMap } from 'react-icons/fa';
 import api from '../api/axiosConfig';
+import { useAuthStore } from '../store/useAuthStore';
 import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import { useNavigate } from 'react-router-dom';
@@ -102,23 +103,23 @@ const ProfilePage: React.FC = () => {
     setUploadingAvatar(true);
     try {
       const res = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       const url = res.data?.data?.url || res.data?.url || res.data;
       if (typeof url === 'string') {
         await UserService.updateAvatar(url);
         setProfile({ ...profile, avatar: url });
         setMessage({ text: 'Cập nhật ảnh đại diện thành công!', type: 'success' });
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          user.avatar = url;
-          localStorage.setItem('user', JSON.stringify(user));
-          window.dispatchEvent(new Event('storage'));
+        const user = useAuthStore.getState().user;
+        if (user) {
+          useAuthStore.setState({ user: { ...user, avatar: url } });
         }
       }
     } catch (err: any) {
-      setMessage({ text: 'Lỗi tải ảnh lên!', type: 'error' });
+      const errorMessage = err.response?.data?.message || 'Lỗi tải ảnh lên!';
+      setMessage({ text: errorMessage, type: 'error' });
     } finally {
       setUploadingAvatar(false);
     }
@@ -170,8 +171,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    useAuthStore.getState().logout();
     navigate('/login');
   };
 
@@ -383,7 +383,7 @@ const ProfilePage: React.FC = () => {
                           <button 
                             onClick={async () => {
                               try {
-                                const res = await BookingService.createVNPayUrl(booking.id);
+                                const res = await BookingService.createPayOSUrl(booking.id);
                                 const paymentData = res?.data || res;
                                 const url = typeof paymentData === 'string' ? paymentData : paymentData?.paymentUrl;
                                 if (url) {
@@ -504,51 +504,152 @@ const ProfilePage: React.FC = () => {
       {/* Booking Details Modal */}
       {selectedBooking && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }} onClick={() => setSelectedBooking(null)}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', width: '100%', maxWidth: '500px', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedBooking(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>&times;</button>
-            <h2 style={{ marginBottom: '20px', color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>Chi Tiết Đơn Hàng #{selectedBooking.id}</h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
-                <span style={{ color: '#64748b', fontWeight: '500' }}>Tên Tour:</span>
-                <span style={{ color: '#0f172a', fontWeight: '600' }}>{selectedBooking.tourTitle || 'Đang cập nhật'}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
-                <span style={{ color: '#64748b', fontWeight: '500' }}>Khách hàng:</span>
-                <span style={{ color: '#0f172a' }}>{selectedBooking.customerName || profile.fullName}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
-                <span style={{ color: '#64748b', fontWeight: '500' }}>Ngày đặt:</span>
-                <span style={{ color: '#0f172a' }}>{new Date(selectedBooking.bookingDate).toLocaleString('vi-VN')}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
-                <span style={{ color: '#64748b', fontWeight: '500' }}>Số hành khách:</span>
-                <span style={{ color: '#0f172a' }}>{selectedBooking.numberOfPeople} người</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '10px' }}>
-                <span style={{ color: '#64748b', fontWeight: '500' }}>Trạng thái:</span>
-                <span style={{ fontWeight: 'bold', color: selectedBooking.status === 'PENDING' ? '#b45309' : selectedBooking.status === 'CONFIRMED' ? '#15803d' : '#b91c1c' }}>
-                  {selectedBooking.status}
-                </span>
-              </div>
-              
-              <div style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#0f172a', fontWeight: '600', fontSize: '1.1rem' }}>Tổng thanh toán:</span>
-                <span style={{ color: '#e11d48', fontWeight: 'bold', fontSize: '1.2rem' }}>{formatPrice(selectedBooking.totalPrice)}</span>
+          <div style={{ background: '#f8fafc', borderRadius: '16px', width: '100%', maxWidth: '650px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '25px 30px', position: 'relative' }}>
+              <button onClick={() => setSelectedBooking(null)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}>&times;</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.15)', padding: '12px', borderRadius: '12px', color: '#38bdf8' }}>
+                  <FaFileInvoiceDollar size={24} />
+                </div>
+                <div>
+                  <h2 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Chi Tiết Đơn Hàng #{selectedBooking.id}</h2>
+                  <p style={{ color: '#94a3b8', margin: '5px 0 0 0', fontSize: '0.9rem' }}>Đặt lúc: {new Date(selectedBooking.bookingDate).toLocaleString('vi-VN')}</p>
+                </div>
               </div>
             </div>
             
-            <div style={{ marginTop: '25px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            {/* Body */}
+            <div style={{ padding: '30px', overflowY: 'auto' }}>
+              
+              {/* Tour Info Card */}
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
+                  <FaMap color="#3b82f6" /> Thông tin chuyến đi
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaMapMarkerAlt /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Tên Tour</div>
+                      <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedBooking.tourTitle || 'Đang cập nhật'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaMapMarkerAlt /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Địa điểm</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.destination || 'Đang cập nhật'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaCalendarAlt /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Ngày đi</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.travelDate ? new Date(selectedBooking.travelDate).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaUsers /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Số hành khách</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.numberOfPeople} người</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Info Card */}
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
+                  <FaIdCard color="#8b5cf6" /> Thông tin người đặt
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaUser /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Họ và tên</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.customerName || profile.fullName}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaPhone /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Số điện thoại</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.customerPhone || profile.phone || 'Không cung cấp'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', gridColumn: '1 / -1' }}>
+                    <div style={{ color: '#64748b', marginTop: '3px' }}><FaEnvelope /></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Email</div>
+                      <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.customerEmail || profile.email || 'Không cung cấp'}</div>
+                    </div>
+                  </div>
+                  {selectedBooking.note && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', gridColumn: '1 / -1', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
+                      <div style={{ color: '#64748b', marginTop: '3px' }}><FaStickyNote /></div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Ghi chú</div>
+                        <div style={{ color: '#334155', fontStyle: 'italic', fontSize: '0.95rem' }}>"{selectedBooking.note}"</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Payment Summary Card */}
+              <div style={{ background: 'linear-gradient(to right, #eff6ff, #dbeafe)', borderRadius: '12px', padding: '20px', border: '1px solid #bfdbfe' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ color: '#1e3a8a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaCheckCircle /> Trạng thái đơn hàng:
+                  </span>
+                  <span style={{ 
+                    fontWeight: 'bold', 
+                    padding: '6px 12px', 
+                    borderRadius: '20px', 
+                    fontSize: '0.9rem',
+                    background: selectedBooking.status === 'PENDING' ? '#fef3c7' : selectedBooking.status === 'CONFIRMED' ? '#dcfce7' : '#fee2e2',
+                    color: selectedBooking.status === 'PENDING' ? '#92400e' : selectedBooking.status === 'CONFIRMED' ? '#166534' : '#991b1b',
+                    border: `1px solid ${selectedBooking.status === 'PENDING' ? '#fde68a' : selectedBooking.status === 'CONFIRMED' ? '#bbf7d0' : '#fecaca'}`
+                  }}>
+                    {selectedBooking.status}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #93c5fd', paddingTop: '15px' }}>
+                  <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FaMoneyBillWave /> Tổng thanh toán:
+                  </span>
+                  <span style={{ color: '#be123c', fontWeight: '800', fontSize: '1.5rem', textShadow: '0 1px 1px rgba(0,0,0,0.05)' }}>
+                    {formatPrice(selectedBooking.totalPrice)}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+            
+            {/* Footer */}
+            <div style={{ padding: '20px 30px', background: '#fff', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '15px', justifyContent: 'flex-end', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
               {selectedBooking.tourId && (
                 <button 
                   onClick={() => navigate(`/tours/${selectedBooking.tourId}`)}
-                  className="btn" 
-                  style={{ background: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1' }}
+                  style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}
                 >
-                  Xem chi tiết Tour
+                  Xem Tour
                 </button>
               )}
-              <button onClick={() => setSelectedBooking(null)} className="btn btn-primary">Đóng</button>
+              <button 
+                onClick={() => setSelectedBooking(null)} 
+                style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 25px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.4)', transition: 'all 0.2s' }}
+                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

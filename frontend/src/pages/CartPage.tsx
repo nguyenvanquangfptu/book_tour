@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCart } from '../context/CartContext';
+import { useCartStore as useCart } from '../store/useCartStore';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaShoppingCart } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
