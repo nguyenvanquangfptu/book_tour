@@ -11,17 +11,39 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import myproject.booking_tour.dto.response.PopularDestinationResponse;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.domain.Page;
+
 @Repository
 public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificationExecutor<Tour> {
+
+    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    Page<Tour> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    java.util.Optional<Tour> findById(Long id);
+
+    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    List<Tour> findAll();
+
     List<Tour> findByStatus(String status);
-    List<Tour> findByTitleContainingIgnoreCase(String keyword);
+    List<Tour> findByTitleContainingIgnoreCaseAndStatusNot(String keyword, String status);
     List<Tour> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
     List<Tour> findByAvailableSlotsGreaterThan(Integer slots);
 
     @Query("SELECT new myproject.booking_tour.dto.response.PopularDestinationResponse(t.destination, COUNT(t.id), MAX(t.imageUrl)) " +
-           "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' " +
+           "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND (t.status IS NULL OR t.status != 'DELETED') " +
            "GROUP BY t.destination ORDER BY COUNT(t.id) DESC")
     List<PopularDestinationResponse> findPopularDestinations(Pageable pageable);
+
+    @Query("SELECT DISTINCT t.destination FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    List<String> findDistinctDestinations();
+
+    @Query("SELECT DISTINCT t.tourType FROM Tour t WHERE t.tourType IS NOT NULL AND t.tourType != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    List<String> findDistinctTourTypes();
+
+    @Query("SELECT DISTINCT t.transport FROM Tour t WHERE t.transport IS NOT NULL AND t.transport != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    List<String> findDistinctTransports();
 
     boolean existsByAccommodation_Id(Long accommodationId);
 

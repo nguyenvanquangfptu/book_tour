@@ -26,4 +26,8 @@ public class TourSchedule {
 
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
 }

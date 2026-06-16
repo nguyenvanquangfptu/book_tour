@@ -22,6 +22,7 @@ public class TourResponse {
     private String imageUrl;
     private LocalDate startDate;
     private LocalDate endDate;
+    private Integer maxPeople;
     private Integer availableSlots;
     private String status;
     private String tourType;
