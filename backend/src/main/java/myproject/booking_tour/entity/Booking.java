@@ -35,7 +35,7 @@ Booking {
     @Column(name = "booking_date")
     private LocalDateTime bookingDate;
 
-    @Column(name = "travel_date", nullable = false)
+    @Column(name = "travel_date")
     private LocalDate travelDate;
 
     @Column(name = "number_of_people", nullable = false)
@@ -58,4 +58,8 @@ Booking {
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private Voucher voucher;
 }

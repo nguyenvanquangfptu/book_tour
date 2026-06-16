@@ -22,6 +22,10 @@ public class BookingResponse {
     private String status;
     private LocalDateTime bookingDate;
     private LocalDate travelDate;
+    private String destination;
+    private String customerEmail;
+    private String customerPhone;
+    private String note;
     
     private boolean isReviewed;
     private Long reviewId;

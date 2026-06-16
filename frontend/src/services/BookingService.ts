@@ -6,8 +6,8 @@ export const BookingService = {
     return response.data;
   },
 
-  createVNPayUrl: async (bookingId: number) => {
-    const response = await api.get(`/payments/create-vnpay-url?bookingId=${bookingId}`);
+  createPayOSUrl: async (bookingId: number) => {
+    const response = await api.get(`/payments/create-payos-url?bookingId=${bookingId}`);
     return response.data;
   },
 
