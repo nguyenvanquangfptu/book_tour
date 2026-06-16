@@ -1,17 +1,11 @@
 package myproject.booking_tour.controller;
 
-import myproject.booking_tour.entity.Booking;
-import myproject.booking_tour.entity.Payment;
-import myproject.booking_tour.repository.BookingRepository;
-import myproject.booking_tour.repository.PaymentRepository;
+import myproject.booking_tour.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.payos.PayOS;
 import vn.payos.model.webhooks.Webhook;
-import vn.payos.model.webhooks.WebhookData;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -20,13 +14,10 @@ import java.util.Map;
 public class PayOSWebhookController {
 
     @Autowired
-    private PayOS payOS;
+    private PaymentService paymentService;
 
     @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
+    private vn.payos.PayOS payOS;
 
     @PostMapping
     public ResponseEntity<Map<String, String>> handlePayOSWebhook(@RequestBody Object body) {
@@ -35,34 +26,13 @@ public class PayOSWebhookController {
             String jsonBody = mapper.writeValueAsString(body);
             
             Webhook webhookBody = mapper.readValue(jsonBody, Webhook.class);
-            WebhookData data = payOS.webhooks().verify(webhookBody);
             
-            // data.getOrderCode() returns long
-            long orderCode = data.getOrderCode();
-            String orderCodeStr = String.valueOf(orderCode);
-            
-            if (orderCodeStr.length() > 4) {
-                Long bookingId = Long.parseLong(orderCodeStr.substring(0, orderCodeStr.length() - 4));
-                
-                Booking booking = bookingRepository.findById(bookingId).orElse(null);
-                if (booking != null) {
-                    booking.setStatus("PAID");
-                    bookingRepository.save(booking);
-                    
-                    Payment payment = new Payment();
-                    payment.setBooking(booking);
-                    payment.setAmount(booking.getTotalPrice());
-                    payment.setPaymentMethod("PAYOS_BANK_TRANSFER");
-                    payment.setPaymentStatus("SUCCESS");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                }
-            }
+            // Delegate logic to PaymentService where signature is verified and cancellation handled
+            paymentService.processPayOSWebhook(webhookBody);
             
             return ResponseEntity.ok(Map.of("success", "true"));
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.ok(Map.of("success", "false"));
+            throw new myproject.booking_tour.exception.BadRequestException("Lỗi webhook PayOS: " + e.getMessage());
         }
     }
 
@@ -73,31 +43,17 @@ public class PayOSWebhookController {
             vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCodeLong);
 
             if ("PAID".equals(paymentLink.getStatus().name())) {
-                String orderCodeStr = String.valueOf(orderCodeLong);
-                if (orderCodeStr.length() > 4) {
-                    Long bookingId = Long.parseLong(orderCodeStr.substring(0, orderCodeStr.length() - 4));
-                    
-                    Booking booking = bookingRepository.findById(bookingId).orElse(null);
-                    if (booking != null && !"PAID".equals(booking.getStatus())) {
-                        booking.setStatus("PAID");
-                        bookingRepository.save(booking);
-                        
-                        Payment payment = new Payment();
-                        payment.setBooking(booking);
-                        payment.setAmount(booking.getTotalPrice());
-                        payment.setPaymentMethod("PAYOS_BANK_TRANSFER");
-                        payment.setPaymentStatus("SUCCESS");
-                        payment.setPaymentDate(LocalDateTime.now());
-                        paymentRepository.save(payment);
-                    }
-                }
+                // Call processPayOSCallback manually to share logic
+                java.util.Map<String, String> params = new java.util.HashMap<>();
+                params.put("orderCode", orderCode);
+                params.put("status", "PAID");
+                paymentService.processPayOSCallback(params);
                 return ResponseEntity.ok(Map.of("success", "true", "status", "PAID"));
             } else {
                 return ResponseEntity.ok(Map.of("success", "false", "status", paymentLink.getStatus().name()));
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.ok(Map.of("success", "false", "error", e.getMessage()));
+            throw new myproject.booking_tour.exception.BadRequestException("Lỗi xác minh thanh toán: " + e.getMessage());
         }
     }
 }

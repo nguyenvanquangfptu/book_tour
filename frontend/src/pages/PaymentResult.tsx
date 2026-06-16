@@ -15,8 +15,8 @@ const PaymentResult: React.FC = () => {
         return;
       }
       try {
-        // Send the query string exactly as received from VNPay to our backend
-        const response = await api.get(`/payments/vnpay-callback${location.search}`);
+        // Send the query string exactly as received from PayOS to our backend
+        const response = await api.get(`/payments/payos-callback${location.search}`);
         if (response.data && response.data.success) {
           setStatus('SUCCESS');
         } else {
