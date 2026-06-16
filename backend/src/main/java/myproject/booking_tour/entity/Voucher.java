@@ -46,4 +46,8 @@ public class Voucher {
 
     @Column(nullable = false)
     private Integer usedCount = 0;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
 }

@@ -51,18 +51,21 @@ public class DataSeeder implements CommandLineRunner {
         if (accommodationRepository.count() == 0) {
             Accommodation a1 = new Accommodation();
             a1.setName("Mường Thanh Luxury");
+            a1.setType("Hotel");
             a1.setAddress("Đà Nẵng");
             a1.setDescription("Khách sạn 5 sao chuẩn quốc tế tại Đà Nẵng");
             a1.setIsActive(true);
 
             Accommodation a2 = new Accommodation();
             a2.setName("Vinpearl Resort");
+            a2.setType("Resort");
             a2.setAddress("Phú Quốc");
             a2.setDescription("Khu nghỉ dưỡng phức hợp đẳng cấp 5 sao");
             a2.setIsActive(true);
 
             Accommodation a3 = new Accommodation();
             a3.setName("InterContinental");
+            a3.setType("Hotel");
             a3.setAddress("Nha Trang");
             a3.setDescription("Khách sạn 5 sao mặt biển Nha Trang");
             a3.setIsActive(true);
