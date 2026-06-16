@@ -8,6 +8,7 @@ import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.PaymentMapper;
 import myproject.booking_tour.repository.BookingRepository;
 import myproject.booking_tour.repository.PaymentRepository;
+import myproject.booking_tour.service.BookingService;
 import myproject.booking_tour.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private PaymentMapper paymentMapper;
+
+    @Autowired
+    private BookingService bookingService;
 
     @Override
     @Transactional
@@ -98,9 +102,18 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         try {
-            // Append 4 random digits to bookingId to make orderCode unique
-            int randomSuffix = new java.util.Random().nextInt(9000) + 1000;
-            long orderCode = Long.parseLong(bookingId.toString() + String.valueOf(randomSuffix));
+            // Create a pending Payment record to track the transaction and use its ID as orderCode
+            Payment payment = new Payment();
+            payment.setBooking(booking);
+            payment.setAmount(booking.getTotalPrice());
+            payment.setPaymentMethod("PAYOS_BANK_TRANSFER");
+            payment.setPaymentStatus("PENDING");
+            payment.setPaymentDate(LocalDateTime.now());
+            Payment savedPayment = paymentRepository.save(payment);
+
+            // Use the saved payment ID as the unique orderCode for PayOS
+            long orderCode = savedPayment.getId();
+
             // Giá trong database đã được bỏ 3 số 0 (VD: 2500000 -> 2500), đủ điều kiện >= 2000đ của PayOS
             int amount = booking.getTotalPrice().intValue();
 
@@ -122,46 +135,138 @@ public class PaymentServiceImpl implements PaymentService {
             vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse data = payOS.paymentRequests().create(paymentData);
             return data.getCheckoutUrl();
         } catch (Exception e) {
-            e.printStackTrace();
-            return "ERROR:" + e.getMessage();
+            throw new RuntimeException("Error creating PayOS payment link: " + e.getMessage(), e);
         }
     }
 
     @Override
     @Transactional
-    public PaymentResponse processVnPayCallback(java.util.Map<String, String> params) {
+    public PaymentResponse processPayOSCallback(java.util.Map<String, String> params) {
         String orderCodeStr = params.get("orderCode");
         String status = params.get("status");
         
-        if (orderCodeStr != null && orderCodeStr.length() > 4) {
-            Long bookingId = Long.parseLong(orderCodeStr.substring(0, orderCodeStr.length() - 4));
-            Booking booking = bookingRepository.findById(bookingId).orElse(null);
-            
-            if (booking != null) {
-                if ("PAID".equals(status) || "PAID".equals(booking.getStatus())) {
-                    booking.setStatus("PAID");
-                    bookingRepository.save(booking);
+        if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
+            try {
+                Long paymentId = Long.parseLong(orderCodeStr);
+                Payment payment = paymentRepository.findById(paymentId).orElse(null);
+                
+                if (payment != null) {
+                    Booking booking = payment.getBooking();
+                    if ("PAID".equals(status) || "PAID".equals(booking.getStatus())) {
+                        booking.setStatus("PAID");
+                        bookingRepository.save(booking);
 
-                    Payment payment = paymentRepository.findAll().stream()
-                        .filter(p -> p.getBooking().getId().equals(bookingId))
-                        .findFirst().orElseGet(() -> {
-                            Payment newPayment = new Payment();
-                            newPayment.setBooking(booking);
-                            newPayment.setAmount(booking.getTotalPrice());
-                            newPayment.setPaymentMethod("PAYOS_BANK_TRANSFER");
-                            return newPayment;
-                        });
-                    
-                    payment.setPaymentStatus("SUCCESS");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    Payment saved = paymentRepository.save(payment);
-                    return paymentMapper.toResponse(saved);
+                        payment.setPaymentStatus("SUCCESS");
+                        payment.setPaymentDate(LocalDateTime.now());
+                        Payment saved = paymentRepository.save(payment);
+                        return paymentMapper.toResponse(saved);
+                    } else if ("CANCELLED".equals(status)) {
+                        if (!"CANCELLED".equals(booking.getStatus())) {
+                            bookingService.cancelBooking(booking.getId());
+                        }
+                        payment.setPaymentStatus("FAILED");
+                        payment.setPaymentDate(LocalDateTime.now());
+                        Payment saved = paymentRepository.save(payment);
+                        return paymentMapper.toResponse(saved);
+                    }
                 }
+            } catch (Exception e) {
+                throw new RuntimeException("Error processing PayOS callback: " + e.getMessage(), e);
             }
         }
         
         Payment dummy = new Payment();
         dummy.setPaymentStatus("FAILED");
         return paymentMapper.toResponse(dummy);
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 1800000) // 30 minutes
+    @Transactional
+    public void checkPendingPayOSPayments() {
+        System.out.println("[CronJob] Bắt đầu kiểm tra các giao dịch PayOS đang chờ...");
+        
+        // Find all payments that are PENDING and use PAYOS_BANK_TRANSFER
+        List<Payment> pendingPayments = paymentRepository.findAll().stream()
+                .filter(p -> "PENDING".equals(p.getPaymentStatus()) && "PAYOS_BANK_TRANSFER".equals(p.getPaymentMethod()))
+                .collect(Collectors.toList());
+
+        for (Payment payment : pendingPayments) {
+            try {
+                long orderCode = payment.getId();
+                vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
+
+                if ("PAID".equals(paymentLink.getStatus().name())) {
+                    System.out.println("[CronJob] Tìm thấy đơn hàng đã thanh toán: PaymentID=" + orderCode);
+                    
+                    Booking booking = payment.getBooking();
+                    if (!"PAID".equals(booking.getStatus())) {
+                        booking.setStatus("PAID");
+                        bookingRepository.save(booking);
+                    }
+                    
+                    payment.setPaymentStatus("SUCCESS");
+                    payment.setPaymentDate(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                } else if ("CANCELLED".equals(paymentLink.getStatus().name()) || "EXPIRED".equals(paymentLink.getStatus().name())) {
+                    System.out.println("[CronJob] Đơn hàng đã hủy/hết hạn: PaymentID=" + orderCode);
+                    Booking booking = payment.getBooking();
+                    if (!"CANCELLED".equals(booking.getStatus())) {
+                        bookingService.cancelBooking(booking.getId());
+                    }
+                    payment.setPaymentStatus("FAILED");
+                    payment.setPaymentDate(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                }
+            } catch (Exception e) {
+                System.err.println("[CronJob] Lỗi kiểm tra PaymentID=" + payment.getId() + ": " + e.getMessage());
+            }
+        }
+        System.out.println("[CronJob] Hoàn tất kiểm tra.");
+    }
+
+    @Override
+    @Transactional
+    public void processPayOSWebhook(vn.payos.model.webhooks.Webhook webhookBody) {
+        try {
+            vn.payos.model.webhooks.WebhookData data = payOS.webhooks().verify(webhookBody);
+            
+            // Theo tài liệu PayOS, code "00" thường là thành công.
+            // data.getOrderCode() returns long
+            long orderCode = data.getOrderCode();
+            String orderCodeStr = String.valueOf(orderCode);
+            String desc = data.getDesc(); // Để biết lý do
+
+            if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
+                Long paymentId = Long.parseLong(orderCodeStr);
+                Payment payment = paymentRepository.findById(paymentId).orElse(null);
+                
+                if (payment != null) {
+                    Booking booking = payment.getBooking();
+                    
+                    // Lấy trạng thái của giao dịch từ PayOS
+                    vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
+                    String status = paymentLink.getStatus().name();
+                    
+                    if ("PAID".equals(status) || "00".equals(data.getCode())) {
+                        if (!"PAID".equals(booking.getStatus())) {
+                            booking.setStatus("PAID");
+                            bookingRepository.save(booking);
+                        }
+                        payment.setPaymentStatus("SUCCESS");
+                        payment.setPaymentDate(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                    } else if ("CANCELLED".equals(status) || "EXPIRED".equals(status)) {
+                        if (!"CANCELLED".equals(booking.getStatus())) {
+                            bookingService.cancelBooking(booking.getId());
+                        }
+                        payment.setPaymentStatus("FAILED");
+                        payment.setPaymentDate(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new myproject.booking_tour.exception.BadRequestException("Lỗi xác thực webhook PayOS: " + e.getMessage());
+        }
     }
 }

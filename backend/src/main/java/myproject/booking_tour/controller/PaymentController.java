@@ -44,21 +44,21 @@ public class PaymentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Payment status updated successfully!", response));
     }
 
-    @GetMapping("/create-vnpay-url")
-    public ResponseEntity<ApiResponse<String>> createVnPayUrl(
+    @GetMapping("/create-payos-url")
+    public ResponseEntity<ApiResponse<String>> createPayOSUrl(
             @RequestParam Long bookingId,
             jakarta.servlet.http.HttpServletRequest request) {
         String paymentUrl = paymentService.createPaymentUrl(bookingId, request);
         if (paymentUrl != null && paymentUrl.startsWith("ERROR:")) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, paymentUrl, null));
         }
-        return ResponseEntity.ok(new ApiResponse<>(true, "VNPay URL generated successfully!", paymentUrl));
+        return ResponseEntity.ok(new ApiResponse<>(true, "PayOS URL generated successfully!", paymentUrl));
     }
 
-    @GetMapping("/vnpay-callback")
-    public ResponseEntity<ApiResponse<PaymentResponse>> vnPayCallback(
+    @GetMapping("/payos-callback")
+    public ResponseEntity<ApiResponse<PaymentResponse>> payOSCallback(
             @RequestParam java.util.Map<String, String> params) {
-        PaymentResponse response = paymentService.processVnPayCallback(params);
+        PaymentResponse response = paymentService.processPayOSCallback(params);
         if ("SUCCESS".equals(response.getPaymentStatus())) {
             return ResponseEntity.ok(new ApiResponse<>(true, "Payment successful!", response));
         } else {

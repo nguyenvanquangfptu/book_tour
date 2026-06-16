@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { FaChevronLeft, FaShieldAlt, FaCreditCard, FaCheckCircle } from 'react-icons/fa';
+import { FaChevronLeft, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { formatPrice } from '../utils/formatPrice';
 import { BookingService } from '../services/BookingService';
