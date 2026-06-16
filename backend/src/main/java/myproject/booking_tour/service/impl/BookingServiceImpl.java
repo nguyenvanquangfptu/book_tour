@@ -63,84 +63,26 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // 2. tìm tour & 3. kiểm tra tour tồn tại
+        // 2. tìm tour
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + request.getTourId()));
 
-        // 4. fetch or create TourSchedule for travelDate
-        if (request.getTravelDate() == null) {
-            throw new BadRequestException("Travel date is required");
-        }
-        TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), request.getTravelDate())
-                .orElseGet(() -> {
-                    TourSchedule newSchedule = new TourSchedule();
-                    newSchedule.setTour(tour);
-                    newSchedule.setDepartureDate(request.getTravelDate());
-                    newSchedule.setAvailableSlots(tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
-                    return newSchedule;
-                });
+        // 3. Xử lý logic kiểm tra và trừ quỹ chỗ theo ngày khởi hành
+        validateAndDeductTourSchedule(tour, request);
 
-        // 5. kiểm tra availableSlots theo ngày
-        if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
-            throw new BadRequestException("Not enough available slots for this date! Only " 
-                    + schedule.getAvailableSlots() + " slots left.");
-        }
-
-        // Trừ trực tiếp chỗ trống và lưu schedule
-        schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
-        tourScheduleRepository.save(schedule);
-
-        // 5. totalPrice = price * numberOfPeople
-        BigDecimal price = tour.getPrice();
-        BigDecimal totalPrice = price.multiply(BigDecimal.valueOf(request.getNumberOfPeople()));
-
-        // Check and apply voucher
-        if (request.getVoucherId() != null) {
-            myproject.booking_tour.entity.Voucher voucher = voucherRepository.findById(request.getVoucherId())
-                    .orElseThrow(() -> new BadRequestException("Voucher không tồn tại"));
-            
-            if (voucher.getIsActive() == null || !voucher.getIsActive()) {
-                throw new BadRequestException("Voucher đã bị vô hiệu hóa");
-            }
-            if (voucher.getValidUntil() != null && LocalDateTime.now().isAfter(voucher.getValidUntil())) {
-                throw new BadRequestException("Voucher đã hết hạn sử dụng");
-            }
-            if (voucher.getValidFrom() != null && LocalDateTime.now().isBefore(voucher.getValidFrom())) {
-                throw new BadRequestException("Voucher chưa đến thời gian sử dụng");
-            }
-            if (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit()) {
-                throw new BadRequestException("Voucher đã hết lượt sử dụng");
-            }
-            if (voucher.getMinOrderValue() != null && totalPrice.compareTo(voucher.getMinOrderValue()) < 0) {
-                throw new BadRequestException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher");
-            }
-
-            BigDecimal discountAmount = BigDecimal.ZERO;
-            if (voucher.getDiscountAmount() != null && voucher.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-                discountAmount = voucher.getDiscountAmount();
-            } else if (voucher.getDiscountPercentage() != null && voucher.getDiscountPercentage() > 0) {
-                discountAmount = totalPrice.multiply(BigDecimal.valueOf(voucher.getDiscountPercentage() / 100.0));
-                if (voucher.getMaxDiscount() != null && discountAmount.compareTo(voucher.getMaxDiscount()) > 0) {
-                    discountAmount = voucher.getMaxDiscount();
-                }
-            }
-
-            totalPrice = totalPrice.subtract(discountAmount);
-            if (totalPrice.compareTo(BigDecimal.ZERO) < 0) {
-                totalPrice = BigDecimal.ZERO;
-            }
-
-            // Increment used count
-            voucher.setUsedCount(voucher.getUsedCount() + 1);
-            voucherRepository.save(voucher);
-        }
-
-        // 6. status = PENDING, set customer info
+        // 4. Tạo Booking
         Booking booking = new Booking();
         booking.setUser(user);
+        
+        BigDecimal totalPrice = tour.getPrice().multiply(BigDecimal.valueOf(request.getNumberOfPeople()));
+        
+        // 4. Áp dụng Voucher (nếu có) và tính giá cuối cùng
+        BigDecimal finalPrice = applyVoucherAndCalculatePrice(request, booking, totalPrice);
+
+        // 5. Gán thông tin Booking
         booking.setTour(tour);
         booking.setNumberOfPeople(request.getNumberOfPeople());
-        booking.setTotalPrice(totalPrice);
+        booking.setTotalPrice(finalPrice);
         booking.setStatus("PENDING");
         booking.setBookingDate(LocalDateTime.now());
         booking.setTravelDate(request.getTravelDate());
@@ -150,10 +92,83 @@ public class BookingServiceImpl implements BookingService {
         booking.setCustomerPhone(request.getCustomerPhone());
         booking.setNote(request.getNote());
 
-        // 7. save
+        // 6. Lưu Booking
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 8. Send Email
+        // 7. Gửi email xác nhận
+        sendBookingEmails(savedBooking, tour);
+
+        return bookingMapper.toResponse(savedBooking);
+    }
+
+    private void validateAndDeductTourSchedule(Tour tour, BookingRequest request) {
+        if (request.getTravelDate() == null) {
+            throw new BadRequestException("Travel date is required");
+        }
+        TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), request.getTravelDate())
+                .orElseGet(() -> {
+                    TourSchedule newSchedule = new TourSchedule();
+                    newSchedule.setTour(tour);
+                    newSchedule.setDepartureDate(request.getTravelDate());
+                    newSchedule.setAvailableSlots(tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0));
+                    return newSchedule;
+                });
+
+        if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
+            throw new BadRequestException("Not enough available slots for this date! Only " 
+                    + schedule.getAvailableSlots() + " slots left.");
+        }
+
+        schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
+        tourScheduleRepository.save(schedule);
+    }
+
+    private BigDecimal applyVoucherAndCalculatePrice(BookingRequest request, Booking booking, BigDecimal totalPrice) {
+        if (request.getVoucherId() == null) {
+            return totalPrice;
+        }
+
+        myproject.booking_tour.entity.Voucher voucher = voucherRepository.findById(request.getVoucherId())
+                .orElseThrow(() -> new BadRequestException("Voucher không tồn tại"));
+        
+        if (voucher.getIsActive() == null || !voucher.getIsActive()) {
+            throw new BadRequestException("Voucher đã bị vô hiệu hóa");
+        }
+        if (voucher.getValidUntil() != null && LocalDateTime.now().isAfter(voucher.getValidUntil())) {
+            throw new BadRequestException("Voucher đã hết hạn sử dụng");
+        }
+        if (voucher.getValidFrom() != null && LocalDateTime.now().isBefore(voucher.getValidFrom())) {
+            throw new BadRequestException("Voucher chưa đến thời gian sử dụng");
+        }
+        if (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new BadRequestException("Voucher đã hết lượt sử dụng");
+        }
+        if (voucher.getMinOrderValue() != null && totalPrice.compareTo(voucher.getMinOrderValue()) < 0) {
+            throw new BadRequestException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher");
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (voucher.getDiscountAmount() != null && voucher.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+            discountAmount = voucher.getDiscountAmount();
+        } else if (voucher.getDiscountPercentage() != null && voucher.getDiscountPercentage() > 0) {
+            discountAmount = totalPrice.multiply(BigDecimal.valueOf(voucher.getDiscountPercentage() / 100.0));
+            if (voucher.getMaxDiscount() != null && discountAmount.compareTo(voucher.getMaxDiscount()) > 0) {
+                discountAmount = voucher.getMaxDiscount();
+            }
+        }
+
+        BigDecimal finalPrice = totalPrice.subtract(discountAmount);
+        if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            finalPrice = BigDecimal.ZERO;
+        }
+
+        voucher.setUsedCount(voucher.getUsedCount() + 1);
+        voucherRepository.save(voucher);
+
+        return finalPrice;
+    }
+
+    private void sendBookingEmails(Booking savedBooking, Tour tour) {
         try {
             Map<String, Object> templateModel = new HashMap<>();
             templateModel.put("customerName", savedBooking.getCustomerName());
@@ -169,11 +184,8 @@ public class BookingServiceImpl implements BookingService {
             // Notify Admin
             emailService.sendMessageUsingThymeleafTemplate(adminEmail, "Có đơn đặt tour mới - #" + savedBooking.getId(), "admin-booking-notification", templateModel);
         } catch (Exception e) {
-            // Log exception, don't fail booking if email fails
             System.err.println("Failed to send email: " + e.getMessage());
         }
-
-        return bookingMapper.toResponse(savedBooking);
     }
 
     @Override
@@ -228,7 +240,7 @@ public class BookingServiceImpl implements BookingService {
             Map<String, Object> templateModel = new HashMap<>();
             templateModel.put("customerName", updated.getCustomerName() != null ? updated.getCustomerName() : updated.getUser().getFullName());
             templateModel.put("bookingId", "#" + updated.getId());
-            templateModel.put("tourName", tour != null ? tour.getTitle() : "Tour");
+            templateModel.put("tourName", updated.getTour() != null ? updated.getTour().getTitle() : "Tour");
             templateModel.put("totalPrice", updated.getTotalPrice().toString());
             
             String emailTo = updated.getCustomerEmail() != null ? updated.getCustomerEmail() : updated.getUser().getEmail();
@@ -259,6 +271,15 @@ public class BookingServiceImpl implements BookingService {
                     schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
                     tourScheduleRepository.save(schedule);
                 });
+        }
+        
+        // Hoàn lại Voucher (nếu có)
+        if (booking.getVoucher() != null) {
+            myproject.booking_tour.entity.Voucher voucher = booking.getVoucher();
+            if (voucher.getUsedCount() > 0) {
+                voucher.setUsedCount(voucher.getUsedCount() - 1);
+                voucherRepository.save(voucher);
+            }
         }
 
         // 2. status = CANCELLED

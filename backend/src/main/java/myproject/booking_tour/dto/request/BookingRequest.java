@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 
 @Data
@@ -16,6 +17,7 @@ public class BookingRequest {
     private Long tourId;
 
     @NotNull(message = "Travel date is required")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate travelDate;
 
     @NotNull(message = "Number of people is required")
