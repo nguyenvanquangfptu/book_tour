@@ -1,6 +1,11 @@
 import api from '../api/axiosConfig';
 
 export const TourService = {
+  getTourOptions: async () => {
+    const response = await api.get('/tours/options');
+    return response.data?.data || response.data;
+  },
+
   getPopularDestinations: async (limit = 4) => {
     const response = await api.get(`/tours/popular-destinations?limit=${limit}`);
     return response.data?.data || response.data;

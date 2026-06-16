@@ -38,6 +38,7 @@ public class TourServiceImpl implements TourService {
     private TourRepository tourRepository;
 
     @Override
+    @org.springframework.cache.annotation.Cacheable("popularDestinations")
     public List<PopularDestinationResponse> getPopularDestinations(int limit) {
         return tourRepository.findPopularDestinations(PageRequest.of(0, limit));
     }
@@ -58,6 +59,7 @@ public class TourServiceImpl implements TourService {
     @Transactional(readOnly = true)
     public List<TourResponse> getAllTours() {
         return tourRepository.findAll().stream()
+                .filter(t -> !"DELETED".equals(t.getStatus()))
                 .map(tourMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -73,7 +75,7 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional(readOnly = true)
     public List<TourResponse> searchTours(String keyword) {
-        return tourRepository.findByTitleContainingIgnoreCase(keyword).stream()
+        return tourRepository.findByTitleContainingIgnoreCaseAndStatusNot(keyword, "DELETED").stream()
                 .map(tourMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -98,6 +100,7 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
     public TourResponse createTour(TourRequest request) {
         Tour tour = tourMapper.toEntity(request);
 
@@ -125,19 +128,30 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
     public TourResponse updateTour(Long id, TourRequest request) {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
 
         tour.setTitle(request.getTitle());
+        tour.setDestination(request.getDestination());
         tour.setDescription(request.getDescription());
         tour.setPrice(request.getPrice());
         tour.setDuration(request.getDuration());
         tour.setImageUrl(request.getImageUrl());
+        tour.setImages(request.getImages());
         tour.setStartDate(request.getStartDate());
         tour.setEndDate(request.getEndDate());
         tour.setMaxPeople(request.getMaxPeople());
+        tour.setTourType(request.getTourType());
+        tour.setTransport(request.getTransport());
+        tour.setHighlights(request.getHighlights());
         
+        if (request.getItinerary() != null) {
+            tour.getItinerary().clear();
+            tour.getItinerary().addAll(request.getItinerary());
+        }
+
         // Only update availableSlots if explicitly provided, otherwise preserve existing or calculate
         if (request.getAvailableSlots() != null) {
             tour.setAvailableSlots(request.getAvailableSlots());
@@ -165,20 +179,34 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
     public void deleteTour(Long id) {
-        if (!tourRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Tour not found with id: " + id);
-        }
-        tourRepository.deleteById(id);
+        Tour tour = tourRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
+        
+        // Soft delete to preserve booking history
+        tour.setStatus("DELETED");
+        tourRepository.save(tour);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Integer getAvailableSlots(Long id, java.time.LocalDate date) {
-        Tour tour = tourRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
+        if (date == null) return 0;
+        Tour tour = tourRepository.findById(id).orElse(null);
+        if (tour == null) return 0;
         return tourScheduleRepository.findByTourIdAndDepartureDate(id, date)
-                .map(TourSchedule::getAvailableSlots)
-                .orElse(tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
+                .map(myproject.booking_tour.entity.TourSchedule::getAvailableSlots)
+                .orElse(tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0));
+    }
+
+    @Override
+    @org.springframework.cache.annotation.Cacheable("tourOptions")
+    public myproject.booking_tour.dto.response.TourOptionsResponse getTourOptions() {
+        return new myproject.booking_tour.dto.response.TourOptionsResponse(
+            tourRepository.findDistinctDestinations(),
+            tourRepository.findDistinctTourTypes(),
+            tourRepository.findDistinctTransports()
+        );
     }
 }

@@ -188,7 +188,9 @@ const TourManagement: React.FC = () => {
 
     try {
       const response = await api.post('/upload/multiple', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       // response chính là ApiResponse (do axios interceptor đã lấy response.data)
       // Nên response.data chính là List<String> urls
@@ -199,10 +201,11 @@ const TourManagement: React.FC = () => {
       }));
     } catch (error) {
       console.error('Lỗi khi tải ảnh lên:', error);
+      const errorMessage = error.response?.data?.message || 'Tải ảnh thất bại. Vui lòng kiểm tra lại cấu hình Cloudinary trên server.';
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: 'Tải ảnh thất bại. Vui lòng kiểm tra lại cấu hình Cloudinary trên server.',
+        text: errorMessage,
         confirmButtonColor: '#3b82f6'
       });
     } finally {
@@ -219,17 +222,20 @@ const TourManagement: React.FC = () => {
 
     try {
       const response = await api.post('/upload', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       // response chính là ApiResponse
       const url = response.data;
       setFormData(prev => ({ ...prev, imageUrl: url }));
     } catch (error) {
       console.error('Lỗi khi tải ảnh bìa lên:', error);
+      const errorMessage = error.response?.data?.message || 'Tải ảnh bìa thất bại.';
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: 'Tải ảnh bìa thất bại.',
+        text: errorMessage,
         confirmButtonColor: '#3b82f6'
       });
     } finally {

@@ -33,6 +33,11 @@ public class TourController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Popular destinations retrieved successfully!", destinations));
     }
 
+    @GetMapping("/options")
+    public ResponseEntity<ApiResponse<myproject.booking_tour.dto.response.TourOptionsResponse>> getTourOptions() {
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tour options fetched successfully", tourService.getTourOptions()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TourResponse>> getTourById(@PathVariable Long id) {
         TourResponse tour = tourService.getTourById(id);
