@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaSuitcase, FaShoppingCart, FaSearch, FaUser, FaHistory, FaHeart, FaSignOutAlt } from 'react-icons/fa';
-import { useCart } from '../context/CartContext';
+import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 import '../styles/navbar.css';
 
 const Navbar: React.FC = () => {
@@ -11,14 +12,12 @@ const Navbar: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const { getCartCount } = useCart();
+  const { getCartCount } = useCartStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   
   // These pages have a hero image at the top, so navbar can be transparent initially
   const transparentNavPaths = ['/', '/tours', '/about', '/contact'];
   const isTransparentNavPage = transparentNavPaths.includes(location.pathname);
-  
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,10 +46,9 @@ const Navbar: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     setDropdownOpen(false);
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const getInitials = (name: string) => {
@@ -90,7 +88,7 @@ const Navbar: React.FC = () => {
             />
           </div>
 
-          {token && user && (
+          {isAuthenticated && user && (
             <Link to="/cart" className="cart-icon-wrapper">
               <FaShoppingCart />
               {getCartCount() > 0 && (
@@ -101,14 +99,14 @@ const Navbar: React.FC = () => {
             </Link>
           )}
 
-          {token && user ? (
+          {isAuthenticated && user ? (
             <div className="avatar-dropdown" ref={dropdownRef}>
               <div className="avatar-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
                 {/* Random avatar from ui-avatars or unsplash. For now, use initials */}
-                {user.avatar ? (
-                  <img src={user.avatar} alt="Avatar" />
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" />
                 ) : (
-                  getInitials(user.username)
+                  getInitials(user.fullName || user.username || 'User')
                 )}
               </div>
               
