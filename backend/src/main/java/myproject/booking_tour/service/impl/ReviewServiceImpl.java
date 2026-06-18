@@ -34,6 +34,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Autowired
     private ReviewMapper reviewMapper;
 
+    @Autowired
+    private myproject.booking_tour.repository.BookingRepository bookingRepository;
+
     @Override
     @Transactional
     public ReviewResponse addReview(ReviewRequest request, String username) {
@@ -43,12 +46,21 @@ public class ReviewServiceImpl implements ReviewService {
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + request.getTourId()));
 
-        // Check if user already reviewed this tour? We can allow multiple for now or block it. Let's allow one review per user per tour.
+        // Check if user has actually booked and completed/confirmed the tour
+        boolean hasBooked = bookingRepository.findByUserId(user.getId()).stream()
+                .anyMatch(b -> b.getTour() != null && b.getTour().getId().equals(tour.getId()) && 
+                        ("CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus())));
+
+        if (!hasBooked) {
+            throw new BadRequestException("Bạn phải đặt và hoàn thành tour này mới có thể đánh giá!");
+        }
+
+        // Check if user already reviewed this tour
         boolean alreadyReviewed = reviewRepository.findByTourId(tour.getId()).stream()
                 .anyMatch(r -> r.getUser().getId().equals(user.getId()));
         
         if (alreadyReviewed) {
-            throw new BadRequestException("You have already reviewed this tour");
+            throw new BadRequestException("Bạn đã đánh giá tour này rồi!");
         }
 
         Review review = reviewMapper.toEntity(request);

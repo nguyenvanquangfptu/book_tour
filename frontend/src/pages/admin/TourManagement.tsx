@@ -17,6 +17,7 @@ const TourManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [priceFilter, setPriceFilter] = useState('ALL');
   const [destinationFilter, setDestinationFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE', 'SOLD_OUT'
 
   // Lấy danh sách địa điểm độc nhất từ tours
   const uniqueDestinations = Array.from(new Set(tours.map(tour => tour.destination).filter(d => d))).sort();
@@ -34,7 +35,12 @@ const TourManagement: React.FC = () => {
       matchDestination = tour.destination === destinationFilter;
     }
 
-    return matchSearch && matchPrice && matchDestination;
+    let matchStatus = true;
+    if (statusFilter !== 'ALL') {
+      matchStatus = tour.status === statusFilter;
+    }
+
+    return matchSearch && matchPrice && matchDestination && matchStatus;
   });
 
   const [formData, setFormData] = useState({
@@ -49,7 +55,8 @@ const TourManagement: React.FC = () => {
     maxPeople: 1,
     utilityIds: [] as number[],
     highlights: [''] as string[],
-    itinerary: [] as {day: string, title: string, description: string}[]
+    itinerary: [] as {day: string, title: string, description: string}[],
+    status: 'INACTIVE'
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -105,7 +112,7 @@ const TourManagement: React.FC = () => {
     setFormData(prev => ({ ...prev, accommodationIds: value ? [Number(value)] : [] }));
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -153,7 +160,7 @@ const TourManagement: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingTour(null);
-    setFormData({ title: '', description: '', price: 0, duration: '', destination: '', imageUrl: '', images: [], accommodationIds: [], maxPeople: 1, utilityIds: [], highlights: [''], itinerary: [{day: '', title: '', description: ''}] });
+    setFormData({ title: '', description: '', price: 0, duration: '', destination: '', imageUrl: '', images: [], accommodationIds: [], maxPeople: 1, utilityIds: [], highlights: [''], itinerary: [{day: '', title: '', description: ''}], status: 'INACTIVE' });
     setShowModal(true);
   };
 
@@ -171,7 +178,8 @@ const TourManagement: React.FC = () => {
       maxPeople: tour.maxPeople || 1,
       utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
       highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],
-      itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}]
+      itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}],
+      status: tour.status || 'INACTIVE'
     });
     setActiveTab('general');
     setShowModal(true);
@@ -282,6 +290,50 @@ const TourManagement: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (tour: any, newStatus: string) => {
+    try {
+      const submitData = {
+        title: tour.title,
+        description: tour.description || '',
+        price: tour.price,
+        duration: tour.duration || '',
+        destination: tour.destination || '',
+        imageUrl: tour.imageUrl || '',
+        images: tour.images || [],
+        accommodationIds: tour.accommodations && tour.accommodations.length > 0 ? [tour.accommodations[0].id] : [],
+        maxPeople: tour.maxPeople || 1,
+        utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
+        highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],
+        itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}],
+        status: newStatus
+      };
+      await TourService.updateTour(tour.id, submitData);
+      
+      // Cập nhật state local
+      setTours(prev => prev.map(t => t.id === tour.id ? { ...t, status: newStatus } : t));
+      
+      const Toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+      Toast.fire({
+        icon: "success",
+        title: "Cập nhật trạng thái thành công"
+      });
+    } catch (error) {
+      console.error('Lỗi khi cập nhật trạng thái', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Cập nhật trạng thái thất bại',
+        confirmButtonColor: '#3b82f6'
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -313,48 +365,89 @@ const TourManagement: React.FC = () => {
     <div className="admin-panel" style={{ background: '#f8fafc', minHeight: '100vh', padding: '30px' }}>
       <style>
         {`
+          /* Admin Panel Layout Enhancements */
+          .admin-panel {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05), 0 0 10px rgba(0, 0, 0, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+          }
+          
+          /* Zebra Striping & Hover */
           .tour-row {
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #ffffff;
+          }
+          .tour-row:nth-child(even) {
+            background-color: #fcfcfd;
           }
           .tour-row:hover {
-            background-color: #f1f5f9;
-            transform: scale(1.002);
-            box-shadow: inset 4px 0 0 0 #3b82f6;
+            background-color: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.08);
+            position: relative;
+            z-index: 2;
           }
+          
+          /* Thumbnail Glow */
+          .tour-thumbnail {
+            width: 110px;
+            height: 75px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+          }
+          .tour-row:hover .tour-thumbnail {
+            box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.1);
+          }
+          
+          /* Minimalist Action Buttons (Appear on Hover) */
+          .actions-container {
+            opacity: 0;
+            transform: translateX(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .tour-row:hover .actions-container {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          
           .action-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
             transition: all 0.2s ease;
+            font-size: 1.1rem;
           }
           .btn-edit-modern {
-            background: #eff6ff;
-            color: #2563eb;
+            background: #f1f5f9;
+            color: #64748b;
           }
           .btn-edit-modern:hover {
-            background: #2563eb;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            background: #eff6ff;
+            color: #3b82f6;
+            transform: scale(1.1);
           }
           .btn-delete-modern {
-            background: #fef2f2;
-            color: #dc2626;
+            background: #f1f5f9;
+            color: #64748b;
           }
           .btn-delete-modern:hover {
-            background: #dc2626;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+            background: #fef2f2;
+            color: #ef4444;
+            transform: scale(1.1);
           }
+          
+          /* Add Button */
           .btn-add-modern {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             color: white;
             padding: 12px 24px;
             border-radius: 12px;
@@ -365,34 +458,54 @@ const TourManagement: React.FC = () => {
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);
           }
           .btn-add-modern:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 20px -3px rgba(59, 130, 246, 0.5);
+            box-shadow: 0 15px 20px -3px rgba(30, 41, 59, 0.4);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
           }
-          .gradient-text {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-          .rounded-button {
-            border-radius: 8px !important;
-          }
+          
+          /* Modern Input */
           .modern-input {
             width: 100%;
             padding: 12px 16px;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.95rem;
             transition: all 0.2s;
             background: #f8fafc;
+            color: #1e293b;
           }
           .modern-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #cbd5e1;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(226, 232, 240, 0.5);
+          }
+          
+          /* Gradient Text */
+          .gradient-text {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+          
+          /* Table Styles */
+          .modern-table th {
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 20px 24px;
+            border-bottom: 2px solid #f1f5f9;
+            background: #ffffff;
+          }
+          .modern-table td {
+            padding: 20px 24px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f8fafc;
           }
         `}
       </style>
@@ -408,9 +521,40 @@ const TourManagement: React.FC = () => {
       </div>
 
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: '1.2rem' }}>Đang tải dữ liệu...</div>
+        <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '1.2rem', fontWeight: 500 }}>
+          <div style={{ width: '40px', height: '40px', border: '3px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 15px' }}></div>
+          Đang tải dữ liệu...
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Status Tabs */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <button 
+              onClick={() => setStatusFilter('ALL')} 
+              style={{ padding: '10px 20px', borderRadius: '30px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s', border: 'none', background: statusFilter === 'ALL' ? '#1e293b' : '#fff', color: statusFilter === 'ALL' ? '#fff' : '#64748b', boxShadow: statusFilter === 'ALL' ? '0 4px 6px rgba(30, 41, 59, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)' }}
+            >
+              Tất cả ({tours.length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('ACTIVE')} 
+              style={{ padding: '10px 20px', borderRadius: '30px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s', border: 'none', background: statusFilter === 'ACTIVE' ? '#16a34a' : '#fff', color: statusFilter === 'ACTIVE' ? '#fff' : '#64748b', boxShadow: statusFilter === 'ACTIVE' ? '0 4px 6px rgba(22, 163, 74, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)' }}
+            >
+              Đang bán ({tours.filter(t => t.status === 'ACTIVE').length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('SOLD_OUT')} 
+              style={{ padding: '10px 20px', borderRadius: '30px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s', border: 'none', background: statusFilter === 'SOLD_OUT' ? '#ef4444' : '#fff', color: statusFilter === 'SOLD_OUT' ? '#fff' : '#64748b', boxShadow: statusFilter === 'SOLD_OUT' ? '0 4px 6px rgba(239, 68, 68, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)' }}
+            >
+              Hết chỗ ({tours.filter(t => t.status === 'SOLD_OUT').length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('INACTIVE')} 
+              style={{ padding: '10px 20px', borderRadius: '30px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s', border: 'none', background: statusFilter === 'INACTIVE' ? '#64748b' : '#fff', color: statusFilter === 'INACTIVE' ? '#fff' : '#64748b', boxShadow: statusFilter === 'INACTIVE' ? '0 4px 6px rgba(100, 116, 139, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)' }}
+            >
+              Bản nháp ({tours.filter(t => t.status === 'INACTIVE').length})
+            </button>
+          </div>
+
           {/* Bộ lọc */}
           <div style={{ display: 'flex', gap: '16px', background: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
             <div style={{ flex: 1, position: 'relative' }}>
@@ -454,31 +598,32 @@ const TourManagement: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: '20px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', overflow: 'hidden', border: '1px solid rgba(226, 232, 240, 0.8)' }}>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <table className="modern-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Mã</th>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Hình ảnh</th>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Tên Tour</th>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Giá</th>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>Thời gian</th>
-                    <th style={{ padding: '20px', fontWeight: 600, borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>Hành động</th>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Hình ảnh</th>
+                    <th>Tên Tour</th>
+                    <th>Giá</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th style={{ textAlign: 'right' }}>Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTours.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                      <td colSpan={7} style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '1.1rem' }}>
                         Không tìm thấy Tour nào phù hợp với bộ lọc.
                       </td>
                     </tr>
                   ) : filteredTours.map(tour => (
-                  <tr key={tour.id} className="tour-row" style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '20px', color: '#64748b', fontWeight: 500 }}>#{tour.id}</td>
-                    <td style={{ padding: '20px' }}>
-                      <div style={{ width: '100px', height: '65px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                  <tr key={tour.id} className="tour-row">
+                    <td style={{ color: '#94a3b8', fontWeight: 600, fontSize: '0.9rem' }}>#{tour.id}</td>
+                    <td>
+                      <div className="tour-thumbnail">
                         <img 
                           src={tour.imageUrl || 'https://images.unsplash.com/photo-1504280390467-33923018e6d0?auto=format&fit=crop&w=200&q=80'} 
                           alt="Tour" 
@@ -491,37 +636,62 @@ const TourManagement: React.FC = () => {
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '20px' }}>
-                      <div style={{ maxWidth: '300px' }}>
-                        <h4 style={{ margin: 0, color: '#1e293b', fontSize: '1rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={tour.title}>
+                    <td>
+                      <div style={{ maxWidth: '320px' }}>
+                        <h4 style={{ margin: '0 0 6px 0', color: '#0f172a', fontSize: '1.05rem', fontWeight: 700, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={tour.title}>
                           {tour.title}
                         </h4>
                         {tour.destination && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b', fontSize: '0.85rem', marginTop: '6px' }}>
-                            <FaMapMarkerAlt /> {tour.destination}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>
+                            <FaMapMarkerAlt style={{ color: '#94a3b8' }} /> {tour.destination}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f172a', fontWeight: 'bold' }}>
-                        <FaMoneyBillWave style={{ color: '#10b981' }} />
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.5px' }}>
                         {formatPrice(tour.price)}
                       </div>
                     </td>
-                    <td style={{ padding: '20px', whiteSpace: 'nowrap' }}>
-                      <div style={{ alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, background: '#f1f5f9', padding: '6px 12px', borderRadius: '20px', display: 'inline-flex' }}>
-                        <FaClock style={{ color: '#3b82f6' }} />
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#475569', fontWeight: 600, fontSize: '0.9rem', background: '#f8fafc', padding: '6px 14px', borderRadius: '30px', border: '1px solid #e2e8f0' }}>
+                        <FaClock style={{ color: '#94a3b8' }} />
                         {tour.duration || 'N/A'}
                       </div>
                     </td>
-                    <td style={{ padding: '20px' }}>
-                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                        <button className="action-btn btn-edit-modern" onClick={() => handleEdit(tour)}>
-                          <FaEdit /> Sửa
+                    <td>
+                      <select 
+                        value={tour.status}
+                        onChange={(e) => handleStatusChange(tour, e.target.value)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '6px 14px',
+                          borderRadius: '30px',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          backgroundColor: tour.status === 'ACTIVE' ? 'rgba(22, 163, 74, 0.1)' : tour.status === 'SOLD_OUT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                          color: tour.status === 'ACTIVE' ? '#16a34a' : tour.status === 'SOLD_OUT' ? '#ef4444' : '#64748b',
+                          border: `1px solid ${tour.status === 'ACTIVE' ? 'rgba(22, 163, 74, 0.2)' : tour.status === 'SOLD_OUT' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 116, 139, 0.2)'}`,
+                          cursor: 'pointer',
+                          outline: 'none',
+                          appearance: 'none', // hide native arrow on some browsers for cleaner look
+                          textAlign: 'center'
+                        }}
+                      >
+                        <option value="ACTIVE" style={{ color: '#000', backgroundColor: '#fff' }}>Đang bán</option>
+                        <option value="SOLD_OUT" style={{ color: '#000', backgroundColor: '#fff' }}>Hết chỗ</option>
+                        <option value="INACTIVE" style={{ color: '#000', backgroundColor: '#fff' }}>Bản nháp</option>
+                      </select>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="actions-container" style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="action-btn btn-edit-modern" onClick={() => handleEdit(tour)} title="Sửa Tour">
+                          <FaEdit />
                         </button>
-                        <button className="action-btn btn-delete-modern" onClick={() => handleDelete(tour.id)}>
-                          <FaTrash /> Xóa
+                        <button className="action-btn btn-delete-modern" onClick={() => handleDelete(tour.id)} title="Xóa Tour">
+                          <FaTrash />
                         </button>
                       </div>
                     </td>
@@ -588,17 +758,17 @@ const TourManagement: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>
-                  <input type="text" name="destination" className="modern-input" placeholder="VD: Đà Nẵng" value={formData.destination} onChange={handleInputChange} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Nơi lưu trú / Khách sạn <span style={{color: '#ef4444'}}>*</span></label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Nơi lưu trú <span style={{color: '#ef4444'}}>*</span></label>
                   <select name="accommodationIds" className="modern-input" value={formData.accommodationIds.length > 0 ? String(formData.accommodationIds[0]) : ''} onChange={handleAccommodationChange} required style={{ height: '42px', width: '100%' }}>
                     <option value="">-- Chọn Nơi lưu trú --</option>
                     {accommodations.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name} - {acc.address}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>
+                  <input type="text" name="destination" className="modern-input" placeholder="VD: Đà Nẵng" value={formData.destination} onChange={handleInputChange} />
                 </div>
               </div>
 

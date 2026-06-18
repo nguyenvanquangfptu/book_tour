@@ -53,6 +53,9 @@ public class TourServiceImpl implements TourService {
     private TourScheduleRepository tourScheduleRepository;
 
     @Autowired
+    private myproject.booking_tour.repository.BookingRepository bookingRepository;
+
+    @Autowired
     private TourMapper tourMapper;
 
     @Override
@@ -82,10 +85,10 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, LocalDate startDate, LocalDate endDate, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir) {
+    public PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir) {
         org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase(org.springframework.data.domain.Sort.Direction.ASC.name()) ? org.springframework.data.domain.Sort.by(sortBy).ascending() : org.springframework.data.domain.Sort.by(sortBy).descending();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
-        org.springframework.data.jpa.domain.Specification<Tour> spec = myproject.booking_tour.repository.specification.TourSpecification.filterTours(keyword, destination, startDate, endDate, minPrice, maxPrice, status, tourTypes, transports);
+        org.springframework.data.jpa.domain.Specification<Tour> spec = myproject.booking_tour.repository.specification.TourSpecification.filterTours(keyword, destination, minPrice, maxPrice, status, tourTypes, transports);
         org.springframework.data.domain.Page<Tour> tours = tourRepository.findAll(spec, pageable);
         List<TourResponse> content = tours.getContent().stream().map(tourMapper::toResponse).collect(Collectors.toList());
         return PageResponse.<TourResponse>builder()
@@ -122,6 +125,10 @@ public class TourServiceImpl implements TourService {
             tour.setAvailableSlots(tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
         }
 
+        if (tour.getStatus() == null || tour.getStatus().trim().isEmpty()) {
+            tour.setStatus("INACTIVE");
+        }
+
         Tour savedTour = tourRepository.save(tour);
         return tourMapper.toResponse(savedTour);
     }
@@ -140,8 +147,7 @@ public class TourServiceImpl implements TourService {
         tour.setDuration(request.getDuration());
         tour.setImageUrl(request.getImageUrl());
         tour.setImages(request.getImages());
-        tour.setStartDate(request.getStartDate());
-        tour.setEndDate(request.getEndDate());
+
         tour.setMaxPeople(request.getMaxPeople());
         tour.setTourType(request.getTourType());
         tour.setTransport(request.getTransport());
@@ -184,9 +190,30 @@ public class TourServiceImpl implements TourService {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
         
-        // Soft delete to preserve booking history
-        tour.setStatus("DELETED");
-        tourRepository.save(tour);
+        if (bookingRepository.existsByTourId(id)) {
+            // Soft delete to preserve booking history
+            tour.setStatus("DELETED");
+            tourRepository.save(tour);
+        } else {
+            // Hard delete
+            tourScheduleRepository.deleteByTourId(id);
+            tourRepository.delete(tour);
+        }
+    }
+
+    private int parseDurationDays(String duration) {
+        if (duration == null || duration.trim().isEmpty()) return 1;
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)\\s*(ngày|day)", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher m = p.matcher(duration);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        p = java.util.regex.Pattern.compile("(\\d+)");
+        m = p.matcher(duration);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        return 1;
     }
 
     @Override
@@ -195,9 +222,22 @@ public class TourServiceImpl implements TourService {
         if (date == null) return 0;
         Tour tour = tourRepository.findById(id).orElse(null);
         if (tour == null) return 0;
-        return tourScheduleRepository.findByTourIdAndDepartureDate(id, date)
-                .map(myproject.booking_tour.entity.TourSchedule::getAvailableSlots)
-                .orElse(tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0));
+        
+        int days = parseDurationDays(tour.getDuration());
+        int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
+        int minAvailable = defaultSlots;
+
+        for (int i = 0; i < days; i++) {
+            java.time.LocalDate checkDate = date.plusDays(i);
+            int availableOnDate = tourScheduleRepository.findByTourIdAndDepartureDate(id, checkDate)
+                    .map(myproject.booking_tour.entity.TourSchedule::getAvailableSlots)
+                    .orElse(defaultSlots);
+            if (availableOnDate < minAvailable) {
+                minAvailable = availableOnDate;
+            }
+        }
+        
+        return minAvailable;
     }
 
     @Override

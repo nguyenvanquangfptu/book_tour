@@ -67,6 +67,16 @@ public class BookingServiceImpl implements BookingService {
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + request.getTourId()));
 
+        if ("SOLD_OUT".equals(tour.getStatus())) {
+            throw new myproject.booking_tour.exception.BadRequestException("Rất tiếc, tour này đã hết chỗ!");
+        }
+        if ("INACTIVE".equals(tour.getStatus())) {
+            throw new myproject.booking_tour.exception.BadRequestException("Tour này hiện đang tạm ngưng nhận khách.");
+        }
+        if ("DELETED".equals(tour.getStatus())) {
+            throw new myproject.booking_tour.exception.BadRequestException("Tour này không còn tồn tại.");
+        }
+
         // 3. Xử lý logic kiểm tra và trừ quỹ chỗ theo ngày khởi hành
         validateAndDeductTourSchedule(tour, request);
 
@@ -101,26 +111,65 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toResponse(savedBooking);
     }
 
+    private int parseDurationDays(String duration) {
+        if (duration == null || duration.trim().isEmpty()) return 1;
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)\\s*(ngày|day)", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher m = p.matcher(duration);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        p = java.util.regex.Pattern.compile("(\\d+)");
+        m = p.matcher(duration);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        return 1;
+    }
+
     private void validateAndDeductTourSchedule(Tour tour, BookingRequest request) {
         if (request.getTravelDate() == null) {
             throw new BadRequestException("Travel date is required");
         }
-        TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), request.getTravelDate())
-                .orElseGet(() -> {
-                    TourSchedule newSchedule = new TourSchedule();
-                    newSchedule.setTour(tour);
-                    newSchedule.setDepartureDate(request.getTravelDate());
-                    newSchedule.setAvailableSlots(tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0));
-                    return newSchedule;
-                });
+        if (request.getTravelDate().isBefore(java.time.LocalDate.now())) {
+            throw new BadRequestException("Ngày khởi hành không được nằm trong quá khứ");
+        }
+        
+        int days = parseDurationDays(tour.getDuration());
+        int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
+        
+        // First pass: validate all days have enough slots
+        for (int i = 0; i < days; i++) {
+            java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
+            TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+                    .orElseGet(() -> {
+                        TourSchedule newSchedule = new TourSchedule();
+                        newSchedule.setTour(tour);
+                        newSchedule.setDepartureDate(checkDate);
+                        newSchedule.setAvailableSlots(defaultSlots);
+                        return newSchedule;
+                    });
 
-        if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
-            throw new BadRequestException("Not enough available slots for this date! Only " 
-                    + schedule.getAvailableSlots() + " slots left.");
+            if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
+                throw new BadRequestException("Not enough available slots for date " + checkDate + "! Only " 
+                        + schedule.getAvailableSlots() + " slots left.");
+            }
         }
 
-        schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
-        tourScheduleRepository.save(schedule);
+        // Second pass: deduct slots for all days
+        for (int i = 0; i < days; i++) {
+            java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
+            TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+                    .orElseGet(() -> {
+                        TourSchedule newSchedule = new TourSchedule();
+                        newSchedule.setTour(tour);
+                        newSchedule.setDepartureDate(checkDate);
+                        newSchedule.setAvailableSlots(defaultSlots);
+                        return newSchedule;
+                    });
+            
+            schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
+            tourScheduleRepository.save(schedule);
+        }
     }
 
     private BigDecimal applyVoucherAndCalculatePrice(BookingRequest request, Booking booking, BigDecimal totalPrice) {
@@ -254,23 +303,34 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingResponse cancelBooking(Long id) {
+    public BookingResponse cancelBooking(Long id, Long userId) {
         // 1. tìm booking
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!booking.getUser().getId().equals(userId) && !user.getRole().getName().equals("ADMIN")) {
+            throw new BadRequestException("You do not have permission to cancel this booking!");
+        }
 
         if ("CANCELLED".equals(booking.getStatus())) {
             throw new BadRequestException("Booking is already cancelled!");
         }
 
-        // 3. Hoàn lại số chỗ trống vào TourSchedule
+        // 3. Hoàn lại số chỗ trống vào TourSchedule cho tất cả các ngày diễn ra tour
         Tour tour = booking.getTour();
         if (tour != null && booking.getTravelDate() != null) {
-            tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), booking.getTravelDate())
-                .ifPresent(schedule -> {
-                    schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
-                    tourScheduleRepository.save(schedule);
-                });
+            int days = parseDurationDays(tour.getDuration());
+            for (int i = 0; i < days; i++) {
+                java.time.LocalDate checkDate = booking.getTravelDate().plusDays(i);
+                tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+                    .ifPresent(schedule -> {
+                        schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
+                        tourScheduleRepository.save(schedule);
+                    });
+            }
         }
         
         // Hoàn lại Voucher (nếu có)

@@ -35,6 +35,7 @@ interface FetchToursParams {
   maxPrice?: number;
   sortBy?: string;
   sortDir?: string;
+  status?: string;
 }
 
 export const fetchTours = async (params: FetchToursParams): Promise<ToursResponse> => {
@@ -49,6 +50,8 @@ export const fetchTours = async (params: FetchToursParams): Promise<ToursRespons
   if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
   if (params.sortBy) queryParams.append('sortBy', params.sortBy);
   if (params.sortDir) queryParams.append('sortDir', params.sortDir);
+  if (params.status) queryParams.append('status', params.status);
+  else queryParams.append('status', 'ACTIVE,SOLD_OUT');
 
   const response = await api.get(`/tours/search?${queryParams.toString()}`);
   return response.data?.data || response.data;

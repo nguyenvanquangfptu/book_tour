@@ -10,30 +10,41 @@ import java.util.List;
 
 public class TourSpecification {
 
-    public static Specification<Tour> filterTours(String keyword, String destination, java.time.LocalDate startDate, java.time.LocalDate endDate, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports) {
+    private static final String VN_ACCENTS = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ";
+    private static final String VN_NO_ACCENTS = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd";
+
+    public static String removeAccents(String str) {
+        if (str == null) return null;
+        String temp = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        return temp.replaceAll("\\p{M}", "").replace("đ", "d").replace("Đ", "D");
+    }
+
+    public static Specification<Tour> filterTours(String keyword, String destination, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (keyword != null && !keyword.trim().isEmpty()) {
-                String likeKeyword = "%" + keyword.trim().toLowerCase() + "%";
+                String likeKeyword = "%" + removeAccents(keyword.trim().toLowerCase()) + "%";
+                jakarta.persistence.criteria.Expression<String> titleLower = criteriaBuilder.lower(root.get("title"));
+                jakarta.persistence.criteria.Expression<String> titleUnaccent = criteriaBuilder.function("translate", String.class, titleLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
+                
+                jakarta.persistence.criteria.Expression<String> descLower = criteriaBuilder.lower(root.get("description"));
+                jakarta.persistence.criteria.Expression<String> descUnaccent = criteriaBuilder.function("translate", String.class, descLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
+                
                 predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), likeKeyword),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), likeKeyword)
+                        criteriaBuilder.like(titleUnaccent, likeKeyword),
+                        criteriaBuilder.like(descUnaccent, likeKeyword)
                 ));
             }
 
             if (destination != null && !destination.trim().isEmpty()) {
-                String likeDest = "%" + destination.trim().toLowerCase() + "%";
-                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("destination")), likeDest));
+                String likeDest = "%" + removeAccents(destination.trim().toLowerCase()) + "%";
+                jakarta.persistence.criteria.Expression<String> destLower = criteriaBuilder.lower(root.get("destination"));
+                jakarta.persistence.criteria.Expression<String> destUnaccent = criteriaBuilder.function("translate", String.class, destLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
+                predicates.add(criteriaBuilder.like(destUnaccent, likeDest));
             }
 
-            if (startDate != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startDate"), startDate));
-            }
 
-            if (endDate != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("endDate"), endDate));
-            }
 
             if (minPrice != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
@@ -44,7 +55,12 @@ public class TourSpecification {
             }
 
             if (status != null && !status.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+                if (status.contains(",")) {
+                    List<String> statusList = java.util.Arrays.asList(status.split(","));
+                    predicates.add(root.get("status").in(statusList));
+                } else {
+                    predicates.add(criteriaBuilder.equal(root.get("status"), status));
+                }
             } else {
                 predicates.add(criteriaBuilder.or(
                         criteriaBuilder.notEqual(root.get("status"), "DELETED"),
