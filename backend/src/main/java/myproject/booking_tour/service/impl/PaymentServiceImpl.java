@@ -162,7 +162,7 @@ public class PaymentServiceImpl implements PaymentService {
                         return paymentMapper.toResponse(saved);
                     } else if ("CANCELLED".equals(status)) {
                         if (!"CANCELLED".equals(booking.getStatus())) {
-                            bookingService.cancelBooking(booking.getId());
+                            bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
                         }
                         payment.setPaymentStatus("FAILED");
                         payment.setPaymentDate(LocalDateTime.now());
@@ -211,7 +211,7 @@ public class PaymentServiceImpl implements PaymentService {
                     System.out.println("[CronJob] Đơn hàng đã hủy/hết hạn: PaymentID=" + orderCode);
                     Booking booking = payment.getBooking();
                     if (!"CANCELLED".equals(booking.getStatus())) {
-                        bookingService.cancelBooking(booking.getId());
+                        bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
                     }
                     payment.setPaymentStatus("FAILED");
                     payment.setPaymentDate(LocalDateTime.now());
@@ -257,7 +257,7 @@ public class PaymentServiceImpl implements PaymentService {
                         paymentRepository.save(payment);
                     } else if ("CANCELLED".equals(status) || "EXPIRED".equals(status)) {
                         if (!"CANCELLED".equals(booking.getStatus())) {
-                            bookingService.cancelBooking(booking.getId());
+                            bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
                         }
                         payment.setPaymentStatus("FAILED");
                         payment.setPaymentDate(LocalDateTime.now());

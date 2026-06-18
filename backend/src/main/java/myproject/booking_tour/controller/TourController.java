@@ -56,8 +56,7 @@ public class TourController {
     public ResponseEntity<ApiResponse<PageResponse<TourResponse>>> searchAndFilterTours(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String destination,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+
             @RequestParam(required = false) java.math.BigDecimal minPrice,
             @RequestParam(required = false) java.math.BigDecimal maxPrice,
             @RequestParam(required = false) String status,
@@ -68,7 +67,7 @@ public class TourController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDir
     ) {
-        myproject.booking_tour.dto.response.PageResponse<TourResponse> response = tourService.searchAndFilterTours(keyword, destination, startDate, endDate, minPrice, maxPrice, status, tourTypes, transports, page, size, sortBy, sortDir);
+        myproject.booking_tour.dto.response.PageResponse<TourResponse> response = tourService.searchAndFilterTours(keyword, destination, minPrice, maxPrice, status, tourTypes, transports, page, size, sortBy, sortDir);
         return ResponseEntity.ok(new ApiResponse<>(true, "Tours retrieved successfully!", response));
     }
 

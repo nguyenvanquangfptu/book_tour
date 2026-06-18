@@ -44,7 +44,7 @@ const TourDetail: React.FC = () => {
   // 3. Fetch Related Tours
   const { data: relatedToursResponse } = useQuery({
     queryKey: ['relatedTours', tour?.destination],
-    queryFn: () => TourService.getTours(0, 4, '', tour?.destination),
+    queryFn: () => TourService.getTours(0, 4, '', tour?.destination, '', '', undefined, 'id', 'ASC', [], [], 'ACTIVE,SOLD_OUT'),
     enabled: !!tour?.destination,
   });
   const relatedTours = (relatedToursResponse?.content || []).filter((t: any) => t.id.toString() !== id).slice(0, 3);
@@ -53,10 +53,11 @@ const TourDetail: React.FC = () => {
   const { data: availableSlotsForDate = null } = useQuery({
     queryKey: ['tourSlots', id, startDate],
     queryFn: async () => {
-      const res = await api.get(`/tours/${id}/schedules?date=${startDate}`);
-      return res.data.data;
+      const res: any = await api.get(`/tours/${id}/schedules?date=${startDate}`);
+      return res.data; // res is already the response body due to axios interceptor
     },
     enabled: !!(startDate && id),
+    staleTime: 0, // Always fetch fresh slot data
   });
 
   // Gallery State
@@ -70,6 +71,15 @@ const TourDetail: React.FC = () => {
 
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSoldOut) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tour Đã Hết Chỗ',
+        text: 'Rất tiếc, tour này hiện tại đã hết chỗ. Vui lòng chọn ngày khởi hành khác hoặc tham khảo các tour tương tự.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
     if (!startDate) {
       Swal.fire({
         icon: 'warning',
@@ -91,6 +101,15 @@ const TourDetail: React.FC = () => {
   };
 
   const handleAddToCart = () => {
+    if (isSoldOut) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tour Đã Hết Chỗ',
+        text: 'Rất tiếc, tour này hiện tại đã hết chỗ. Vui lòng chọn ngày khởi hành khác hoặc tham khảo các tour tương tự.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
     if (!startDate) {
       Swal.fire({
         icon: 'warning',
@@ -148,7 +167,7 @@ const TourDetail: React.FC = () => {
     ? (availableSlotsForDate !== null ? availableSlotsForDate : (tour.availableSlots || 0))
     : (tour.availableSlots || 0);
 
-  const isSoldOut = slotsLeft <= 0;
+  const isSoldOut = tour.status === 'SOLD_OUT' || slotsLeft <= 0;
 
 
   return (
@@ -450,10 +469,10 @@ const TourDetail: React.FC = () => {
                 </div>
               </div>
               
-              <button type="submit" className="btn-book" disabled={isSoldOut} style={isSoldOut ? {opacity: 0.5, cursor: 'not-allowed'} : {}}>
+              <button type="submit" className="btn-book" style={isSoldOut ? {opacity: 0.7, cursor: 'pointer', background: '#94a3b8'} : {}}>
                 {isSoldOut ? 'Đã Hết Chỗ' : 'Đặt Tour Ngay'}
               </button>
-              <button type="button" onClick={handleAddToCart} className="btn-cart" disabled={isSoldOut} style={isSoldOut ? {opacity: 0.5, cursor: 'not-allowed'} : {}}>
+              <button type="button" onClick={handleAddToCart} className="btn-cart" style={isSoldOut ? {opacity: 0.7, cursor: 'pointer', border: '1px solid #94a3b8', color: '#94a3b8'} : {}}>
                 <FaShoppingCart /> Thêm Vào Giỏ Hàng
               </button>
             </form>

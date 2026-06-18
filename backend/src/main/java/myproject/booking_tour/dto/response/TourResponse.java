@@ -20,8 +20,7 @@ public class TourResponse {
     private BigDecimal price;
     private String duration;
     private String imageUrl;
-    private LocalDate startDate;
-    private LocalDate endDate;
+
     private Integer maxPeople;
     private Integer availableSlots;
     private String status;

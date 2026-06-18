@@ -1,7 +1,7 @@
 package myproject.booking_tour.service.impl;
 
 import myproject.booking_tour.dto.request.ChangePasswordRequest;
-import myproject.booking_tour.dto.request.RegisterRequest;
+import myproject.booking_tour.dto.request.UpdateProfileRequest;
 import myproject.booking_tour.dto.response.UserResponse;
 import myproject.booking_tour.entity.User;
 import myproject.booking_tour.exception.BadRequestException;
@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateProfile(Long userId, RegisterRequest request) {
+    public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
