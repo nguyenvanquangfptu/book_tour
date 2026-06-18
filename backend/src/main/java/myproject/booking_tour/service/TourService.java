@@ -11,7 +11,7 @@ public interface TourService {
     List<TourResponse> getAllTours();
     TourResponse getTourById(Long id);
     List<TourResponse> searchTours(String keyword);
-    PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, java.time.LocalDate startDate, java.time.LocalDate endDate, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
+    PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
     TourResponse createTour(TourRequest request);
     TourResponse updateTour(Long id, TourRequest request);
     void deleteTour(Long id);

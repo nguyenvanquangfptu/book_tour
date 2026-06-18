@@ -33,9 +33,7 @@ public class TourRequest {
 
     private String imageUrl;
 
-    private LocalDate startDate;
 
-    private LocalDate endDate;
 
     @Min(value = 1, message = "Max people must be at least 1")
     private Integer maxPeople;
