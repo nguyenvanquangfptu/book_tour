@@ -246,11 +246,11 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Email</label>
-                  <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} required />
+                  <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|vn|net|org|edu|gov|info|io)$" title="Vui lòng nhập đúng định dạng email hợp lệ (ví dụ: example@domain.com)" required />
                 </div>
                 <div className="input-group">
                   <label className="input-label">Số điện thoại</label>
-                  <input type="text" className="input-field" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} required />
+                  <input type="text" className="input-field" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} pattern="^(0|\+84)[0-9]{9}$" title="Vui lòng nhập đúng số điện thoại Việt Nam (ví dụ: 0912345678)" required />
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={loading} style={{ alignSelf: 'flex-start', marginTop: '10px' }}>
                   {loading ? 'Đang cập nhật...' : 'Cập Nhật Hồ Sơ'}
@@ -464,7 +464,7 @@ const ProfilePage: React.FC = () => {
                                     const res = await api.post('/reviews', { tourId: booking.tourId, rating: reviewData.rating, comment: reviewData.comment });
                                     setMessage({ text: 'Cảm ơn bạn đã đánh giá!', type: 'success' });
                                     booking.reviewed = true;
-                                    booking.reviewId = res.data.data.id;
+                                    booking.reviewId = res.data?.id;
                                     booking.reviewRating = reviewData.rating;
                                     booking.reviewComment = reviewData.comment;
                                   }

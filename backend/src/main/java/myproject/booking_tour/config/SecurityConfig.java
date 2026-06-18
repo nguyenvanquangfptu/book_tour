@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/accommodations/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/utilities/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                 
                 // Admin specific endpoints
                 .requestMatchers(HttpMethod.POST, "/api/tours/**").hasRole("ADMIN")
@@ -56,8 +57,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/utilities/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/utilities/**").hasRole("ADMIN")
                 
-                // Customer / authenticated bookings
-                .requestMatchers("/api/bookings/**").hasAnyRole("CUSTOMER", "ADMIN")
+                // User Profile Endpoints
+                .requestMatchers(HttpMethod.GET, "/api/users/profile").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/users/profile/**").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                
+                // Bookings Endpoints
+                .requestMatchers(HttpMethod.GET, "/api/bookings/my-bookings").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bookings").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/bookings/*/cancel").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers("/api/bookings/**").hasRole("ADMIN")
+                
                 .requestMatchers("/api/payments/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                 // All other requests require authentication

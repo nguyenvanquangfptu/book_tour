@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import myproject.booking_tour.dto.request.ChangePasswordRequest;
 import myproject.booking_tour.dto.request.RegisterRequest;
+import myproject.booking_tour.dto.request.UpdateProfileRequest;
 import myproject.booking_tour.dto.response.ApiResponse;
 import myproject.booking_tour.dto.response.UserResponse;
 import myproject.booking_tour.service.UserService;
@@ -49,7 +50,7 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(@Valid @RequestBody UpdateProfileRequest request) {
         Long userId = getAuthenticatedUserId();
         UserResponse user = userService.updateProfile(userId, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile updated successfully!", user));
@@ -72,7 +73,7 @@ public class UserController {
     // --- Admin APIs ---
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> updateProfileAdmin(@PathVariable Long id, @Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfileAdmin(@PathVariable Long id, @Valid @RequestBody UpdateProfileRequest request) {
         UserResponse user = userService.updateProfile(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile updated successfully by admin!", user));
     }

@@ -44,11 +44,7 @@ public class Tour {
     @Column(name = "image_url", length = 1000)
     private List<String> images = new java.util.ArrayList<>();
 
-    @Column(name = "start_date")
-    private LocalDate startDate;
 
-    @Column(name = "end_date")
-    private LocalDate endDate;
 
     @Column(name = "max_people")
     private Integer maxPeople;

@@ -11,8 +11,9 @@ export const TourService = {
     return response.data?.data || response.data;
   },
 
-  getTours: async (page = 0, size = 12, keyword = '', destination = '', startDate = '', endDate = '', maxPrice?: number, sortBy = 'id', sortDir = 'ASC', tourTypes: string[] = [], transports: string[] = []) => {
+  getTours: async (page = 0, size = 12, keyword = '', destination = '', startDate = '', endDate = '', maxPrice?: number, sortBy = 'id', sortDir = 'ASC', tourTypes: string[] = [], transports: string[] = [], status: string = '') => {
     let url = `/tours/search?page=${page}&size=${size}`;
+    if (status) url += `&status=${status}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
     if (destination) url += `&destination=${encodeURIComponent(destination)}`;
     if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;

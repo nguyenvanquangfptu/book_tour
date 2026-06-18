@@ -44,7 +44,8 @@ public class BookingController {
 
     @PutMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<BookingResponse>> cancelBooking(@PathVariable Long id) {
-        BookingResponse response = bookingService.cancelBooking(id);
+        Long userId = getAuthenticatedUserId();
+        BookingResponse response = bookingService.cancelBooking(id, userId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Booking cancelled successfully!", response));
     }
 
