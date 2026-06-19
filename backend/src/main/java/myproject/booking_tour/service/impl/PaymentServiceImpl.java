@@ -18,20 +18,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
-
-    @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private PaymentMapper paymentMapper;
-
-    @Autowired
-    private BookingService bookingService;
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
+    private final PaymentMapper paymentMapper;
+    private final BookingService bookingService;
+    private final vn.payos.PayOS payOS;
 
     @Override
     @Transactional
@@ -86,8 +84,6 @@ public class PaymentServiceImpl implements PaymentService {
                 .collect(Collectors.toList());
     }
 
-    @Autowired
-    private vn.payos.PayOS payOS;
 
     @org.springframework.beans.factory.annotation.Value("${payos.return-url}")
     private String returnUrl;

@@ -4,22 +4,22 @@ import myproject.booking_tour.dto.request.TourRequest;
 import myproject.booking_tour.dto.response.TourResponse;
 import myproject.booking_tour.dto.response.AccommodationResponse;
 import myproject.booking_tour.dto.response.UtilityResponse;
+import myproject.booking_tour.dto.TourItineraryDto;
+import myproject.booking_tour.entity.TourItinerary;
 import myproject.booking_tour.entity.Tour;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class TourMapper {
 
-    @Autowired
-    private AccommodationMapper accommodationMapper;
-
-    @Autowired
-    private UtilityMapper utilityMapper;
+    private final AccommodationMapper accommodationMapper;
+    private final UtilityMapper utilityMapper;
 
     public Tour toEntity(TourRequest request) {
         if (request == null) {
@@ -40,7 +40,16 @@ public class TourMapper {
         tour.setTransport(request.getTransport());
         tour.setHighlights(request.getHighlights());
         tour.setImages(request.getImages());
-        tour.setItinerary(request.getItinerary());
+        if (request.getItinerary() != null) {
+            List<TourItinerary> itineraryList = request.getItinerary().stream().map(dto -> {
+                TourItinerary item = new TourItinerary();
+                item.setDay(dto.getDay());
+                item.setTitle(dto.getTitle());
+                item.setDescription(dto.getDescription());
+                return item;
+            }).collect(Collectors.toList());
+            tour.setItinerary(itineraryList);
+        }
         // Note: accommodation and utilities entities are loaded and linked in the Service layer
         return tour;
     }
@@ -67,16 +76,27 @@ public class TourMapper {
         response.setReviewCount(tour.getReviewCount());
         response.setRating(tour.getRating());
 
-        // Map single accommodation to accommodations List in TourResponse
-        if (tour.getAccommodation() != null) {
-            List<AccommodationResponse> accommodationList = new ArrayList<>();
-            accommodationList.add(accommodationMapper.toResponse(tour.getAccommodation()));
+        boolean isAdmin = false;
+        try {
+            isAdmin = myproject.booking_tour.security.SecurityUtil.isAdmin();
+        } catch (Exception e) {
+            // Context might not be available in some background tasks
+        }
+        final boolean finalIsAdmin = isAdmin;
+
+        // Map accommodations to List in TourResponse
+        if (tour.getAccommodations() != null && !tour.getAccommodations().isEmpty()) {
+            List<AccommodationResponse> accommodationList = tour.getAccommodations().stream()
+                .filter(acc -> finalIsAdmin || Boolean.TRUE.equals(acc.getIsActive()))
+                .map(accommodationMapper::toResponse)
+                .collect(java.util.stream.Collectors.toList());
             response.setAccommodations(accommodationList);
         }
 
         // Map utilities set to utilities List in TourResponse
         if (tour.getUtilities() != null) {
             List<UtilityResponse> utilityList = tour.getUtilities().stream()
+                    .filter(u -> finalIsAdmin || Boolean.TRUE.equals(u.getIsActive()))
                     .map(utilityMapper::toResponse)
                     .collect(Collectors.toList());
             response.setUtilities(utilityList);
@@ -85,7 +105,16 @@ public class TourMapper {
         // Map new detail fields
         response.setHighlights(tour.getHighlights());
         response.setImages(tour.getImages());
-        response.setItinerary(tour.getItinerary());
+        if (tour.getItinerary() != null) {
+            List<TourItineraryDto> dtoList = tour.getItinerary().stream().map(item -> {
+                TourItineraryDto dto = new TourItineraryDto();
+                dto.setDay(item.getDay());
+                dto.setTitle(item.getTitle());
+                dto.setDescription(item.getDescription());
+                return dto;
+            }).collect(Collectors.toList());
+            response.setItinerary(dtoList);
+        }
 
         return response;
     }

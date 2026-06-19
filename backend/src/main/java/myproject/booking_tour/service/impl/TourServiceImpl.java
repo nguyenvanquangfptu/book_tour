@@ -13,8 +13,8 @@ import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.TourMapper;
 import myproject.booking_tour.repository.AccommodationRepository;
 import myproject.booking_tour.repository.TourRepository;
-import myproject.booking_tour.repository.TourScheduleRepository;
 import myproject.booking_tour.repository.UtilityRepository;
+import myproject.booking_tour.repository.AuditLogRepository;
 import myproject.booking_tour.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,40 +31,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class TourServiceImpl implements TourService {
 
-    @Autowired
-    private TourRepository tourRepository;
+    private final TourRepository tourRepository;
+    private final AccommodationRepository accommodationRepository;
+    private final UtilityRepository utilityRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final myproject.booking_tour.repository.TourScheduleRepository tourScheduleRepository;
+    private final myproject.booking_tour.repository.BookingRepository bookingRepository;
+    private final TourMapper tourMapper;
 
     @Override
     @org.springframework.cache.annotation.Cacheable("popularDestinations")
     public List<PopularDestinationResponse> getPopularDestinations(int limit) {
         return tourRepository.findPopularDestinations(PageRequest.of(0, limit));
-    }
-
-    @Autowired
-    private AccommodationRepository accommodationRepository;
-
-    @Autowired
-    private UtilityRepository utilityRepository;
-
-    @Autowired
-    private TourScheduleRepository tourScheduleRepository;
-
-    @Autowired
-    private myproject.booking_tour.repository.BookingRepository bookingRepository;
-
-    @Autowired
-    private TourMapper tourMapper;
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<TourResponse> getAllTours() {
-        return tourRepository.findAll().stream()
-                .filter(t -> !"DELETED".equals(t.getStatus()))
-                .map(tourMapper::toResponse)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -86,6 +71,9 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir) {
+        if (!myproject.booking_tour.security.SecurityUtil.isAdmin()) {
+            status = "ACTIVE";
+        }
         org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase(org.springframework.data.domain.Sort.Direction.ASC.name()) ? org.springframework.data.domain.Sort.by(sortBy).ascending() : org.springframework.data.domain.Sort.by(sortBy).descending();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
         org.springframework.data.jpa.domain.Specification<Tour> spec = myproject.booking_tour.repository.specification.TourSpecification.filterTours(keyword, destination, minPrice, maxPrice, status, tourTypes, transports);
@@ -107,17 +95,18 @@ public class TourServiceImpl implements TourService {
     public TourResponse createTour(TourRequest request) {
         Tour tour = tourMapper.toEntity(request);
 
-        // Map Single Accommodation from set in Request
+        // Map Accommodations from set of IDs in Request
         if (request.getAccommodationIds() != null && !request.getAccommodationIds().isEmpty()) {
-            Long accId = request.getAccommodationIds().iterator().next();
-            Accommodation accommodation = accommodationRepository.findById(accId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation not found with id: " + accId));
-            tour.setAccommodation(accommodation);
+            java.util.List<Accommodation> accommodations = accommodationRepository.findAllById(request.getAccommodationIds());
+            if (accommodations.size() != request.getAccommodationIds().size()) {
+                throw new ResourceNotFoundException("One or more Accommodations not found");
+            }
+            tour.setAccommodations(new java.util.HashSet<>(accommodations));
         }
 
         // Map Utilities from set in Request
         if (request.getUtilityIds() != null && !request.getUtilityIds().isEmpty()) {
-            Set<Utility> utilities = new HashSet<>(utilityRepository.findAllById(request.getUtilityIds()));
+            java.util.List<Utility> utilities = utilityRepository.findAllById(request.getUtilityIds());
             tour.setUtilities(utilities);
         }
 
@@ -127,6 +116,14 @@ public class TourServiceImpl implements TourService {
 
         if (tour.getStatus() == null || tour.getStatus().trim().isEmpty()) {
             tour.setStatus("INACTIVE");
+        }
+
+        if ("ACTIVE".equals(tour.getStatus())) {
+            boolean hasInactiveAcc = tour.getAccommodations().stream()
+                    .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
+            if (hasInactiveAcc) {
+                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động.");
+            }
         }
 
         Tour savedTour = tourRepository.save(tour);
@@ -143,6 +140,19 @@ public class TourServiceImpl implements TourService {
         tour.setTitle(request.getTitle());
         tour.setDestination(request.getDestination());
         tour.setDescription(request.getDescription());
+        
+        if (tour.getPrice() != null && request.getPrice() != null && tour.getPrice().compareTo(request.getPrice()) != 0) {
+            myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+            log.setEntityName("Tour");
+            log.setEntityId(tour.getId());
+            log.setAction("UPDATE_PRICE");
+            log.setOldValue(tour.getPrice().toString());
+            log.setNewValue(request.getPrice().toString());
+            // Assuming system action since we don't have current user context here
+            log.setUserId(0L); 
+            auditLogRepository.save(log);
+        }
+        
         tour.setPrice(request.getPrice());
         tour.setDuration(request.getDuration());
         tour.setImageUrl(request.getImageUrl());
@@ -155,7 +165,14 @@ public class TourServiceImpl implements TourService {
         
         if (request.getItinerary() != null) {
             tour.getItinerary().clear();
-            tour.getItinerary().addAll(request.getItinerary());
+            List<myproject.booking_tour.entity.TourItinerary> newItinerary = request.getItinerary().stream().map(dto -> {
+                myproject.booking_tour.entity.TourItinerary item = new myproject.booking_tour.entity.TourItinerary();
+                item.setDay(dto.getDay());
+                item.setTitle(dto.getTitle());
+                item.setDescription(dto.getDescription());
+                return item;
+            }).collect(Collectors.toList());
+            tour.getItinerary().addAll(newItinerary);
         }
 
         // Only update availableSlots if explicitly provided, otherwise preserve existing or calculate
@@ -165,21 +182,34 @@ public class TourServiceImpl implements TourService {
         
         tour.setStatus(request.getStatus());
 
-        // Map Single Accommodation
+        // Map Accommodations
         if (request.getAccommodationIds() != null && !request.getAccommodationIds().isEmpty()) {
-            Long accId = request.getAccommodationIds().iterator().next();
-            Accommodation accommodation = accommodationRepository.findById(accId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Accommodation not found with id: " + accId));
-            tour.setAccommodation(accommodation);
+            java.util.List<Accommodation> accommodations = accommodationRepository.findAllById(request.getAccommodationIds());
+            if (accommodations.size() != request.getAccommodationIds().size()) {
+                throw new ResourceNotFoundException("One or more Accommodations not found");
+            }
+            tour.setAccommodations(new java.util.HashSet<>(accommodations));
+        } else {
+            tour.getAccommodations().clear();
         }
 
         // Map Utilities
         if (request.getUtilityIds() != null) {
-            Set<Utility> utilities = new HashSet<>(utilityRepository.findAllById(request.getUtilityIds()));
+            java.util.List<Utility> utilities = utilityRepository.findAllById(request.getUtilityIds());
             tour.setUtilities(utilities);
         }
 
-        Tour updatedTour = tourRepository.save(tour);
+        Tour updatedTour = tour;
+
+        if ("ACTIVE".equals(updatedTour.getStatus())) {
+            boolean hasInactiveAcc = updatedTour.getAccommodations().stream()
+                    .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
+            if (hasInactiveAcc) {
+                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
+            }
+        }
+
+        updatedTour = tourRepository.save(updatedTour);
         return tourMapper.toResponse(updatedTour);
     }
 

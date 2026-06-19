@@ -29,29 +29,20 @@ import myproject.booking_tour.service.EmailService;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
-    @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private TourRepository tourRepository;
-
-    @Autowired
-    private VoucherRepository voucherRepository;
-
-    @Autowired
-    private TourScheduleRepository tourScheduleRepository;
-
-    @Autowired
-    private BookingMapper bookingMapper;
-
-    @Autowired
-    private EmailService emailService;
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final TourRepository tourRepository;
+    private final VoucherRepository voucherRepository;
+    private final TourScheduleRepository tourScheduleRepository;
+    private final BookingMapper bookingMapper;
+    private final EmailService emailService;
 
     @Value("${app.admin.email}")
     private String adminEmail;
@@ -247,10 +238,20 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingResponse> getAllBookings() {
-        return bookingRepository.findAll().stream()
+    public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size) {
+        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findAll(org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate")));
+        List<BookingResponse> responses = bookingPage.getContent().stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
+
+        myproject.booking_tour.dto.response.PageResponse<BookingResponse> pageResponse = new myproject.booking_tour.dto.response.PageResponse<>();
+        pageResponse.setContent(responses);
+        pageResponse.setPageNumber(bookingPage.getNumber());
+        pageResponse.setPageSize(bookingPage.getSize());
+        pageResponse.setTotalElements(bookingPage.getTotalElements());
+        pageResponse.setTotalPages(bookingPage.getTotalPages());
+        pageResponse.setLast(bookingPage.isLast());
+        return pageResponse;
     }
 
     @Override
