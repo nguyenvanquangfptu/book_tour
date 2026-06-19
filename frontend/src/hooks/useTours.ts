@@ -44,8 +44,8 @@ export const fetchTours = async (params: FetchToursParams): Promise<ToursRespons
   if (params.size !== undefined) queryParams.append('size', params.size.toString());
   if (params.keyword) queryParams.append('keyword', params.keyword);
   if (params.destination) queryParams.append('destination', params.destination);
-  if (params.tourType) queryParams.append('tourType', params.tourType);
-  if (params.transport) queryParams.append('transport', params.transport);
+  if (params.tourType) queryParams.append('tourTypes', params.tourType);
+  if (params.transport) queryParams.append('transports', params.transport);
   if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
   if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
   if (params.sortBy) queryParams.append('sortBy', params.sortBy);

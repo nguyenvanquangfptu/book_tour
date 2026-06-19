@@ -24,24 +24,21 @@ public class TourSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             if (keyword != null && !keyword.trim().isEmpty()) {
-                String likeKeyword = "%" + removeAccents(keyword.trim().toLowerCase()) + "%";
-                jakarta.persistence.criteria.Expression<String> titleLower = criteriaBuilder.lower(root.get("title"));
-                jakarta.persistence.criteria.Expression<String> titleUnaccent = criteriaBuilder.function("translate", String.class, titleLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
-                
-                jakarta.persistence.criteria.Expression<String> descLower = criteriaBuilder.lower(root.get("description"));
-                jakarta.persistence.criteria.Expression<String> descUnaccent = criteriaBuilder.function("translate", String.class, descLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
-                
-                predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.like(titleUnaccent, likeKeyword),
-                        criteriaBuilder.like(descUnaccent, likeKeyword)
+                predicates.add(criteriaBuilder.isTrue(
+                    criteriaBuilder.function("fts_match", Boolean.class, 
+                        root.get("searchVector"), 
+                        criteriaBuilder.literal(keyword.trim())
+                    )
                 ));
             }
 
             if (destination != null && !destination.trim().isEmpty()) {
-                String likeDest = "%" + removeAccents(destination.trim().toLowerCase()) + "%";
-                jakarta.persistence.criteria.Expression<String> destLower = criteriaBuilder.lower(root.get("destination"));
-                jakarta.persistence.criteria.Expression<String> destUnaccent = criteriaBuilder.function("translate", String.class, destLower, criteriaBuilder.literal(VN_ACCENTS), criteriaBuilder.literal(VN_NO_ACCENTS));
-                predicates.add(criteriaBuilder.like(destUnaccent, likeDest));
+                predicates.add(criteriaBuilder.isTrue(
+                    criteriaBuilder.function("fts_match", Boolean.class, 
+                        root.get("searchVector"), 
+                        criteriaBuilder.literal(destination.trim())
+                    )
+                ));
             }
 
 

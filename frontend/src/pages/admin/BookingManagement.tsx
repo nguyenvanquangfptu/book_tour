@@ -22,11 +22,18 @@ const BookingManagement: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 15;
 
   const fetchBookings = async () => {
     try {
-      const response: any = await api.get('/bookings'); // Admin endpoint fetches all
-      if (response.data) {
+      setLoading(true);
+      const response: any = await api.get(`/bookings?page=${currentPage}&size=${pageSize}`);
+      if (response.data && response.data.content) {
+        setBookings(response.data.content);
+        setTotalPages(response.data.totalPages);
+      } else if (response.data) {
         setBookings(response.data);
       } else if (Array.isArray(response)) {
         setBookings(response);
@@ -40,7 +47,7 @@ const BookingManagement: React.FC = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [currentPage]);
 
   const handleConfirm = async (id: number) => {
     const result = await Swal.fire({
@@ -90,8 +97,7 @@ const BookingManagement: React.FC = () => {
     .filter(b => {
       if (filterStatus === 'ALL') return true;
       return b.status === filterStatus;
-    })
-    .sort((a, b) => b.id - a.id);
+    });
 
   return (
     <div className="admin-panel">
@@ -167,6 +173,44 @@ const BookingManagement: React.FC = () => {
             )}
           </tbody>
         </table>
+      )}
+      
+      {/* Pagination Controls */}
+      {!loading && totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
+          <button 
+            disabled={currentPage === 0} 
+            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: currentPage === 0 ? '#f1f5f9' : '#fff', cursor: currentPage === 0 ? 'not-allowed' : 'pointer' }}
+          >
+            Trước
+          </button>
+          
+          {[...Array(totalPages)].map((_, idx) => (
+            <button 
+              key={idx}
+              onClick={() => setCurrentPage(idx)}
+              style={{ 
+                padding: '8px 16px', 
+                borderRadius: '4px', 
+                border: '1px solid #ccc', 
+                background: currentPage === idx ? '#3b82f6' : '#fff',
+                color: currentPage === idx ? '#fff' : '#333',
+                cursor: 'pointer' 
+              }}
+            >
+              {idx + 1}
+            </button>
+          ))}
+
+          <button 
+            disabled={currentPage === totalPages - 1} 
+            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: currentPage === totalPages - 1 ? '#f1f5f9' : '#fff', cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer' }}
+          >
+            Sau
+          </button>
+        </div>
       )}
 
       {/* Booking Details Modal */}

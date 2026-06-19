@@ -11,8 +11,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
+
 @Entity
 @Table(name = "tours")
+@SQLDelete(sql = "UPDATE tours SET is_deleted = true WHERE id=?")
+@Where(clause = "is_deleted = false")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,9 +44,8 @@ public class Tour {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @ElementCollection
-    @CollectionTable(name = "tour_images", joinColumns = @JoinColumn(name = "tour_id"))
-    @Column(name = "image_url", length = 1000)
+    @org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.json.JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private List<String> images = new java.util.ArrayList<>();
 
 
@@ -70,10 +74,14 @@ public class Tour {
     @Column(name = "rating")
     private Double rating = 0.0;
 
-    // Many-to-One with Accommodation (Ref: tours.accommodation_id > accommodations.id)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "accommodation_id", nullable = false)
-    private Accommodation accommodation;
+    // Many-to-Many with Accommodations
+    @ManyToMany
+    @JoinTable(
+            name = "tour_accommodations",
+            joinColumns = @JoinColumn(name = "tour_id"),
+            inverseJoinColumns = @JoinColumn(name = "accommodation_id")
+    )
+    private java.util.Set<Accommodation> accommodations = new java.util.HashSet<>();
 
 
     // Many-to-Many with Utilities
@@ -83,15 +91,19 @@ public class Tour {
             joinColumns = @JoinColumn(name = "tour_id"),
             inverseJoinColumns = @JoinColumn(name = "utility_id")
     )
-    private Set<Utility> utilities = new HashSet<>();
+    private java.util.List<Utility> utilities = new java.util.ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "tour_highlights", joinColumns = @JoinColumn(name = "tour_id"))
-    @Column(name = "highlight")
+    @org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.json.JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private java.util.List<String> highlights = new java.util.ArrayList<>();
 
-
-    @ElementCollection
-    @CollectionTable(name = "tour_itineraries", joinColumns = @JoinColumn(name = "tour_id"))
+    @org.hibernate.annotations.Type(io.hypersistence.utils.hibernate.type.json.JsonType.class)
+    @Column(columnDefinition = "jsonb")
     private java.util.List<TourItinerary> itinerary = new java.util.ArrayList<>();
+
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
+    @Column(name = "search_vector", columnDefinition = "tsvector", insertable = false, updatable = false)
+    private String searchVector;
 }

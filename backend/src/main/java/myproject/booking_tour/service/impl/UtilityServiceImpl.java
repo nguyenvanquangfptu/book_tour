@@ -14,22 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class UtilityServiceImpl implements UtilityService {
 
-    @Autowired
-    private UtilityRepository utilityRepository;
-
-    @Autowired
-    private UtilityMapper utilityMapper;
-
-    @Autowired
-    private myproject.booking_tour.repository.TourRepository tourRepository;
+    private final UtilityRepository utilityRepository;
+    private final UtilityMapper utilityMapper;
+    private final myproject.booking_tour.repository.TourRepository tourRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<UtilityResponse> getAllUtilities() {
+        boolean isAdmin = myproject.booking_tour.security.SecurityUtil.isAdmin();
         return utilityRepository.findAll().stream()
+                .filter(u -> isAdmin || Boolean.TRUE.equals(u.getIsActive()))
                 .map(utilityMapper::toResponse)
                 .collect(Collectors.toList());
     }

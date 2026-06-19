@@ -8,7 +8,7 @@ import myproject.booking_tour.dto.response.PopularDestinationResponse;
 import java.util.List;
 
 public interface TourService {
-    List<TourResponse> getAllTours();
+
     TourResponse getTourById(Long id);
     List<TourResponse> searchTours(String keyword);
     PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
