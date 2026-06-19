@@ -13,14 +13,15 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    @Autowired
-    private JavaMailSender emailSender;
-
-    @Autowired
-    private SpringTemplateEngine templateEngine;
+    private final JavaMailSender emailSender;
+    private final SpringTemplateEngine templateEngine;
 
     @Override
     public void sendSimpleMessage(String to, String subject, String text) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaMoneyBillWave, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaSearch, FaFilter } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
@@ -107,9 +107,13 @@ const TourManagement: React.FC = () => {
     fetchUtilities();
   }, []);
 
-  const handleAccommodationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, accommodationIds: value ? [Number(value)] : [] }));
+  const handleAccommodationToggle = (id: number) => {
+    setFormData(prev => {
+      const newAccIds = prev.accommodationIds.includes(id) 
+        ? prev.accommodationIds.filter(aid => aid !== id)
+        : [...prev.accommodationIds, id];
+      return { ...prev, accommodationIds: newAccIds };
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -207,7 +211,7 @@ const TourManagement: React.FC = () => {
         ...prev,
         images: [...prev.images, ...urls]
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi tải ảnh lên:', error);
       const errorMessage = error.response?.data?.message || 'Tải ảnh thất bại. Vui lòng kiểm tra lại cấu hình Cloudinary trên server.';
       Swal.fire({
@@ -237,7 +241,7 @@ const TourManagement: React.FC = () => {
       // response chính là ApiResponse
       const url = response.data;
       setFormData(prev => ({ ...prev, imageUrl: url }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi tải ảnh bìa lên:', error);
       const errorMessage = error.response?.data?.message || 'Tải ảnh bìa thất bại.';
       Swal.fire({
@@ -278,12 +282,13 @@ const TourManagement: React.FC = () => {
         await TourService.deleteTour(id);
         fetchTours();
         Swal.fire('Thành công!', 'Tour đã bị xóa.', 'success');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Lỗi khi xóa', error);
+        const errorMsg = error.response?.data?.message || 'Xóa thất bại';
         Swal.fire({
           icon: 'error',
           title: 'Lỗi',
-          text: 'Xóa thất bại',
+          text: errorMsg,
           confirmButtonColor: '#3b82f6'
         });
       }
@@ -323,12 +328,13 @@ const TourManagement: React.FC = () => {
         icon: "success",
         title: "Cập nhật trạng thái thành công"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi cập nhật trạng thái', error);
+      const errorMsg = error.response?.data?.message || 'Cập nhật trạng thái thất bại';
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: 'Cập nhật trạng thái thất bại',
+        text: errorMsg,
         confirmButtonColor: '#3b82f6'
       });
     }
@@ -350,12 +356,13 @@ const TourManagement: React.FC = () => {
       }
       setShowModal(false);
       fetchTours();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi khi lưu Tour', error);
+      const errorMsg = error.response?.data?.message || 'Lưu thất bại. Kiểm tra dữ liệu nhập.';
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: 'Lưu thất bại. Kiểm tra dữ liệu nhập.',
+        text: errorMsg,
         confirmButtonColor: '#3b82f6'
       });
     }
@@ -758,13 +765,20 @@ const TourManagement: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Nơi lưu trú <span style={{color: '#ef4444'}}>*</span></label>
-                  <select name="accommodationIds" className="modern-input" value={formData.accommodationIds.length > 0 ? String(formData.accommodationIds[0]) : ''} onChange={handleAccommodationChange} required style={{ height: '42px', width: '100%' }}>
-                    <option value="">-- Chọn Nơi lưu trú --</option>
+                  <label style={{ display: 'block', marginBottom: '12px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>Nơi lưu trú <span style={{color: '#ef4444'}}>*</span></label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '150px', overflowY: 'auto', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     {accommodations.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} - {acc.address}</option>
+                      <label key={acc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.accommodationIds.includes(acc.id)}
+                          onChange={() => handleAccommodationToggle(acc.id)}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '0.9rem', color: '#334155' }}>{acc.name} - <span style={{ color: '#64748b' }}>{acc.address}</span></span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>

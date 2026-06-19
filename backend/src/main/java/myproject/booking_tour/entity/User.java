@@ -41,6 +41,15 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    @Column(name = "forgot_password_attempts")
+    private Integer forgotPasswordAttempts = 0;
+
+    @Column(name = "forgot_password_last_attempt")
+    private LocalDateTime forgotPasswordLastAttempt;
+
+    @Column(name = "forgot_password_ban_until")
+    private LocalDateTime forgotPasswordBanUntil;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

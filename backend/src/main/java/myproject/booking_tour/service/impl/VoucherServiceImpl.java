@@ -23,7 +23,9 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Override
     public List<VoucherResponse> getAllVouchers() {
+        boolean isAdmin = myproject.booking_tour.security.SecurityUtil.isAdmin();
         return voucherRepository.findAll().stream()
+                .filter(v -> isAdmin || Boolean.TRUE.equals(v.getIsActive()))
                 .map(voucherMapper::toResponse)
                 .collect(Collectors.toList());
     }

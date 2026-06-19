@@ -13,6 +13,8 @@ const Login: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,7 +86,7 @@ const Login: React.FC = () => {
 
           {error && <div className="auth-error">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
             <div className="input-group">
               <label className="input-label">Tên đăng nhập</label>
               <div className="auth-input-wrapper">
@@ -96,6 +98,9 @@ const Login: React.FC = () => {
                   placeholder="Nhập tên đăng nhập"
                   value={formData.username}
                   onChange={handleInputChange}
+                  autoComplete="username"
+                  readOnly={!isUsernameFocused}
+                  onFocus={() => setIsUsernameFocused(true)}
                   required 
                 />
               </div>
@@ -104,7 +109,7 @@ const Login: React.FC = () => {
             <div className="input-group">
               <div className="label-with-link">
                 <label className="input-label">Mật khẩu</label>
-                <a href="#" className="auth-link">Quên mật khẩu?</a>
+                <Link to="/forgot-password" className="auth-link">Quên mật khẩu?</Link>
               </div>
               <div className="auth-input-wrapper">
                 <FaLock className="auth-icon" />
@@ -115,6 +120,9 @@ const Login: React.FC = () => {
                   placeholder="Nhập mật khẩu"
                   value={formData.password}
                   onChange={handleInputChange}
+                  autoComplete="current-password"
+                  readOnly={!isPasswordFocused}
+                  onFocus={() => setIsPasswordFocused(true)}
                   required 
                 />
               </div>

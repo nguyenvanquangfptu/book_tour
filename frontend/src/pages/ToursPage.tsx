@@ -75,12 +75,14 @@ const ToursPage: React.FC = () => {
     setSelectedTypes(prev => 
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
+    setPage(0);
   };
 
   const handleTransportToggle = (transport: string) => {
     setSelectedTransports(prev => 
       prev.includes(transport) ? prev.filter(t => t !== transport) : [...prev, transport]
     );
+    setPage(0);
   };
 
   return (

@@ -20,11 +20,7 @@ public class TourController {
 
     private final TourService tourService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<TourResponse>>> getAllTours() {
-        List<TourResponse> tours = tourService.getAllTours();
-        return ResponseEntity.ok(new ApiResponse<>(true, "Tours retrieved successfully!", tours));
-    }
+
 
     @GetMapping("/popular-destinations")
     public ResponseEntity<ApiResponse<List<PopularDestinationResponse>>> getPopularDestinations(
