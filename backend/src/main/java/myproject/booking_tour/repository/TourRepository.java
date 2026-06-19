@@ -17,13 +17,13 @@ import org.springframework.data.domain.Page;
 @Repository
 public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificationExecutor<Tour> {
 
-    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    @EntityGraph(attributePaths = {"accommodations", "utilities"})
     Page<Tour> findAll(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    @EntityGraph(attributePaths = {"accommodations", "utilities"})
     java.util.Optional<Tour> findById(Long id);
 
-    @EntityGraph(attributePaths = {"accommodation", "utilities"})
+    @EntityGraph(attributePaths = {"accommodations", "utilities"})
     List<Tour> findAll();
 
     List<Tour> findByStatus(String status);
@@ -32,20 +32,21 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
     List<Tour> findByAvailableSlotsGreaterThan(Integer slots);
 
     @Query("SELECT new myproject.booking_tour.dto.response.PopularDestinationResponse(t.destination, COUNT(t.id), MAX(t.imageUrl)) " +
-           "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND (t.status IS NULL OR t.status != 'DELETED') " +
+           "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND t.status = 'ACTIVE' " +
            "GROUP BY t.destination ORDER BY COUNT(t.id) DESC")
     List<PopularDestinationResponse> findPopularDestinations(Pageable pageable);
 
-    @Query("SELECT DISTINCT t.destination FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    @Query("SELECT DISTINCT t.destination FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND t.status = 'ACTIVE'")
     List<String> findDistinctDestinations();
 
-    @Query("SELECT DISTINCT t.tourType FROM Tour t WHERE t.tourType IS NOT NULL AND t.tourType != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    @Query("SELECT DISTINCT t.tourType FROM Tour t WHERE t.tourType IS NOT NULL AND t.tourType != '' AND t.status = 'ACTIVE'")
     List<String> findDistinctTourTypes();
 
-    @Query("SELECT DISTINCT t.transport FROM Tour t WHERE t.transport IS NOT NULL AND t.transport != '' AND (t.status IS NULL OR t.status != 'DELETED')")
+    @Query("SELECT DISTINCT t.transport FROM Tour t WHERE t.transport IS NOT NULL AND t.transport != '' AND t.status = 'ACTIVE'")
     List<String> findDistinctTransports();
 
-    boolean existsByAccommodation_Id(Long accommodationId);
+    boolean existsByAccommodations_Id(Long accommodationId);
+    List<Tour> findByAccommodations_Id(Long accommodationId);
 
     @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM Tour t JOIN t.utilities u WHERE u.id = :utilityId")
     boolean existsByUtilityId(@org.springframework.data.repository.query.Param("utilityId") Long utilityId);

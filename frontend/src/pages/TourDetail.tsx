@@ -239,7 +239,7 @@ const TourDetail: React.FC = () => {
             <div className="inclusions-grid">
               <div className="inclusion-list">
                 <h3 style={{marginBottom: '16px'}}>✅ Bao gồm</h3>
-                {tour.utilities && tour.utilities.map((u: any, idx: number) => (
+                {tour.utilities && tour.utilities.filter((u: any) => u.isActive !== false).map((u: any, idx: number) => (
                   <div key={`u-${idx}`} className="inclusion-item yes"><FaCheckCircle /> {u.name}</div>
                 ))}
                 {tour.highlights && tour.highlights.map((h: string, idx: number) => (

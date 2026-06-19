@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import myproject.booking_tour.entity.TourItinerary;
+import myproject.booking_tour.dto.TourItineraryDto;
 import java.util.Set;
 
 @Data
@@ -54,5 +54,5 @@ public class TourRequest {
 
     private List<String> images;
 
-    private List<TourItinerary> itinerary;
+    private List<TourItineraryDto> itinerary;
 }

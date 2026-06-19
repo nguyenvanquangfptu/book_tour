@@ -157,6 +157,10 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const isEmailInvalid = formData.email.length > 0 && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|vn|net|org|edu|gov|info|io)$/.test(formData.email);
+  const isPhoneInvalid = formData.phone.length > 0 && !/^(0|\+84)[0-9]{9}$/.test(formData.phone);
+  const isFormInvalid = isEmailInvalid || isPhoneInvalid;
+
   return (
     <div className="checkout-page container">
       <div className="checkout-header">
@@ -170,7 +174,7 @@ const Checkout: React.FC = () => {
         {/* Form Thông Tin */}
         <div className="checkout-form-section glass-card">
           <h2 className="section-title">Thông tin liên hệ</h2>
-          <form onSubmit={handleSubmit} id="checkout-form">
+          <form onSubmit={handleSubmit} id="checkout-form" autoComplete="off">
             <div className="input-group">
               <label className="input-label">Họ và tên *</label>
               <input 
@@ -180,6 +184,7 @@ const Checkout: React.FC = () => {
                 placeholder="Nhập họ tên của bạn"
                 value={formData.fullName}
                 onChange={handleInputChange}
+                autoComplete="off"
                 required 
               />
             </div>
@@ -194,8 +199,10 @@ const Checkout: React.FC = () => {
                   placeholder="example@gmail.com"
                   value={formData.email}
                   onChange={handleInputChange}
+                  autoComplete="off"
                   required 
                 />
+                {isEmailInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập email hợp lệ.</span>}
               </div>
               
               <div className="input-group">
@@ -207,8 +214,10 @@ const Checkout: React.FC = () => {
                   placeholder="09xx xxx xxx"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  autoComplete="off"
                   required 
                 />
+                {isPhoneInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập đúng số điện thoại.</span>}
               </div>
             </div>
 
@@ -293,7 +302,7 @@ const Checkout: React.FC = () => {
             form="checkout-form" 
             className="btn btn-primary"
             style={{ backgroundColor: '#3b82f6', borderColor: '#3b82f6', width: '100%', padding: '15px', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-            disabled={loading}
+            disabled={loading || isFormInvalid}
           >
             {loading ? 'Đang xử lý...' : (
               <>

@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+
 import Home from './pages/Home';
 import ToursPage from './pages/ToursPage';
 import AboutPage from './pages/AboutPage';
@@ -10,6 +9,7 @@ import TourDetail from './pages/TourDetail';
 import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
 import PaymentResult from './pages/PaymentResult';
@@ -20,6 +20,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import ScrollToTop from './components/ScrollToTop';
+import PublicLayout from './components/PublicLayout';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -48,23 +49,26 @@ const App: React.FC = () => {
         <div className="app">
           <Routes>
               {/* Public Routes with Navbar and Footer */}
-              <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
-              <Route path="/tours" element={<><Navbar /><ToursPage /><Footer /></>} />
-              <Route path="/about" element={<><Navbar /><AboutPage /><Footer /></>} />
-              <Route path="/contact" element={<><Navbar /><ContactPage /><Footer /></>} />
-              <Route path="/tours/:id" element={<><Navbar /><TourDetail /><Footer /></>} />
-              <Route path="/checkout/:id" element={<><Navbar /><Checkout /><Footer /></>} />
-              <Route path="/cart" element={<><Navbar /><CartPage /><Footer /></>} />
-              <Route path="/profile" element={<><Navbar /><ProfilePage /><Footer /></>} />
-              <Route path="/payment-result" element={<><Navbar /><PaymentResult /><Footer /></>} />
-              <Route path="/payment/success" element={<><Navbar /><PaymentSuccess /><Footer /></>} />
-              <Route path="/payment/cancel" element={<><Navbar /><PaymentCancel /><Footer /></>} />
-              <Route path="/login" element={<><Navbar /><Login /><Footer /></>} />
-              <Route path="/register" element={<><Navbar /><Register /><Footer /></>} />
-              <Route path="/faq" element={<><Navbar /><FAQPage /><Footer /></>} />
-              <Route path="/privacy-policy" element={<><Navbar /><PrivacyPolicyPage /><Footer /></>} />
-              <Route path="/terms-of-service" element={<><Navbar /><TermsOfServicePage /><Footer /></>} />
-              <Route path="/refund-policy" element={<><Navbar /><RefundPolicyPage /><Footer /></>} />
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/tours" element={<ToursPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/tours/:id" element={<TourDetail />} />
+                <Route path="/checkout/:id" element={<Checkout />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/payment-result" element={<PaymentResult />} />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancel" element={<PaymentCancel />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/faq" element={<FAQPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              </Route>
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>

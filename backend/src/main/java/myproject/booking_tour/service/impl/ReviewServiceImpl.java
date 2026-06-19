@@ -19,23 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 @Service
+@RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
-    @Autowired
-    private ReviewRepository reviewRepository;
-
-    @Autowired
-    private TourRepository tourRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ReviewMapper reviewMapper;
-
-    @Autowired
-    private myproject.booking_tour.repository.BookingRepository bookingRepository;
+    private final ReviewRepository reviewRepository;
+    private final TourRepository tourRepository;
+    private final UserRepository userRepository;
+    private final ReviewMapper reviewMapper;
+    private final myproject.booking_tour.repository.BookingRepository bookingRepository;
 
     @Override
     @Transactional
