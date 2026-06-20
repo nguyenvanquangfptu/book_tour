@@ -10,15 +10,6 @@ import java.util.List;
 
 public class TourSpecification {
 
-    private static final String VN_ACCENTS = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ";
-    private static final String VN_NO_ACCENTS = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd";
-
-    public static String removeAccents(String str) {
-        if (str == null) return null;
-        String temp = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
-        return temp.replaceAll("\\p{M}", "").replace("đ", "d").replace("Đ", "D");
-    }
-
     public static Specification<Tour> filterTours(String keyword, String destination, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
