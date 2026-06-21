@@ -21,7 +21,7 @@ const RefundPolicyPage: React.FC = () => {
           <p>If we have to cancel a tour due to weather or unforeseen circumstances, you will receive a full 100% refund or the option to reschedule your tour at no extra cost.</p>
 
           <h3 style={{ marginTop: '24px', marginBottom: '12px', color: 'var(--text-primary)' }}>How to Request a Refund</h3>
-          <p>Please contact our support team at support@bookingtour.com with your booking ID and reason for cancellation. Refunds take 5-7 business days to process.</p>
+          <p>Please contact our support team at vanquangqn28@gmail.com with your booking ID and reason for cancellation. Refunds take 5-7 business days to process.</p>
         </div>
       </div>
     </div>

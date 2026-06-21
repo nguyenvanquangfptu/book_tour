@@ -73,7 +73,7 @@ const ContactPage: React.FC = () => {
               <FaEnvelope className="contact-icon" />
               <div>
                 <h4>Email</h4>
-                <p>support@bookingtour.com<br/>info@bookingtour.com</p>
+                <p>vanquangqn28@gmail.com</p>
               </div>
             </div>
 
