@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface TourScheduleRepository extends JpaRepository<TourSchedule, Long> {
-    Optional<TourSchedule> findByTourIdAndDepartureDate(Long tourId, LocalDate departureDate);
+    Optional<TourSchedule> findFirstByTourIdAndDepartureDate(Long tourId, LocalDate departureDate);
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.data.jpa.repository.Query("DELETE FROM TourSchedule ts WHERE ts.tour.id = :tourId")

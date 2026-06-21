@@ -259,7 +259,7 @@ public class TourServiceImpl implements TourService {
 
         for (int i = 0; i < days; i++) {
             java.time.LocalDate checkDate = date.plusDays(i);
-            int availableOnDate = tourScheduleRepository.findByTourIdAndDepartureDate(id, checkDate)
+            int availableOnDate = tourScheduleRepository.findFirstByTourIdAndDepartureDate(id, checkDate)
                     .map(myproject.booking_tour.entity.TourSchedule::getAvailableSlots)
                     .orElse(defaultSlots);
             if (availableOnDate < minAvailable) {

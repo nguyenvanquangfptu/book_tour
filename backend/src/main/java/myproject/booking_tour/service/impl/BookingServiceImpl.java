@@ -131,7 +131,7 @@ public class BookingServiceImpl implements BookingService {
         // First pass: validate all days have enough slots
         for (int i = 0; i < days; i++) {
             java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
-            TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+            TourSchedule schedule = tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
                     .orElseGet(() -> {
                         TourSchedule newSchedule = new TourSchedule();
                         newSchedule.setTour(tour);
@@ -149,7 +149,7 @@ public class BookingServiceImpl implements BookingService {
         // Second pass: deduct slots for all days
         for (int i = 0; i < days; i++) {
             java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
-            TourSchedule schedule = tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+            TourSchedule schedule = tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
                     .orElseGet(() -> {
                         TourSchedule newSchedule = new TourSchedule();
                         newSchedule.setTour(tour);
@@ -326,7 +326,7 @@ public class BookingServiceImpl implements BookingService {
             int days = parseDurationDays(tour.getDuration());
             for (int i = 0; i < days; i++) {
                 java.time.LocalDate checkDate = booking.getTravelDate().plusDays(i);
-                tourScheduleRepository.findByTourIdAndDepartureDate(tour.getId(), checkDate)
+                tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
                     .ifPresent(schedule -> {
                         schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
                         tourScheduleRepository.save(schedule);
