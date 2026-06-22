@@ -12,5 +12,29 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: booktour-backend
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/booktour_db
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: booktour-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
