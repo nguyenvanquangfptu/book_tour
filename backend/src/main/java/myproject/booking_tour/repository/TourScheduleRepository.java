@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface TourScheduleRepository extends JpaRepository<TourSchedule, Long> {
     Optional<TourSchedule> findFirstByTourIdAndDepartureDate(Long tourId, LocalDate departureDate);
 
+    java.util.List<TourSchedule> findByTourIdAndDepartureDateBetween(Long tourId, LocalDate startDate, LocalDate endDate);
+
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.data.jpa.repository.Query("DELETE FROM TourSchedule ts WHERE ts.tour.id = :tourId")
     void deleteByTourId(@org.springframework.data.repository.query.Param("tourId") Long tourId);
