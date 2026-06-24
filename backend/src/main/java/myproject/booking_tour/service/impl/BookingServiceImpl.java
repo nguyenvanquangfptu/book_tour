@@ -133,7 +133,7 @@ public class BookingServiceImpl implements BookingService {
 
         List<TourSchedule> existingSchedules = tourScheduleRepository.findByTourIdAndDepartureDateBetween(tour.getId(), startDate, endDate);
         Map<java.time.LocalDate, TourSchedule> scheduleMap = existingSchedules.stream()
-                .collect(Collectors.toMap(TourSchedule::getDepartureDate, s -> s));
+                .collect(Collectors.toMap(TourSchedule::getDepartureDate, s -> s, (s1, s2) -> s1));
 
         List<TourSchedule> schedulesToSave = new java.util.ArrayList<>();
 
