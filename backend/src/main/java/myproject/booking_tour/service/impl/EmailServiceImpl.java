@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.Map;
 
@@ -23,6 +24,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender emailSender;
     private final SpringTemplateEngine templateEngine;
 
+    @Async("taskExecutor")
     @Override
     public void sendSimpleMessage(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -33,6 +35,7 @@ public class EmailServiceImpl implements EmailService {
         emailSender.send(message);
     }
 
+    @Async("taskExecutor")
     @Override
     public void sendMessageUsingThymeleafTemplate(String to, String subject, String templateName, Map<String, Object> templateModel) throws MessagingException {
         Context thymeleafContext = new Context();
