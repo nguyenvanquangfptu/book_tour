@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
+import { useTranslation } from 'react-i18next';
 import '../styles/auth.css';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
@@ -43,7 +45,7 @@ const Login: React.FC = () => {
         window.location.reload();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.');
+      setError(err.response?.data?.message || t('auth.loginFail'));
       console.error('Login error', err);
     } finally {
       setLoading(false);
@@ -67,7 +69,7 @@ const Login: React.FC = () => {
         window.location.reload();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập bằng Google thất bại.');
+      setError(err.response?.data?.message || t('auth.googleLoginFail'));
       console.error('Google login error', err);
     } finally {
       setLoading(false);
@@ -80,22 +82,22 @@ const Login: React.FC = () => {
       <div className="auth-container animate-fade-in">
         <div className="auth-card glass-card">
           <div className="auth-header">
-            <h2>Chào mừng trở lại!</h2>
-            <p>Vui lòng đăng nhập để tiếp tục</p>
+            <h2>{t('auth.loginTitle')}</h2>
+            <p>{t('auth.loginSubtitle')}</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
 
           <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
             <div className="input-group">
-              <label className="input-label">Tên đăng nhập</label>
+              <label className="input-label">{t('auth.usernameLabel')}</label>
               <div className="auth-input-wrapper">
                 <FaEnvelope className="auth-icon" />
                 <input 
                   type="text" 
                   name="username"
                   className="input-field" 
-                  placeholder="Nhập tên đăng nhập"
+                  placeholder={t('auth.usernamePlaceholder')}
                   value={formData.username}
                   onChange={handleInputChange}
                   autoComplete="username"
@@ -108,8 +110,8 @@ const Login: React.FC = () => {
 
             <div className="input-group">
               <div className="label-with-link">
-                <label className="input-label">Mật khẩu</label>
-                <Link to="/forgot-password" className="auth-link">Quên mật khẩu?</Link>
+                <label className="input-label">{t('auth.passwordLabel')}</label>
+                <Link to="/forgot-password" className="auth-link">{t('auth.forgotPasswordLink')}</Link>
               </div>
               <div className="auth-input-wrapper">
                 <FaLock className="auth-icon" />
@@ -117,7 +119,7 @@ const Login: React.FC = () => {
                   type="password" 
                   name="password"
                   className="input-field" 
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={formData.password}
                   onChange={handleInputChange}
                   autoComplete="current-password"
@@ -129,30 +131,30 @@ const Login: React.FC = () => {
             </div>
 
             <button type="submit" className="btn btn-primary auth-btn" disabled={loading}>
-              {loading ? 'Đang xử lý...' : (
+              {loading ? t('auth.processing') : (
                 <>
-                  <FaSignInAlt /> Đăng nhập
+                  <FaSignInAlt /> {t('auth.loginBtn')}
                 </>
               )}
             </button>
           </form>
 
           <div className="auth-divider">
-            <span>Hoặc đăng nhập với</span>
+            <span>{t('auth.orLoginWith')}</span>
           </div>
 
           <div className="auth-social" style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => {
-                setError('Đăng nhập bằng Google thất bại.');
+                setError(t('auth.googleLoginFail'));
               }}
               useOneTap
             />
           </div>
 
           <div className="auth-footer" style={{ marginTop: '24px' }}>
-            <p>Chưa có tài khoản? <Link to="/register" className="auth-link">Đăng ký ngay</Link></p>
+            <p>{t('auth.noAccount')} <Link to="/register" className="auth-link">{t('auth.registerNow')}</Link></p>
           </div>
         </div>
       </div>

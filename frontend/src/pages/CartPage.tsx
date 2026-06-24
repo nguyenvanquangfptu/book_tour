@@ -3,8 +3,10 @@ import { useCartStore as useCart } from '../store/useCartStore';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaShoppingCart } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
+import { useTranslation } from 'react-i18next';
 
 const CartPage: React.FC = () => {
+  const { t } = useTranslation();
   const { cart, removeFromCart, getCartCount } = useCart();
   const navigate = useNavigate();
 
@@ -29,17 +31,17 @@ const CartPage: React.FC = () => {
       <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '30px', borderRadius: '20px', marginBottom: '40px', color: 'white', display: 'flex', alignItems: 'center', gap: '15px', boxShadow: '0 10px 25px rgba(15, 23, 42, 0.2)' }}>
         <FaShoppingCart style={{ fontSize: '2.5rem', color: '#38bdf8' }} />
         <div>
-          <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>Giỏ Hàng Của Bạn</h1>
-          <p style={{ margin: '5px 0 0', color: '#94a3b8', fontSize: '1.1rem' }}>Bạn đang có {getCartCount()} tour chờ thanh toán</p>
+          <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>{t('cartPage.yourCart')}</h1>
+          <p style={{ margin: '5px 0 0', color: '#94a3b8', fontSize: '1.1rem' }}>{t('cartPage.cartCount', { count: getCartCount() })}</p>
         </div>
       </div>
 
       {cart.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fff', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px dashed #cbd5e1' }}>
           <FaShoppingCart style={{ fontSize: '5rem', color: '#e2e8f0', marginBottom: '20px' }} />
-          <h3 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '10px' }}>Giỏ hàng đang trống</h3>
-          <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '1.1rem' }}>Bạn chưa chọn tour nào. Hãy quay lại trang chủ để khám phá nhé!</p>
-          <button onClick={() => navigate('/')} className="btn btn-primary" style={{ padding: '12px 32px', fontSize: '1.1rem', borderRadius: '12px' }}>Khám Phá Tour Ngay</button>
+          <h3 style={{ fontSize: '1.5rem', color: '#1e293b', marginBottom: '10px' }}>{t('cartPage.emptyCart')}</h3>
+          <p style={{ color: '#64748b', marginBottom: '30px', fontSize: '1.1rem' }}>{t('cartPage.emptyCartDesc')}</p>
+          <button onClick={() => navigate('/')} className="btn btn-primary" style={{ padding: '12px 32px', fontSize: '1.1rem', borderRadius: '12px' }}>{t('cartPage.exploreNow')}</button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
@@ -68,14 +70,14 @@ const CartPage: React.FC = () => {
               <div style={{ flex: 1, minWidth: '250px' }}>
                 <h3 style={{ margin: '0 0 12px 0', fontSize: '1.3rem', color: '#0f172a', fontWeight: 700 }}>{item.tourTitle}</h3>
                 <div style={{ display: 'flex', gap: '20px', color: '#475569', fontSize: '0.95rem' }}>
-                  <p style={{ margin: 0, background: '#f8fafc', padding: '6px 12px', borderRadius: '8px' }}>Khởi hành: <strong style={{ color: '#0f172a' }}>{item.startDate}</strong></p>
-                  <p style={{ margin: 0, background: '#f8fafc', padding: '6px 12px', borderRadius: '8px' }}>Số khách: <strong style={{ color: '#0f172a' }}>{item.guests}</strong></p>
+                  <p style={{ margin: 0, background: '#f8fafc', padding: '6px 12px', borderRadius: '8px' }}>{t('cartPage.departure')}<strong style={{ color: '#0f172a' }}>{item.startDate}</strong></p>
+                  <p style={{ margin: 0, background: '#f8fafc', padding: '6px 12px', borderRadius: '8px' }}>{t('cartPage.guests')}<strong style={{ color: '#0f172a' }}>{item.guests}</strong></p>
                 </div>
               </div>
 
               <div style={{ textAlign: 'right', minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: '#64748b' }}>Đơn giá: {formatPrice(item.price)}</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: '#64748b' }}>{t('cartPage.unitPrice')}{formatPrice(item.price)}</p>
                   <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#e11d48' }}>
                     {formatPrice(item.price * item.guests)}
                   </p>
@@ -95,7 +97,7 @@ const CartPage: React.FC = () => {
                     className="btn btn-primary"
                     style={{ padding: '10px 24px', borderRadius: '10px', fontWeight: 600, fontSize: '1rem', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}
                   >
-                    Thanh Toán
+                    {t('cartPage.checkout')}
                   </button>
                 </div>
               </div>
@@ -104,12 +106,12 @@ const CartPage: React.FC = () => {
 
           <div style={{ marginTop: '30px', padding: '30px 40px', background: 'linear-gradient(to right, #ffffff, #f8fafc)', border: '1px solid #e2e8f0', borderRadius: '20px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.5rem' }}>Tổng cộng giỏ hàng</h2>
-              <p style={{ margin: '5px 0 0', color: '#64748b' }}>Bao gồm tất cả các tour đã chọn</p>
+              <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.5rem' }}>{t('cartPage.cartTotal')}</h2>
+              <p style={{ margin: '5px 0 0', color: '#64748b' }}>{t('cartPage.includesAll')}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <h2 style={{ margin: 0, color: '#e11d48', fontSize: '2.5rem', fontWeight: 800 }}>{formatPrice(calculateTotal())}</h2>
-              <p style={{ margin: '5px 0 0', color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>Đã bao gồm thuế (VAT)</p>
+              <p style={{ margin: '5px 0 0', color: '#10b981', fontWeight: 600, fontSize: '0.9rem' }}>{t('cartPage.taxIncluded')}</p>
             </div>
           </div>
         </div>

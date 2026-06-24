@@ -9,9 +9,11 @@ import { useAuthStore } from '../store/useAuthStore';
 import TourCard from '../components/TourCard';
 import api from '../api/axiosConfig';
 import { formatPrice } from '../utils/formatPrice';
+import { useTranslation } from 'react-i18next';
 import '../styles/tourDetail.css';
 
 const TourDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
@@ -83,8 +85,8 @@ const TourDetail: React.FC = () => {
     if (!startDate) {
       Swal.fire({
         icon: 'warning',
-        title: 'Lỗi',
-        text: 'Vui lòng chọn ngày khởi hành',
+        title: t('tourDetail.noDateAlert'),
+        text: t('tourDetail.noDateText'),
         confirmButtonColor: '#3b82f6'
       });
       return;
@@ -113,8 +115,8 @@ const TourDetail: React.FC = () => {
     if (!startDate) {
       Swal.fire({
         icon: 'warning',
-        title: 'Chưa chọn ngày',
-        text: 'Vui lòng chọn ngày khởi hành để thêm vào giỏ hàng',
+        title: t('tourDetail.noDateCartTitle'),
+        text: t('tourDetail.noDateCartText'),
         confirmButtonColor: '#3b82f6'
       });
       return;
@@ -134,18 +136,18 @@ const TourDetail: React.FC = () => {
 
     Swal.fire({
       icon: 'success',
-      title: 'Thành công!',
-      html: `Đã thêm tour vào giỏ hàng thành công!<br><br><b>Giỏ hàng của bạn hiện đang có ${newCount} tour</b>`,
+      title: t('tourDetail.successTitle'),
+      html: t('tourDetail.addCartSuccess', { count: newCount }),
       confirmButtonColor: '#3b82f6'
     });
   };
 
   if (tourLoading) {
-    return <div className="loading-spinner container" style={{minHeight: '60vh', paddingTop: '100px'}}>Đang tải dữ liệu...</div>;
+    return <div className="loading-spinner container" style={{minHeight: '60vh', paddingTop: '100px'}}>{t('tourDetail.loading')}</div>;
   }
 
   if (!tour) {
-    return <div className="container" style={{paddingTop: '100px'}}>Không tìm thấy tour.</div>;
+    return <div className="container" style={{paddingTop: '100px'}}>{t('tourDetail.notFound')}</div>;
   }
 
   const images = tour.images ? [...tour.images] : [];
@@ -179,7 +181,7 @@ const TourDetail: React.FC = () => {
           <div className="detail-rating">
             <FaStar className="star-icon" style={{color: '#f59e0b'}} />
             <span>{avgRating}</span>
-            <span className="review-count" onClick={scrollToReviews}>({reviewCount} đánh giá)</span>
+            <span className="review-count" onClick={scrollToReviews}>({reviewCount} {t('tourDetail.reviews')})</span>
           </div>
           <span>•</span>
           <span className="badge"><FaMapMarkerAlt /> {tour.destination}</span>
@@ -202,7 +204,7 @@ const TourDetail: React.FC = () => {
           </div>
         </div>
         <button className="view-all-btn" onClick={() => { setShowGallery(true); setCurrentImageIndex(0); }}>
-          Hiển thị tất cả ảnh
+          {t('tourDetail.viewAllPhotos')}
         </button>
       </div>
 
@@ -229,16 +231,16 @@ const TourDetail: React.FC = () => {
           
           {/* Overview Section */}
           <section className="detail-section">
-            <h2 className="section-heading">Tổng Quan Hành Trình</h2>
+            <h2 className="section-heading">{t('tourDetail.overview')}</h2>
             <p className="detail-desc">{tour.description}</p>
           </section>
 
           {/* Inclusions & Exclusions */}
           <section className="detail-section">
-            <h2 className="section-heading">Tour Này Có Gì?</h2>
+            <h2 className="section-heading">{t('tourDetail.whatsIncluded')}</h2>
             <div className="inclusions-grid">
               <div className="inclusion-list">
-                <h3 style={{marginBottom: '16px'}}>✅ Bao gồm</h3>
+                <h3 style={{marginBottom: '16px'}}>✅ {t('tourDetail.included')}</h3>
                 {tour.utilities && tour.utilities.filter((u: any) => u.isActive !== false).map((u: any, idx: number) => (
                   <div key={`u-${idx}`} className="inclusion-item yes"><FaCheckCircle /> {u.name}</div>
                 ))}
@@ -246,15 +248,15 @@ const TourDetail: React.FC = () => {
                   <div key={`h-${idx}`} className="inclusion-item yes"><FaCheckCircle /> {h}</div>
                 ))}
                 {(!tour.utilities || tour.utilities.length === 0) && (!tour.highlights || tour.highlights.length === 0) && (
-                  <div className="inclusion-item yes" style={{color: '#64748b'}}>Đang cập nhật...</div>
+                  <div className="inclusion-item yes" style={{color: '#64748b'}}>{t('tourDetail.updating')}</div>
                 )}
               </div>
               <div className="exclusion-list">
-                <h3 style={{marginBottom: '16px'}}>❌ Không bao gồm</h3>
-                <div className="inclusion-item no"><FaTimesCircle /> Thuế VAT 10%</div>
-                <div className="inclusion-item no"><FaTimesCircle /> Chi phí cá nhân ngoài chương trình</div>
-                <div className="inclusion-item no"><FaTimesCircle /> Tiền tip cho HDV và tài xế</div>
-                <div className="inclusion-item no"><FaTimesCircle /> Phụ thu phòng đơn</div>
+                <h3 style={{marginBottom: '16px'}}>❌ {t('tourDetail.excluded')}</h3>
+                <div className="inclusion-item no"><FaTimesCircle /> {t('tourDetail.vat')}</div>
+                <div className="inclusion-item no"><FaTimesCircle /> {t('tourDetail.personalExpenses')}</div>
+                <div className="inclusion-item no"><FaTimesCircle /> {t('tourDetail.tips')}</div>
+                <div className="inclusion-item no"><FaTimesCircle /> {t('tourDetail.singleSupplement')}</div>
               </div>
             </div>
           </section>
@@ -262,10 +264,10 @@ const TourDetail: React.FC = () => {
           {/* Timeline Itinerary */}
           {tour.itinerary && tour.itinerary.length > 0 && (
             <section className="detail-section">
-              <h2 className="section-heading">Lịch Trình Chi Tiết</h2>
+              <h2 className="section-heading">{t('tourDetail.itinerary')}</h2>
               <div className="itinerary-timeline">
                 {tour.itinerary.map((item: any, idx: number) => {
-                  const dayText = String(item.day).toLowerCase().includes('ngày') ? item.day : `Ngày ${item.day}`;
+                  const dayText = String(item.day).toLowerCase().includes(t('tourDetail.day').toLowerCase()) ? item.day : `${t('tourDetail.day')} ${item.day}`;
                   return (
                     <div key={idx} className="timeline-item">
                       <div className="timeline-dot"></div>
@@ -282,7 +284,7 @@ const TourDetail: React.FC = () => {
 
           {/* Reviews from DB */}
           <section id="reviews-section" className="detail-section">
-            <h2 className="section-heading">Đánh giá từ khách hàng</h2>
+            <h2 className="section-heading">{t('tourDetail.customerReviews')}</h2>
             
             {reviews.length > 0 ? (
               <>
@@ -291,7 +293,7 @@ const TourDetail: React.FC = () => {
                   <span style={{fontSize: '2rem', fontWeight: 700}}>
                     {(reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviews.length).toFixed(1)}
                   </span>
-                  <span style={{color: '#64748b', fontSize: '1.1rem'}}>• {reviews.length} đánh giá</span>
+                  <span style={{color: '#64748b', fontSize: '1.1rem'}}>• {reviews.length} {t('tourDetail.reviews')}</span>
                 </div>
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px'}}>
                   {(showAllReviews ? reviews : reviews.slice(0, 4)).map((review: any) => (
@@ -316,7 +318,7 @@ const TourDetail: React.FC = () => {
                               }}
                               style={{ background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.9rem', textDecoration: 'underline' }}
                             >
-                              Chỉnh sửa
+                              {t('tourDetail.edit')}
                             </button>
                           )}
                         </div>
@@ -350,22 +352,22 @@ const TourDetail: React.FC = () => {
                                   // Wait, since I removed refetchReviews, I should just do window.location.reload() or re-fetch.
                                   // For simplicity:
                                   window.location.reload();
-                                  Swal.fire({ icon: 'success', title: 'Cập nhật thành công', showConfirmButton: false, timer: 1500 });
+                                  Swal.fire({ icon: 'success', title: t('tourDetail.updateSuccess'), showConfirmButton: false, timer: 1500 });
                                 } catch (e) {
-                                  Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Cập nhật thất bại' });
+                                  Swal.fire({ icon: 'error', title: t('tourDetail.errorTitle'), text: t('tourDetail.updateError') });
                                 } finally {
                                   setIsSubmittingReview(false);
                                 }
                               }}
                               style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
                             >
-                              {isSubmittingReview ? 'Đang lưu...' : 'Lưu lại'}
+                              {isSubmittingReview ? t('tourDetail.saving') : t('tourDetail.save')}
                             </button>
                             <button 
                               onClick={() => setEditingReviewId(null)}
                               style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
                             >
-                              Hủy
+                              {t('tourDetail.cancel')}
                             </button>
                           </div>
                         </div>
@@ -383,13 +385,13 @@ const TourDetail: React.FC = () => {
                       onMouseEnter={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#2563eb'; }}
                     >
-                      {showAllReviews ? 'Thu gọn' : `Xem tất cả ${reviews.length} đánh giá`}
+                      {showAllReviews ? t('tourDetail.showLess') : t('tourDetail.showAllReviews', { count: reviews.length })}
                     </button>
                   </div>
                 )}
               </>
             ) : (
-              <p style={{color: '#64748b'}}>Chưa có đánh giá nào cho tour này. Hãy là người đầu tiên trải nghiệm và đánh giá!</p>
+              <p style={{color: '#64748b'}}>{t('tourDetail.noReviews')}</p>
             )}
           </section>
         </div>
@@ -401,15 +403,15 @@ const TourDetail: React.FC = () => {
             <div className="fomo-badge" style={isSoldOut ? {background: '#fee2e2', color: '#ef4444'} : {}}>
               {startDate ? (
                 isSoldOut ? (
-                  <><FaTimesCircle /> Rất tiếc, chuyến này đã hết chỗ!</>
+                  <><FaTimesCircle /> {t('tourDetail.soldOutBadge')}</>
                 ) : (
-                  <><FaFire /> Đang bán chạy! Chuyến này còn {slotsLeft} chỗ trống</>
+                  <><FaFire /> {t('tourDetail.sellingFast', { slots: slotsLeft })}</>
                 )
               ) : (
                 isSoldOut ? (
-                  <><FaTimesCircle /> Rất tiếc, tour này tạm thời hết chỗ!</>
+                  <><FaTimesCircle /> {t('tourDetail.soldOutGeneral')}</>
                 ) : (
-                  <><FaFire /> Đang bán chạy! Hiện còn {slotsLeft} chỗ. Chọn ngày để xem số chỗ chính xác</>
+                  <><FaFire /> {t('tourDetail.slotsLeftGeneral', { slots: slotsLeft })}</>
                 )
               )}
             </div>
@@ -422,12 +424,12 @@ const TourDetail: React.FC = () => {
             </div>
 
             <div className="price-header">
-              {formatPrice(tour.price)} <span>/ người</span>
+              {formatPrice(tour.price)} <span>{t('tourDetail.perPerson')}</span>
             </div>
             
             <form onSubmit={handleBooking} className="booking-form">
               <div className="form-group">
-                <label>Ngày khởi hành</label>
+                <label>{t('tourDetail.departureDate')}</label>
                 <input 
                   type="date" 
                   value={startDate}
@@ -438,7 +440,7 @@ const TourDetail: React.FC = () => {
               </div>
               
               <div className="form-group">
-                <label>Số lượng hành khách</label>
+                <label>{t('tourDetail.passengers')}</label>
                 <div style={{position: 'relative'}}>
                   <FaUserFriends style={{position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b'}} />
                   <input 
@@ -456,24 +458,24 @@ const TourDetail: React.FC = () => {
 
               <div className="price-breakdown">
                 <div className="breakdown-row">
-                  <span>Giá ({guests} người)</span>
+                  <span>{t('tourDetail.priceFor', { guests })}</span>
                   <span>{formatPrice(tour.price * guests)}</span>
                 </div>
                 <div className="breakdown-row">
-                  <span>Thuế & Phí dịch vụ</span>
-                  <span>Miễn phí</span>
+                  <span>{t('tourDetail.taxAndFee')}</span>
+                  <span>{t('tourDetail.free')}</span>
                 </div>
                 <div className="breakdown-row total">
-                  <span>Tổng tiền</span>
+                  <span>{t('tourDetail.totalAmount')}</span>
                   <span>{formatPrice(tour.price * guests)}</span>
                 </div>
               </div>
               
               <button type="submit" className="btn-book" style={isSoldOut ? {opacity: 0.7, cursor: 'pointer', background: '#94a3b8'} : {}}>
-                {isSoldOut ? 'Đã Hết Chỗ' : 'Đặt Tour Ngay'}
+                {isSoldOut ? t('tourDetail.soldOutBtn') : t('tourDetail.bookNow')}
               </button>
               <button type="button" onClick={handleAddToCart} className="btn-cart" style={isSoldOut ? {opacity: 0.7, cursor: 'pointer', border: '1px solid #94a3b8', color: '#94a3b8'} : {}}>
-                <FaShoppingCart /> Thêm Vào Giỏ Hàng
+                <FaShoppingCart /> {t('tourDetail.addToCart')}
               </button>
             </form>
           </div>
@@ -483,7 +485,7 @@ const TourDetail: React.FC = () => {
       {/* Related Tours Section */}
       {relatedTours.length > 0 && (
         <div className="related-tours">
-          <h2 className="section-heading" style={{textAlign: 'center', marginBottom: '40px'}}>Có Thể Bạn Cũng Thích</h2>
+          <h2 className="section-heading" style={{textAlign: 'center', marginBottom: '40px'}}>{t('tourDetail.relatedTours')}</h2>
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '30px'}}>
             {relatedTours.map((t: any) => (
               <TourCard key={t.id} tour={t} />

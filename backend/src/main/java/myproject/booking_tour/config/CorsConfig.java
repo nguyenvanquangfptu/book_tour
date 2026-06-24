@@ -20,7 +20,8 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Collections.singletonList(frontendUrl));
+        // Tách chuỗi URL bằng dấu phẩy để hỗ trợ nhiều domain
+        config.setAllowedOrigins(Arrays.asList(frontendUrl.split(",")));
         config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-User-Id"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
