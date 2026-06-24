@@ -4,6 +4,7 @@ import api from '../../api/axiosConfig';
 import { UserService } from '../../services/UserService';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 interface UserInfoTabProps {
   initialProfile: any;
@@ -11,6 +12,7 @@ interface UserInfoTabProps {
 }
 
 const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [profile, setProfile] = useState({ fullName: '', email: '', phone: '', avatar: '' });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -29,11 +31,11 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
   const updateProfileMutation = useMutation({
     mutationFn: (data: any) => UserService.updateProfile(data),
     onSuccess: () => {
-      setMessage({ text: 'Cập nhật hồ sơ thành công!', type: 'success' });
+      setMessage({ text: t('profile.userInfo.successMsg'), type: 'success' });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (error: any) => {
-      setMessage({ text: error.response?.data?.message || 'Cập nhật thất bại!', type: 'error' });
+      setMessage({ text: error.response?.data?.message || t('profile.userInfo.errorMsg'), type: 'error' });
     }
   });
 
@@ -51,7 +53,7 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
       if (typeof url === 'string') {
         await UserService.updateAvatar(url);
         setProfile({ ...profile, avatar: url });
-        setMessage({ text: 'Cập nhật ảnh đại diện thành công!', type: 'success' });
+        setMessage({ text: t('profile.userInfo.successMsg'), type: 'success' });
         const user = useAuthStore.getState().user;
         if (user) {
           useAuthStore.setState({ user: { ...user, avatar: url } });
@@ -59,7 +61,7 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
         queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Lỗi tải ảnh lên!';
+      const errorMessage = err.response?.data?.message || t('profile.userInfo.errorMsg');
       setMessage({ text: errorMessage, type: 'error' });
     } finally {
       setUploadingAvatar(false);
@@ -77,7 +79,7 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
 
   return (
     <div>
-      <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>Hồ Sơ Của Bạn</h2>
+      <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>{t('profile.userInfo.title')}</h2>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
         <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: '#f1f5f9', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
           {profile.avatar ? (
@@ -96,21 +98,21 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
       </div>
       <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }} autoComplete="off">
         <div className="input-group">
-          <label className="input-label">Họ và tên</label>
+          <label className="input-label">{t('profile.userInfo.fullName')}</label>
           <input type="text" className="input-field" value={profile.fullName} onChange={e => setProfile({...profile, fullName: e.target.value})} autoComplete="off" required />
         </div>
         <div className="input-group">
-          <label className="input-label">Email</label>
+          <label className="input-label">{t('profile.userInfo.email')}</label>
           <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|vn|net|org|edu|gov|info|io)$" title="Vui lòng nhập đúng định dạng email hợp lệ" autoComplete="off" required />
           {isEmailInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập email hợp lệ (vd: abc@gmail.com).</span>}
         </div>
         <div className="input-group">
-          <label className="input-label">Số điện thoại</label>
+          <label className="input-label">{t('profile.userInfo.phone')}</label>
           <input type="text" className="input-field" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} pattern="^(0|\+84)[0-9]{9}$" title="Vui lòng nhập đúng số điện thoại Việt Nam" autoComplete="off" required />
           {isPhoneInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập đúng số điện thoại (vd: 0912345678).</span>}
         </div>
         <button type="submit" className="btn btn-primary" disabled={updateProfileMutation.isPending || isFormInvalid} style={{ alignSelf: 'flex-start', marginTop: '10px' }}>
-          {updateProfileMutation.isPending ? 'Đang cập nhật...' : 'Cập Nhật Hồ Sơ'}
+          {updateProfileMutation.isPending ? t('profile.userInfo.savingBtn') : t('profile.userInfo.saveBtn')}
         </button>
       </form>
     </div>

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaKey, FaArrowLeft } from 'react-icons/fa';
 import { AuthService } from '../services/AuthService';
+import { useTranslation } from 'react-i18next';
 import '../styles/auth.css';
 
 const ForgotPassword: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<1 | 2>(1);
@@ -29,7 +31,7 @@ const ForgotPassword: React.FC = () => {
   const handleRequestToken = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email) {
-      setError('Vui lòng nhập email');
+      setError(t('auth.enterEmail'));
       return;
     }
     
@@ -39,11 +41,11 @@ const ForgotPassword: React.FC = () => {
     
     try {
       await AuthService.forgotPassword(email);
-      setSuccess('Mã xác thực đã được gửi đến email của bạn.');
+      setSuccess(t('auth.tokenSent'));
       setStep(2);
       setCountdown(60);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể gửi mã xác thực. Vui lòng kiểm tra lại email.');
+      setError(err.response?.data?.message || t('auth.sendTokenFail'));
       console.error('Forgot password error', err);
     } finally {
       setLoading(false);
@@ -54,12 +56,12 @@ const ForgotPassword: React.FC = () => {
     e.preventDefault();
     
     if (newPassword.length < 8) {
-      setError('Mật khẩu mới phải có ít nhất 8 ký tự.');
+      setError(t('auth.passwordShort'));
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
+      setError(t('auth.passwordMismatch'));
       return;
     }
     
@@ -69,11 +71,11 @@ const ForgotPassword: React.FC = () => {
     
     try {
       await AuthService.resetPassword(token, newPassword);
-      setSuccess('Đổi mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.');
+      setSuccess(t('auth.resetSuccess'));
       // Auto redirect after 3s
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đổi mật khẩu thất bại. Mã xác thực không đúng hoặc đã hết hạn.');
+      setError(err.response?.data?.message || t('auth.resetFail'));
       console.error('Reset password error', err);
     } finally {
       setLoading(false);
@@ -90,8 +92,8 @@ const ForgotPassword: React.FC = () => {
       <div className="auth-container animate-fade-in">
         <div className="auth-card glass-card">
           <div className="auth-header">
-            <h2>Khôi phục mật khẩu</h2>
-            <p>{step === 1 ? 'Nhập email để nhận mã xác thực' : 'Nhập mã xác thực và mật khẩu mới'}</p>
+            <h2>{t('auth.forgotTitle')}</h2>
+            <p>{step === 1 ? t('auth.forgotSubtitle1') : t('auth.forgotSubtitle2')}</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -100,13 +102,13 @@ const ForgotPassword: React.FC = () => {
           {step === 1 ? (
             <form onSubmit={handleRequestToken} className="auth-form" autoComplete="off">
               <div className="input-group">
-                <label className="input-label">Email của bạn</label>
+                <label className="input-label">{t('auth.emailYourLabel')}</label>
                 <div className="auth-input-wrapper">
                   <FaEnvelope className="auth-icon" />
                   <input 
                     type="email" 
                     className="input-field" 
-                    placeholder="Nhập địa chỉ email"
+                    placeholder={t('auth.emailAddressPlaceholder')}
                     value={email}
                     autoComplete="email"
                     onChange={(e) => setEmail(e.target.value)}
@@ -116,14 +118,14 @@ const ForgotPassword: React.FC = () => {
               </div>
 
               <button type="submit" className="btn btn-primary auth-btn" disabled={loading}>
-                {loading ? 'Đang gửi...' : 'Gửi mã xác thực'}
+                {loading ? t('auth.sendingBtn') : t('auth.sendCodeBtn')}
               </button>
             </form>
           ) : (
             <form onSubmit={handleResetPassword} className="auth-form" autoComplete="off">
               <div className="input-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                  <label className="input-label" style={{ marginBottom: 0 }}>Mã xác thực (Token)</label>
+                  <label className="input-label" style={{ marginBottom: 0 }}>{t('auth.tokenLabel')}</label>
                   <button 
                     type="button" 
                     onClick={(e) => handleRequestToken(e)} 
@@ -138,7 +140,7 @@ const ForgotPassword: React.FC = () => {
                       padding: 0
                     }}
                   >
-                    {countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại mã'}
+                    {countdown > 0 ? t('auth.resendCodeIn', { s: countdown }) : t('auth.resendCode')}
                   </button>
                 </div>
                 <div className="auth-input-wrapper">
@@ -146,7 +148,7 @@ const ForgotPassword: React.FC = () => {
                   <input 
                     type="text" 
                     className="input-field" 
-                    placeholder="Nhập mã OTP từ email"
+                    placeholder={t('auth.tokenPlaceholder')}
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     autoComplete="one-time-code"
@@ -156,48 +158,48 @@ const ForgotPassword: React.FC = () => {
               </div>
 
               <div className="input-group">
-                <label className="input-label">Mật khẩu mới</label>
+                <label className="input-label">{t('auth.newPasswordLabel')}</label>
                 <div className="auth-input-wrapper">
                   <FaLock className="auth-icon" />
                   <input 
                     type="password" 
                     className="input-field" 
-                    placeholder="Nhập mật khẩu mới"
+                    placeholder={t('auth.newPasswordPlaceholder')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     autoComplete="new-password"
                     required 
                   />
                 </div>
-                {isPasswordShort && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>Mật khẩu phải có ít nhất 8 ký tự.</span>}
+                {isPasswordShort && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>{t('auth.passwordShort')}</span>}
               </div>
               
               <div className="input-group">
-                <label className="input-label">Xác nhận mật khẩu mới</label>
+                <label className="input-label">{t('auth.confirmNewPasswordLabel')}</label>
                 <div className="auth-input-wrapper">
                   <FaLock className="auth-icon" />
                   <input 
                     type="password" 
                     className="input-field" 
-                    placeholder="Xác nhận mật khẩu"
+                    placeholder={t('auth.confirmNewPasswordPlaceholder')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     autoComplete="new-password"
                     required 
                   />
                 </div>
-                {isPasswordMismatch && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>Mật khẩu xác nhận không khớp.</span>}
+                {isPasswordMismatch && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>{t('auth.passwordMismatch')}</span>}
               </div>
 
               <button type="submit" className="btn btn-primary auth-btn" disabled={loading || isFormInvalid}>
-                {loading ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}
+                {loading ? t('auth.processing') : t('auth.resetPasswordBtn')}
               </button>
             </form>
           )}
 
           <div className="auth-footer" style={{ marginTop: '24px' }}>
             <Link to="/login" className="auth-link" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-              <FaArrowLeft /> Quay lại đăng nhập
+              <FaArrowLeft /> {t('auth.backToLogin')}
             </Link>
           </div>
         </div>

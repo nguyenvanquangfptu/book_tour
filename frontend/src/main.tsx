@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './styles/index.css'
 import './styles/components.css'
+import './i18n';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
