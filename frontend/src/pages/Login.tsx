@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
@@ -8,7 +8,6 @@ import '../styles/auth.css';
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
