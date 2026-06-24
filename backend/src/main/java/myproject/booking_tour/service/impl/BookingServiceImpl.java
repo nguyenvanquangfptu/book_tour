@@ -128,39 +128,38 @@ public class BookingServiceImpl implements BookingService {
         int days = parseDurationDays(tour.getDuration());
         int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
         
-        // First pass: validate all days have enough slots
+        java.time.LocalDate startDate = request.getTravelDate();
+        java.time.LocalDate endDate = startDate.plusDays(days - 1);
+
+        List<TourSchedule> existingSchedules = tourScheduleRepository.findByTourIdAndDepartureDateBetween(tour.getId(), startDate, endDate);
+        Map<java.time.LocalDate, TourSchedule> scheduleMap = existingSchedules.stream()
+                .collect(Collectors.toMap(TourSchedule::getDepartureDate, s -> s));
+
+        List<TourSchedule> schedulesToSave = new java.util.ArrayList<>();
+
+        // Validate and prepare for deduction
         for (int i = 0; i < days; i++) {
-            java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
-            TourSchedule schedule = tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
-                    .orElseGet(() -> {
-                        TourSchedule newSchedule = new TourSchedule();
-                        newSchedule.setTour(tour);
-                        newSchedule.setDepartureDate(checkDate);
-                        newSchedule.setAvailableSlots(defaultSlots);
-                        return newSchedule;
-                    });
+            java.time.LocalDate checkDate = startDate.plusDays(i);
+            TourSchedule schedule = scheduleMap.getOrDefault(checkDate, null);
+            
+            if (schedule == null) {
+                schedule = new TourSchedule();
+                schedule.setTour(tour);
+                schedule.setDepartureDate(checkDate);
+                schedule.setAvailableSlots(defaultSlots);
+            }
 
             if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
                 throw new BadRequestException("Not enough available slots for date " + checkDate + "! Only " 
                         + schedule.getAvailableSlots() + " slots left.");
             }
-        }
-
-        // Second pass: deduct slots for all days
-        for (int i = 0; i < days; i++) {
-            java.time.LocalDate checkDate = request.getTravelDate().plusDays(i);
-            TourSchedule schedule = tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
-                    .orElseGet(() -> {
-                        TourSchedule newSchedule = new TourSchedule();
-                        newSchedule.setTour(tour);
-                        newSchedule.setDepartureDate(checkDate);
-                        newSchedule.setAvailableSlots(defaultSlots);
-                        return newSchedule;
-                    });
             
             schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
-            tourScheduleRepository.save(schedule);
+            schedulesToSave.add(schedule);
         }
+
+        // Batch save
+        tourScheduleRepository.saveAll(schedulesToSave);
     }
 
     private BigDecimal applyVoucherAndCalculatePrice(BookingRequest request, Booking booking, BigDecimal totalPrice) {
@@ -324,13 +323,15 @@ public class BookingServiceImpl implements BookingService {
         Tour tour = booking.getTour();
         if (tour != null && booking.getTravelDate() != null) {
             int days = parseDurationDays(tour.getDuration());
-            for (int i = 0; i < days; i++) {
-                java.time.LocalDate checkDate = booking.getTravelDate().plusDays(i);
-                tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
-                    .ifPresent(schedule -> {
-                        schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
-                        tourScheduleRepository.save(schedule);
-                    });
+            java.time.LocalDate startDate = booking.getTravelDate();
+            java.time.LocalDate endDate = startDate.plusDays(days - 1);
+            
+            List<TourSchedule> existingSchedules = tourScheduleRepository.findByTourIdAndDepartureDateBetween(tour.getId(), startDate, endDate);
+            for (TourSchedule schedule : existingSchedules) {
+                schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
+            }
+            if (!existingSchedules.isEmpty()) {
+                tourScheduleRepository.saveAll(existingSchedules);
             }
         }
         
