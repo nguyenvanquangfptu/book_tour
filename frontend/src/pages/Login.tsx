@@ -42,8 +42,10 @@ const Login: React.FC = () => {
         window.location.href = '/';
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || t('auth.loginFail'));
+      const errorMsg = err.response?.data?.message || err.message || t('auth.loginFail');
+      setError(errorMsg);
       console.error('Login error', err);
+      alert("Chi tiết lỗi Đăng nhập thường: " + errorMsg + "\nNếu có chữ Network Error, hãy báo cho AI biết!");
     } finally {
       setLoading(false);
     }
@@ -65,8 +67,10 @@ const Login: React.FC = () => {
         window.location.href = '/';
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || t('auth.googleLoginFail'));
+      const errorMsg = err.response?.data?.message || err.message || t('auth.googleLoginFail');
+      setError(errorMsg);
       console.error('Google login error', err);
+      alert("Chi tiết lỗi Đăng nhập Google: " + errorMsg + "\nNếu có chữ Network Error, hãy báo cho AI biết!");
     } finally {
       setLoading(false);
     }
