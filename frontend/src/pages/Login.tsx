@@ -39,10 +39,8 @@ const Login: React.FC = () => {
           role: data.role
         }));
         
-        // Chuyển hướng về trang chủ
-        navigate('/');
-        // Tải lại trang để navbar nhận diện trạng thái login
-        window.location.reload();
+        // Chuyển hướng về trang chủ và tải lại trang để navbar nhận diện trạng thái login
+        window.location.href = '/';
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.loginFail'));
@@ -65,8 +63,7 @@ const Login: React.FC = () => {
           username: data.username,
           role: data.role
         }));
-        navigate('/');
-        window.location.reload();
+        window.location.href = '/';
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.googleLoginFail'));
