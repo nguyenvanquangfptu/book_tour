@@ -1,26 +1,28 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import '../styles/pages.css';
 
 const AboutPage: React.FC = () => {
+  const { t } = useTranslation();
   const teamMembers = [
     {
       name: 'Nguyễn Văn A',
-      role: 'Giám Đốc Điều Hành',
+      role: t('about.team.ceo'),
       image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&q=80'
     },
     {
       name: 'Trần Thị B',
-      role: 'Trưởng Phòng Điều Hành',
+      role: t('about.team.manager'),
       image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80'
     },
     {
       name: 'Lê Văn C',
-      role: 'Chuyên Gia Thiết Kế Tour',
+      role: t('about.team.designer'),
       image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80'
     },
     {
       name: 'Phạm Thị D',
-      role: 'Chăm Sóc Khách Hàng',
+      role: t('about.team.support'),
       image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&q=80'
     }
   ];
@@ -30,30 +32,24 @@ const AboutPage: React.FC = () => {
       {/* Page Header */}
       <div className="page-header" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1920&q=80')" }}>
         <div className="page-overlay"></div>
-        <h1 className="page-title animate-fade-in">Về Chúng Tôi</h1>
+        <h1 className="page-title animate-fade-in">{t('about.title')}</h1>
       </div>
 
       {/* About Section */}
       <div className="about-section container">
         <div className="about-grid">
           <div className="about-content animate-slide-up">
-            <h2>Hành trình mang đến những trải nghiệm tuyệt vời</h2>
-            <p>
-              BookingTour được thành lập với sứ mệnh mang đến cho khách hàng những chuyến đi không chỉ là du lịch, 
-              mà còn là những trải nghiệm văn hóa, khám phá bản thân và tận hưởng cuộc sống một cách trọn vẹn nhất.
-            </p>
-            <p>
-              Với hơn 10 năm kinh nghiệm trong ngành du lịch, chúng tôi tự hào là người bạn đồng hành tin cậy của 
-              hàng nghìn du khách trên mọi nẻo đường, từ những bãi biển xanh ngắt đến những ngọn núi hùng vĩ.
-            </p>
+            <h2>{t('about.journeyTitle')}</h2>
+            <p>{t('about.desc1')}</p>
+            <p>{t('about.desc2')}</p>
             <div style={{ marginTop: '32px', display: 'flex', gap: '24px' }}>
               <div>
                 <h3 style={{ fontSize: '2.5rem', color: 'var(--primary)', marginBottom: '8px' }}>10k+</h3>
-                <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Khách hàng hài lòng</p>
+                <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{t('about.statsCustomers')}</p>
               </div>
               <div>
                 <h3 style={{ fontSize: '2.5rem', color: 'var(--primary)', marginBottom: '8px' }}>500+</h3>
-                <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Điểm đến tuyệt đẹp</p>
+                <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{t('about.statsDestinations')}</p>
               </div>
             </div>
           </div>
@@ -64,28 +60,28 @@ const AboutPage: React.FC = () => {
 
         {/* Why Choose Us - Reuse from home features */}
         <div style={{ marginTop: '100px', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)', marginBottom: '48px' }}>Tại sao chọn BookingTour?</h2>
+          <h2 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)', marginBottom: '48px' }}>{t('about.whyChooseUs')}</h2>
           <div className="features-grid">
             <div className="feature-card glass-card">
-              <h3>Giá Cả Tốt Nhất</h3>
-              <p>Cam kết mang đến cho bạn mức giá cạnh tranh và nhiều ưu đãi hấp dẫn nhất thị trường.</p>
+              <h3>{t('about.bestPrice')}</h3>
+              <p>{t('about.bestPriceDesc')}</p>
             </div>
             <div className="feature-card glass-card">
-              <h3>Dịch Vụ Chuẩn 5 Sao</h3>
-              <p>Đội ngũ hướng dẫn viên chuyên nghiệp, tận tâm và am hiểu điểm đến.</p>
+              <h3>{t('about.fiveStarService')}</h3>
+              <p>{t('about.fiveStarServiceDesc')}</p>
             </div>
             <div className="feature-card glass-card">
-              <h3>Hỗ Trợ 24/7</h3>
-              <p>Luôn sẵn sàng hỗ trợ và giải đáp mọi thắc mắc của bạn bất cứ lúc nào.</p>
+              <h3>{t('about.support247')}</h3>
+              <p>{t('about.support247Desc')}</p>
             </div>
           </div>
         </div>
 
         {/* Team Section */}
         <div style={{ marginTop: '100px' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)', marginBottom: '16px', textAlign: 'center' }}>Đội Ngũ Của Chúng Tôi</h2>
+          <h2 style={{ fontSize: '2.5rem', color: 'var(--primary-dark)', marginBottom: '16px', textAlign: 'center' }}>{t('about.ourTeam')}</h2>
           <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-            Những con người đam mê du lịch và luôn cống hiến hết mình để tạo ra những hành trình đáng nhớ cho bạn.
+            {t('about.ourTeamDesc')}
           </p>
           
           <div className="team-grid">

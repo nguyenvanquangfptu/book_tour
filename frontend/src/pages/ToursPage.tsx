@@ -3,10 +3,12 @@ import { useLocation } from 'react-router-dom';
 import TourCard from '../components/TourCard';
 import { useTourOptions } from '../hooks/useTourOptions';
 import { useTours } from '../hooks/useTours';
+import { useTranslation } from 'react-i18next';
 import '../styles/pages.css';
 import '../styles/toursPage.css';
 
 const ToursPage: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialDest = searchParams.get('dest') || '';
@@ -90,7 +92,7 @@ const ToursPage: React.FC = () => {
       {/* Simple Page Header */}
       <div className="page-header" style={{ height: '30vh', minHeight: '250px', backgroundImage: "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80')" }}>
         <div className="page-overlay"></div>
-        <h1 className="page-title animate-fade-up" style={{ fontSize: '2.5rem' }}>Khám Phá Các Chuyến Đi</h1>
+        <h1 className="page-title animate-fade-up" style={{ fontSize: '2.5rem' }}>{t('toursPage.title')}</h1>
       </div>
 
       <div className="container" style={{ marginTop: '40px' }}>
@@ -98,25 +100,25 @@ const ToursPage: React.FC = () => {
           {/* Filter Sidebar */}
           <aside className="filter-sidebar animate-fade-up">
             <div className="filter-header">
-              <h3>Filter Search</h3>
-              <span className="clear-filter" onClick={clearFilters}>Clear All</span>
+              <h3>{t('toursPage.filterSearch')}</h3>
+              <span className="clear-filter" onClick={clearFilters}>{t('toursPage.clearAll')}</span>
             </div>
 
             <div className="filter-group">
-              <div className="filter-group-title">Search</div>
+              <div className="filter-group-title">{t('toursPage.search')}</div>
               <input 
                 type="text" 
                 className="filter-input" 
-                placeholder="Search by name..." 
+                placeholder={t('toursPage.searchPlaceholder')}
                 value={keyword}
                 onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
               />
             </div>
 
             <div className="filter-group">
-              <div className="filter-group-title">Destination</div>
+              <div className="filter-group-title">{t('toursPage.destination')}</div>
               <select className="filter-input" value={destination} onChange={handleDestinationChange}>
-                <option value="">All Destinations</option>
+                <option value="">{t('toursPage.allDestinations')}</option>
                 {allDestinations.map(dest => (
                   <option key={dest} value={dest}>{dest}</option>
                 ))}
@@ -124,7 +126,7 @@ const ToursPage: React.FC = () => {
             </div>
 
             <div className="filter-group">
-              <div className="filter-group-title">Price Range (VND)</div>
+              <div className="filter-group-title">{t('toursPage.priceRange')}</div>
               <input 
                 type="range" 
                 min="0" max="10000000" step="500000"
@@ -141,7 +143,7 @@ const ToursPage: React.FC = () => {
             </div>
 
             <div className="filter-group">
-              <div className="filter-group-title">Tour Type</div>
+              <div className="filter-group-title">{t('toursPage.tourType')}</div>
               <div className="checkbox-list">
                 {allTourTypes.map(type => (
                   <label key={type} className="checkbox-item">
@@ -152,7 +154,7 @@ const ToursPage: React.FC = () => {
             </div>
 
             <div className="filter-group">
-              <div className="filter-group-title">Transport</div>
+              <div className="filter-group-title">{t('toursPage.transport')}</div>
               <div className="checkbox-list">
                 {allTransports.map(transport => (
                   <label key={transport} className="checkbox-item">
@@ -162,7 +164,7 @@ const ToursPage: React.FC = () => {
               </div>
             </div>
             <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { setPage(0); }}>
-              Apply Filters
+              {t('toursPage.applyFilters')}
             </button>
           </aside>
 
@@ -170,13 +172,13 @@ const ToursPage: React.FC = () => {
           <div className="tours-content">
             <div className="tours-content-header animate-fade-up">
               <div className="tours-count">
-                Showing {tours.length} results {destination ? `in ${destination}` : ''}
+                {t('toursPage.showingResults', { count: tours.length })} {destination ? t('toursPage.inDestination', { dest: destination }) : ''}
               </div>
               <div className="tours-sort">
                 <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setPage(0); }}>
-                  <option value="id_ASC">Sort by: Recommended</option>
-                  <option value="price_ASC">Price: Low to High</option>
-                  <option value="price_DESC">Price: High to Low</option>
+                  <option value="id_ASC">{t('toursPage.sortByRecommended')}</option>
+                  <option value="price_ASC">{t('toursPage.priceLowToHigh')}</option>
+                  <option value="price_DESC">{t('toursPage.priceHighToLow')}</option>
                 </select>
               </div>
             </div>
@@ -204,7 +206,7 @@ const ToursPage: React.FC = () => {
                       className="btn btn-outline"
                       style={{ opacity: page === 0 ? 0.5 : 1, cursor: page === 0 ? 'not-allowed' : 'pointer' }}
                     >
-                      Previous
+                      {t('toursPage.previous')}
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 10px' }}>
                       {page + 1} / {totalPages}
@@ -215,7 +217,7 @@ const ToursPage: React.FC = () => {
                       className="btn btn-outline"
                       style={{ opacity: page >= totalPages - 1 ? 0.5 : 1, cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
                     >
-                      Next
+                      {t('toursPage.next')}
                     </button>
                   </div>
                 )}
@@ -223,10 +225,10 @@ const ToursPage: React.FC = () => {
             ) : (
               <div style={{ textAlign: 'center', padding: '80px 0', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
                 <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', marginBottom: '16px' }}>
-                  No tours found matching your criteria.
+                  {t('toursPage.noToursFound')}
                 </h3>
                 <button className="btn btn-primary" onClick={clearFilters}>
-                  Clear Filters
+                  {t('toursPage.clearAll')}
                 </button>
               </div>
             )}

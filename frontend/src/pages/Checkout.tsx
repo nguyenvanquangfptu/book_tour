@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { formatPrice } from '../utils/formatPrice';
 import { BookingService } from '../services/BookingService';
 import { VoucherService } from '../services/VoucherService';
+import { useTranslation } from 'react-i18next';
 import '../styles/checkout.css';
 
 interface LocationState {
@@ -16,6 +17,7 @@ interface LocationState {
 }
 
 const Checkout: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState;
@@ -38,9 +40,9 @@ const Checkout: React.FC = () => {
   if (!state) {
     return (
       <div className="container checkout-empty">
-        <h2>Không tìm thấy thông tin đặt tour</h2>
-        <p>Vui lòng quay lại chọn tour trước khi thanh toán.</p>
-        <Link to="/tours" className="btn btn-primary">Xem danh sách Tour</Link>
+        <h2>{t('checkout.noTourInfoTitle')}</h2>
+        <p>{t('checkout.noTourInfoDesc')}</p>
+        <Link to="/tours" className="btn btn-primary">{t('checkout.viewTours')}</Link>
       </div>
     );
   }
@@ -56,7 +58,7 @@ const Checkout: React.FC = () => {
       setVoucherMessage('');
       const voucher = await VoucherService.getVoucherByCode(voucherCode);
       if (!voucher || !voucher.isActive) {
-        setVoucherMessage('Voucher không hợp lệ hoặc đã bị vô hiệu hóa.');
+        setVoucherMessage(t('checkout.voucherInvalid'));
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
@@ -64,25 +66,25 @@ const Checkout: React.FC = () => {
       
       const now = new Date();
       if (voucher.validFrom && now < new Date(voucher.validFrom)) {
-        setVoucherMessage('Voucher chưa đến thời gian bắt đầu sử dụng.');
+        setVoucherMessage(t('checkout.voucherNotStarted'));
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
       }
       if (voucher.validUntil && now > new Date(voucher.validUntil)) {
-        setVoucherMessage('Voucher đã hết hạn sử dụng.');
+        setVoucherMessage(t('checkout.voucherExpired'));
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
       }
       if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) {
-        setVoucherMessage('Voucher đã hết lượt sử dụng.');
+        setVoucherMessage(t('checkout.voucherLimitReached'));
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
       }
       if (state.totalPrice < (voucher.minOrderValue || 0)) {
-        setVoucherMessage(`Đơn hàng phải từ ${formatPrice(voucher.minOrderValue)} để áp dụng.`);
+        setVoucherMessage(t('checkout.voucherMinOrder', { min: formatPrice(voucher.minOrderValue) }));
         setDiscountAmount(0);
         setAppliedVoucherId(null);
         return;
@@ -100,9 +102,9 @@ const Checkout: React.FC = () => {
       
       setDiscountAmount(discount);
       setAppliedVoucherId(voucher.id);
-      setVoucherMessage('Áp dụng mã giảm giá thành công!');
+      setVoucherMessage(t('checkout.voucherSuccess'));
     } catch (error) {
-      setVoucherMessage('Mã giảm giá không tồn tại.');
+      setVoucherMessage(t('checkout.voucherNotFound'));
       setDiscountAmount(0);
       setAppliedVoucherId(null);
     }
@@ -137,8 +139,8 @@ const Checkout: React.FC = () => {
       if (bookingData && bookingData.id) {
         Swal.fire({
           icon: 'success',
-          title: 'Đặt Tour Thành Công!',
-          text: 'Đơn đặt của bạn đã được ghi nhận. Vui lòng chờ Admin duyệt để tiến hành thanh toán.',
+          title: t('checkout.bookingSuccessTitle'),
+          text: t('checkout.bookingSuccessText'),
           confirmButtonColor: '#3b82f6'
         }).then(() => {
           navigate('/profile');
@@ -148,8 +150,8 @@ const Checkout: React.FC = () => {
       console.error('Checkout failed', error);
       Swal.fire({
         icon: 'error',
-        title: 'Lỗi',
-        text: 'Đã xảy ra lỗi trong quá trình xử lý. Vui lòng thử lại sau.',
+        title: t('checkout.bookingErrorTitle'),
+        text: t('checkout.bookingErrorText'),
         confirmButtonColor: '#3b82f6'
       });
     } finally {
@@ -165,23 +167,23 @@ const Checkout: React.FC = () => {
     <div className="checkout-page container">
       <div className="checkout-header">
         <button onClick={() => navigate(-1)} className="btn-back">
-          <FaChevronLeft /> Quay lại
+          <FaChevronLeft /> {t('checkout.back')}
         </button>
-        <h1>Thanh Toán An Toàn</h1>
+        <h1>{t('checkout.secureCheckout')}</h1>
       </div>
 
       <div className="checkout-grid">
         {/* Form Thông Tin */}
         <div className="checkout-form-section glass-card">
-          <h2 className="section-title">Thông tin liên hệ</h2>
+          <h2 className="section-title">{t('checkout.contactInfo')}</h2>
           <form onSubmit={handleSubmit} id="checkout-form" autoComplete="off">
             <div className="input-group">
-              <label className="input-label">Họ và tên *</label>
+              <label className="input-label">{t('checkout.fullName')}</label>
               <input 
                 type="text" 
                 name="fullName"
                 className="input-field" 
-                placeholder="Nhập họ tên của bạn"
+                placeholder={t('checkout.fullNamePlaceholder')}
                 value={formData.fullName}
                 onChange={handleInputChange}
                 autoComplete="off"
@@ -191,43 +193,43 @@ const Checkout: React.FC = () => {
             
             <div className="form-row">
               <div className="input-group">
-                <label className="input-label">Email *</label>
+                <label className="input-label">{t('checkout.email')}</label>
                 <input 
                   type="email" 
                   name="email"
                   className="input-field" 
-                  placeholder="example@gmail.com"
+                  placeholder={t('checkout.emailPlaceholder')}
                   value={formData.email}
                   onChange={handleInputChange}
                   autoComplete="off"
                   required 
                 />
-                {isEmailInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập email hợp lệ.</span>}
+                {isEmailInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>{t('checkout.emailInvalid')}</span>}
               </div>
               
               <div className="input-group">
-                <label className="input-label">Số điện thoại *</label>
+                <label className="input-label">{t('checkout.phone')}</label>
                 <input 
                   type="tel" 
                   name="phone"
                   className="input-field" 
-                  placeholder="09xx xxx xxx"
+                  placeholder={t('checkout.phonePlaceholder')}
                   value={formData.phone}
                   onChange={handleInputChange}
                   autoComplete="off"
                   required 
                 />
-                {isPhoneInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>Vui lòng nhập đúng số điện thoại.</span>}
+                {isPhoneInvalid && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', fontWeight: '500'}}>{t('checkout.phoneInvalid')}</span>}
               </div>
             </div>
 
             <div className="input-group">
-              <label className="input-label">Ghi chú thêm (Tuỳ chọn)</label>
+              <label className="input-label">{t('checkout.note')}</label>
               <textarea 
                 name="note"
                 className="input-field" 
                 rows={4}
-                placeholder="Ví dụ: Yêu cầu ăn chay, đón tại sân bay..."
+                placeholder={t('checkout.notePlaceholder')}
                 value={formData.note}
                 onChange={handleInputChange}
               ></textarea>
@@ -236,19 +238,19 @@ const Checkout: React.FC = () => {
 
           <div className="security-notice">
             <FaShieldAlt className="shield-icon" />
-            <p>Thông tin của bạn được mã hóa bảo mật an toàn 100%.</p>
+            <p>{t('checkout.securityNotice')}</p>
           </div>
         </div>
 
         {/* Tóm tắt Booking */}
         <div className="checkout-summary glass-card">
-          <h2 className="section-title">Tóm tắt chuyến đi</h2>
+          <h2 className="section-title">{t('checkout.tripSummary')}</h2>
           
           <div className="summary-tour-info">
             <h3>{state.tourTitle}</h3>
             <div className="summary-meta">
-              <p><strong>Ngày đi:</strong> {state.startDate}</p>
-              <p><strong>Số lượng:</strong> {state.guests} hành khách</p>
+              <p><strong>{t('checkout.departureDate')}</strong> {state.startDate}</p>
+              <p><strong>{t('checkout.guests')}</strong> {state.guests} {t('checkout.guestsCount')}</p>
             </div>
           </div>
 
@@ -259,12 +261,12 @@ const Checkout: React.FC = () => {
               <input 
                 type="text" 
                 className="voucher-input" 
-                placeholder="Nhập mã giảm giá" 
+                placeholder={t('checkout.voucherPlaceholder')}
                 value={voucherCode}
                 onChange={(e) => setVoucherCode(e.target.value)}
               />
               <button type="button" className="voucher-btn" onClick={handleApplyVoucher}>
-                Áp dụng
+                {t('checkout.apply')}
               </button>
             </div>
             {voucherMessage && (
@@ -278,21 +280,21 @@ const Checkout: React.FC = () => {
 
           <div className="price-details">
             <div className="price-row">
-              <span>Giá vé ({state.guests} người)</span>
+              <span>{t('checkout.ticketPrice', { guests: state.guests })}</span>
               <span>{formatPrice(state.totalPrice)}</span>
             </div>
             <div className="price-row">
-              <span>Thuế và phí</span>
+              <span>{t('checkout.taxAndFee')}</span>
               <span>0 VNĐ</span>
             </div>
             {discountAmount > 0 && (
               <div className="price-row" style={{ color: 'var(--success)' }}>
-                <span>Giảm giá</span>
+                <span>{t('checkout.discount')}</span>
                 <span>-{formatPrice(discountAmount)}</span>
               </div>
             )}
             <div className="price-row total">
-              <span>Tổng thanh toán</span>
+              <span>{t('checkout.totalPayment')}</span>
               <span className="total-amount">{formatPrice(Math.max(0, state.totalPrice - discountAmount))}</span>
             </div>
           </div>
@@ -304,14 +306,14 @@ const Checkout: React.FC = () => {
             style={{ backgroundColor: '#3b82f6', borderColor: '#3b82f6', width: '100%', padding: '15px', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             disabled={loading || isFormInvalid}
           >
-            {loading ? 'Đang xử lý...' : (
+            {loading ? t('checkout.processing') : (
               <>
-                <FaCheckCircle style={{ marginRight: '8px' }} /> Xác nhận Đặt Tour
+                <FaCheckCircle style={{ marginRight: '8px' }} /> {t('checkout.confirmBooking')}
               </>
             )}
           </button>
           <p className="vnpay-notice" style={{ color: '#64748b', textAlign: 'center', marginTop: '12px' }}>
-            Hệ thống sẽ ghi nhận đơn đặt và chờ Admin duyệt trước khi thanh toán.
+            {t('checkout.adminNotice')}
           </p>
         </div>
       </div>
