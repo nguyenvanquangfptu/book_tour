@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
@@ -8,7 +8,6 @@ import '../styles/auth.css';
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -39,10 +38,8 @@ const Login: React.FC = () => {
           role: data.role
         }));
         
-        // Chuyển hướng về trang chủ
-        navigate('/');
-        // Tải lại trang để navbar nhận diện trạng thái login
-        window.location.reload();
+        // Chuyển hướng về trang chủ và tải lại trang để navbar nhận diện trạng thái login
+        window.location.href = '/';
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.loginFail'));
@@ -65,8 +62,7 @@ const Login: React.FC = () => {
           username: data.username,
           role: data.role
         }));
-        navigate('/');
-        window.location.reload();
+        window.location.href = '/';
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.googleLoginFail'));
