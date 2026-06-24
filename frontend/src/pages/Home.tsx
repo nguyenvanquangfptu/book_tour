@@ -7,11 +7,13 @@ import { TourService } from '../services/TourService';
 import { ReviewService } from '../services/ReviewService';
 import { useTourOptions } from '../hooks/useTourOptions';
 import { useTours } from '../hooks/useTours';
+import { useTranslation } from 'react-i18next';
 import '../styles/pages.css';
 import '../styles/home.css';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Search States
   const [destination, setDestination] = useState('');
@@ -48,14 +50,14 @@ const Home: React.FC = () => {
       <section className="hero-section">
         <div className="hero-overlay"></div>
         <div className="hero-content animate-fade-up">
-          <h1 className="hero-title">Discover Vietnam With Amazing Tours</h1>
-          <p className="hero-subtitle">Find beaches, mountains and unforgettable experiences</p>
+          <h1 className="hero-title">{t('home.heroTitle')}</h1>
+          <p className="hero-subtitle">{t('home.heroSubtitle')}</p>
           
           <div className="hero-search-box">
             <div className="search-input-group">
               <FaMapMarkerAlt className="search-icon" />
               <div className="search-input-wrapper">
-                <label>Destination</label>
+                <label>{t('home.destination')}</label>
                 <select 
                   className="search-input" 
                   value={destination} 
@@ -74,7 +76,7 @@ const Home: React.FC = () => {
             <div className="search-input-group">
               <FaCalendarAlt className="search-icon" />
               <div className="search-input-wrapper">
-                <label>Duration</label>
+                <label>{t('home.duration')}</label>
                 <select 
                   className="search-input" 
                   value={duration} 
@@ -93,7 +95,7 @@ const Home: React.FC = () => {
             <div className="search-input-group">
               <FaWallet className="search-icon" />
               <div className="search-input-wrapper">
-                <label>Budget</label>
+                <label>{t('home.budget')}</label>
                 <select 
                   className="search-input" 
                   value={budget} 
@@ -108,7 +110,7 @@ const Home: React.FC = () => {
             </div>
             
             <button className="btn btn-primary search-btn" onClick={handleSearchClick}>
-              <FaSearch /> Search
+              <FaSearch /> {t('home.search')}
             </button>
           </div>
         </div>
@@ -118,8 +120,8 @@ const Home: React.FC = () => {
       <section className="destinations-section">
         <div className="container">
           <div className="section-header animate-fade-up">
-            <h2 className="section-title">Popular Destinations</h2>
-            <p className="section-subtitle">Explore our most booked cities and places</p>
+            <h2 className="section-title">{t('home.popularDestinations')}</h2>
+            <p className="section-subtitle">{t('home.exploreDestinations')}</p>
           </div>
           
           <div className="destinations-grid">
@@ -135,12 +137,12 @@ const Home: React.FC = () => {
                 />
                 <div className="destination-overlay">
                   <h3 className="destination-name">{dest.name}</h3>
-                  <span className="destination-tours">{dest.count} Tours</span>
+                  <span className="destination-tours">{t('home.toursCount', { count: dest.count })}</span>
                 </div>
               </div>
             )) : (
               <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '40px 0' }}>
-                <p>No popular destinations found.</p>
+                <p>{t('home.noDestinations')}</p>
               </div>
             )}
           </div>
@@ -151,8 +153,8 @@ const Home: React.FC = () => {
       <section className="tours-section">
         <div className="container">
           <div className="section-header animate-fade-up">
-            <h2 className="section-title">Featured Tours</h2>
-            <p className="section-subtitle">Handpicked selection of the best tours for you</p>
+            <h2 className="section-title">{t('home.featuredTours')}</h2>
+            <p className="section-subtitle">{t('home.handpickedTours')}</p>
           </div>
 
           {toursLoading ? (
@@ -171,13 +173,13 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <p>No featured tours available at the moment.</p>
+              <p>{t('home.noFeaturedTours')}</p>
             </div>
           )}
           
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <button className="btn btn-outline" style={{ padding: '12px 32px' }} onClick={() => navigate('/tours')}>
-              View All Tours
+              {t('home.viewAllTours')}
             </button>
           </div>
         </div>
@@ -187,8 +189,8 @@ const Home: React.FC = () => {
       <section className="testimonials-section">
         <div className="container">
           <div className="section-header animate-fade-up">
-            <h2 className="section-title">What Our Travelers Say</h2>
-            <p className="section-subtitle">Real experiences from our amazing customers</p>
+            <h2 className="section-title">{t('home.testimonials')}</h2>
+            <p className="section-subtitle">{t('home.realExperiences')}</p>
           </div>
           
           <div className="testimonials-grid">
@@ -204,17 +206,17 @@ const Home: React.FC = () => {
               <>
                 <div className="testimonial-card animate-fade-up">
                   <div className="stars">⭐⭐⭐⭐⭐</div>
-                  <p className="quote">"What an amazing experience! The guide was extremely knowledgeable and the views in Ha Long Bay were breathtaking. Highly recommended!"</p>
+                  <p className="quote">"{t('home.fallbackReview1')}"</p>
                   <h4 className="author">- Nguyễn Văn A</h4>
                 </div>
                 <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.1s' }}>
                   <div className="stars">⭐⭐⭐⭐⭐</div>
-                  <p className="quote">"Dịch vụ 5 sao tuyệt vời. Mọi thứ từ đưa đón, khách sạn đến ăn uống đều được chuẩn bị chu đáo. BookingTour làm việc rất chuyên nghiệp."</p>
+                  <p className="quote">"{t('home.fallbackReview2')}"</p>
                   <h4 className="author">- Trần Thị B</h4>
                 </div>
                 <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.2s' }}>
                   <div className="stars">⭐⭐⭐⭐⭐</div>
-                  <p className="quote">"My family had the best vacation ever in Phu Quoc. The booking process was seamless and the support team was very helpful."</p>
+                  <p className="quote">"{t('home.fallbackReview3')}"</p>
                   <h4 className="author">- John Doe</h4>
                 </div>
               </>

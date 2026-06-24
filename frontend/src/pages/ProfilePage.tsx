@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import TicketTemplate from '../components/TicketTemplate';
+import { useTranslation } from 'react-i18next';
 
 import ProfileSidebar from '../components/profile/ProfileSidebar';
 import UserInfoTab from '../components/profile/UserInfoTab';
@@ -17,6 +18,7 @@ import BookingDetailsModal from '../components/profile/BookingDetailsModal';
 import '../styles/tourDetail.css';
 
 const ProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const [message, setMessage] = useState({ text: '', type: '' });
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -60,7 +62,7 @@ const ProfilePage: React.FC = () => {
           pdf.save(`Ve_E_Ticket_${booking.id}.pdf`);
         } catch (error) {
           console.error("Lỗi khi tạo PDF:", error);
-          alert("Có lỗi xảy ra khi tạo vé. Vui lòng thử lại!");
+          alert(t('profile.pdfError'));
         } finally {
           setIsGeneratingPDF(false);
         }
@@ -92,19 +94,19 @@ const ProfilePage: React.FC = () => {
           {renderMessage()}
 
           {activeTab === 'profile' && (
-            isProfileLoading ? <p>Đang tải...</p> : 
+            isProfileLoading ? <p>{t('profile.loading')}</p> : 
             <UserInfoTab initialProfile={profile} setMessage={setMessage} />
           )}
 
           {activeTab === 'password' && <ChangePasswordTab setMessage={setMessage} />}
 
           {activeTab === 'billing' && (
-            isBookingsLoading ? <p>Đang tải...</p> : 
+            isBookingsLoading ? <p>{t('profile.loading')}</p> : 
             <BillingTab bookings={bookings} triggerPrint={triggerPrint} isGeneratingPDF={isGeneratingPDF} />
           )}
 
           {activeTab === 'bookings' && (
-            isBookingsLoading ? <p>Đang tải...</p> : 
+            isBookingsLoading ? <p>{t('profile.loading')}</p> : 
             <BookingHistoryTab 
               bookings={bookings} 
               setSelectedBooking={setSelectedBooking} 

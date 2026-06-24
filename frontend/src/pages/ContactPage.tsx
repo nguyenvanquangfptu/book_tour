@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import api from '../api/axiosConfig';
+import { useTranslation } from 'react-i18next';
 import '../styles/pages.css';
 
 const ContactPage: React.FC = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -24,16 +26,16 @@ const ContactPage: React.FC = () => {
       await api.post('/contacts', formData);
       Swal.fire({
         icon: 'success',
-        title: 'Thành công!',
-        text: 'Tin nhắn của bạn đã được gửi thành công!',
+        title: t('contact.successTitle'),
+        text: t('contact.successText'),
         confirmButtonColor: '#3b82f6'
       });
       setFormData({ fullName: '', email: '', subject: '', message: '' });
     } catch (error) {
       Swal.fire({
         icon: 'error',
-        title: 'Lỗi!',
-        text: 'Đã có lỗi xảy ra. Vui lòng thử lại sau.',
+        title: t('contact.errorTitle'),
+        text: t('contact.errorText'),
         confirmButtonColor: '#ef4444'
       });
     } finally {
@@ -44,27 +46,27 @@ const ContactPage: React.FC = () => {
     <div className="page-wrapper">
       <div className="page-header" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&w=1920&q=80')" }}>
         <div className="page-overlay"></div>
-        <h1 className="page-title animate-fade-in">Liên Hệ Với Chúng Tôi</h1>
+        <h1 className="page-title animate-fade-in">{t('contact.pageTitle')}</h1>
       </div>
 
       <div className="contact-section container">
         <div className="contact-grid">
           {/* Contact Info */}
           <div className="contact-info-card animate-slide-up">
-            <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--primary-dark)' }}>Thông Tin Liên Hệ</h2>
+            <h2 style={{ fontSize: '2rem', marginBottom: '32px', color: 'var(--primary-dark)' }}>{t('contact.contactInfo')}</h2>
             
             <div className="contact-item">
               <FaMapMarkerAlt className="contact-icon" />
               <div>
-                <h4>Địa chỉ văn phòng</h4>
-                <p>123 Đường Du Lịch, Phường 1, Quận 1<br/>TP. Hồ Chí Minh, Việt Nam</p>
+                <h4>{t('contact.officeAddress')}</h4>
+                <p>{t('contact.addressLine1')}<br/>{t('contact.addressLine2')}</p>
               </div>
             </div>
 
             <div className="contact-item">
               <FaPhoneAlt className="contact-icon" />
               <div>
-                <h4>Hotline</h4>
+                <h4>{t('contact.hotline')}</h4>
                 <p>+84 123 456 789<br/>+84 987 654 321</p>
               </div>
             </div>
@@ -72,7 +74,7 @@ const ContactPage: React.FC = () => {
             <div className="contact-item">
               <FaEnvelope className="contact-icon" />
               <div>
-                <h4>Email</h4>
+                <h4>{t('contact.email')}</h4>
                 <p>vanquangqn28@gmail.com</p>
               </div>
             </div>
@@ -85,32 +87,32 @@ const ContactPage: React.FC = () => {
 
           {/* Contact Form */}
           <div className="contact-form animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <h2 style={{ fontSize: '2rem', marginBottom: '16px', color: 'var(--primary-dark)' }}>Gửi Tin Nhắn</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Vui lòng điền thông tin bên dưới, chúng tôi sẽ liên hệ lại với bạn trong thời gian sớm nhất.</p>
+            <h2 style={{ fontSize: '2rem', marginBottom: '16px', color: 'var(--primary-dark)' }}>{t('contact.sendMessage')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>{t('contact.formDesc')}</p>
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Họ và Tên</label>
-                <input type="text" name="fullName" className="form-control" placeholder="Nhập họ tên của bạn" value={formData.fullName} onChange={handleChange} required />
+                <label>{t('contact.fullNameLabel')}</label>
+                <input type="text" name="fullName" className="form-control" placeholder={t('contact.fullNamePlaceholder')} value={formData.fullName} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
-                <label>Email</label>
-                <input type="email" name="email" className="form-control" placeholder="Nhập địa chỉ email" value={formData.email} onChange={handleChange} required />
+                <label>{t('contact.emailLabel')}</label>
+                <input type="email" name="email" className="form-control" placeholder={t('contact.emailPlaceholder')} value={formData.email} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
-                <label>Chủ đề</label>
-                <input type="text" name="subject" className="form-control" placeholder="Bạn muốn hỏi về vấn đề gì?" value={formData.subject} onChange={handleChange} required />
+                <label>{t('contact.subjectLabel')}</label>
+                <input type="text" name="subject" className="form-control" placeholder={t('contact.subjectPlaceholder')} value={formData.subject} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
-                <label>Nội dung tin nhắn</label>
-                <textarea name="message" className="form-control" placeholder="Nhập chi tiết lời nhắn của bạn..." value={formData.message} onChange={handleChange} required></textarea>
+                <label>{t('contact.messageLabel')}</label>
+                <textarea name="message" className="form-control" placeholder={t('contact.messagePlaceholder')} value={formData.message} onChange={handleChange} required></textarea>
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }} disabled={loading}>
-                {loading ? 'Đang gửi...' : 'Gửi Tin Nhắn'}
+                {loading ? t('contact.sending') : t('contact.sendBtn')}
               </button>
             </form>
           </div>

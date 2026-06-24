@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaFileInvoiceDollar, FaDownload } from 'react-icons/fa';
 import { formatPrice } from '../../utils/formatPrice';
+import { useTranslation } from 'react-i18next';
 
 interface BillingTabProps {
   bookings: any[];
@@ -9,16 +10,17 @@ interface BillingTabProps {
 }
 
 const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGeneratingPDF }) => {
+  const { t } = useTranslation();
   const paidBookings = bookings.filter(b => b.status === 'PAID');
 
   return (
     <div>
-      <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>Hóa Đơn Của Tôi</h2>
+      <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>{t('profile.billing.title')}</h2>
       {paidBookings.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
           <FaFileInvoiceDollar style={{ fontSize: '3rem', color: '#94a3b8', marginBottom: '15px' }} />
-          <h3 style={{ color: '#475569', marginBottom: '10px' }}>Chưa có hóa đơn nào</h3>
-          <p style={{ color: '#64748b' }}>Các hóa đơn và biên lai thanh toán của bạn sẽ hiển thị tại đây.</p>
+          <h3 style={{ color: '#475569', marginBottom: '10px' }}>{t('profile.billing.noTransactions')}</h3>
+          <p style={{ color: '#64748b' }}></p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -29,14 +31,14 @@ const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGener
                   <FaFileInvoiceDollar style={{ fontSize: '1.5rem', color: '#4338ca' }} />
                 </div>
                 <div>
-                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: '#1e293b' }}>Hóa đơn #{booking.id}</h3>
-                  <p style={{ margin: '0 0 5px 0', color: '#475569', fontSize: '0.9rem' }}>Ngày thanh toán: {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}</p>
+                  <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: '#1e293b' }}>{t('profile.billing.transactionId')} #{booking.id}</h3>
+                  <p style={{ margin: '0 0 5px 0', color: '#475569', fontSize: '0.9rem' }}>{t('profile.billing.date')}: {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}</p>
                   <p style={{ margin: '0', color: '#e11d48', fontWeight: 'bold' }}>{formatPrice(booking.totalPrice)}</p>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', background: '#dcfce7', color: '#15803d', display: 'inline-block', marginBottom: '10px' }}>
-                  Thành Công
+                  {t('profile.billing.statusPaid')}
                 </span>
                 <br />
                 <button 
@@ -46,7 +48,7 @@ const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGener
                   onMouseEnter={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; } }}
                   onMouseLeave={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#cbd5e1'; } }}
                 >
-                  <FaDownload /> {isGeneratingPDF ? 'Đang tải...' : 'Tải Biên Lai PDF'}
+                  <FaDownload /> {isGeneratingPDF ? t('profile.bookingHistory.generatingTicket') : t('profile.billing.downloadE_Ticket')}
                 </button>
               </div>
             </div>

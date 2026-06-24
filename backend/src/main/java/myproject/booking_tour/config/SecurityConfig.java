@@ -103,7 +103,8 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.List.of(frontendUrl));
+        // Tách chuỗi URL bằng dấu phẩy để hỗ trợ nhiều domain
+        configuration.setAllowedOrigins(java.util.Arrays.asList(frontendUrl.split(",")));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
         configuration.setAllowCredentials(true);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaStar, FaUsers, FaBus, FaHotel, FaUtensils } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
+import { useTranslation } from 'react-i18next';
 import '../styles/tourCard.css';
 
 interface TourProps {
@@ -9,6 +10,7 @@ interface TourProps {
 }
 
 const TourCard: React.FC<TourProps> = ({ tour }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [hasError, setHasError] = useState(false);
 
@@ -25,7 +27,7 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
       <div className="tour-img-container">
         {/* Discount Badge */}
         <div className="tour-discount-badge">
-          🔥 20% OFF
+          {t('tourCard.discount')}
         </div>
 
         <img 
@@ -52,25 +54,25 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
 
       <div className="tour-info">
         <div className="tour-destination">
-          <FaMapMarkerAlt /> {tour.destination || 'Việt Nam'}
+          <FaMapMarkerAlt /> {tour.destination || t('tourCard.defaultDestination')}
         </div>
         
         <h3 className="tour-title" title={tour.title}>{tour.title}</h3>
 
         <div className="tour-stats">
           <div className="tour-stat-item rating">
-            <FaStar /> {(tour.rating || 0).toFixed(1)} <span>({tour.reviewCount || 0} reviews)</span>
+            <FaStar /> {(tour.rating || 0).toFixed(1)} <span>({tour.reviewCount || 0} {t('tourCard.reviews')})</span>
           </div>
           <div className="tour-stat-item">
-            <FaUsers /> {tour.bookedCount || 0} booked
+            <FaUsers /> {tour.bookedCount || 0} {t('tourCard.booked')}
           </div>
         </div>
 
         {/* Included Services Mock */}
         <div className="tour-services">
-          <div className="service-icon" title="Transport"><FaBus /></div>
-          <div className="service-icon" title="Hotel"><FaHotel /></div>
-          <div className="service-icon" title="Meals"><FaUtensils /></div>
+          <div className="service-icon" title={t('tourCard.transport')}><FaBus /></div>
+          <div className="service-icon" title={t('tourCard.hotel')}><FaHotel /></div>
+          <div className="service-icon" title={t('tourCard.meals')}><FaUtensils /></div>
         </div>
 
         <div className="tour-actions">
@@ -78,13 +80,13 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
             className="btn btn-outline" 
             onClick={() => navigate(`/tours/${tour.id}`)}
           >
-            Chi Tiết
+            {t('tourCard.details')}
           </button>
           <button 
             className="btn btn-book" 
             onClick={() => navigate(`/tours/${tour.id}`)}
           >
-            Đặt Ngay
+            {t('tourCard.bookNow')}
           </button>
         </div>
       </div>
