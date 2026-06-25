@@ -107,8 +107,10 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setPaymentDate(LocalDateTime.now());
             Payment savedPayment = paymentRepository.save(payment);
 
-            // Use the saved payment ID as the unique orderCode for PayOS
-            long orderCode = savedPayment.getId();
+            // Use a unique orderCode combining timestamp and payment ID to avoid PayOS duplicates
+            long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis() / 1000) + String.format("%04d", savedPayment.getId() % 10000));
+            savedPayment.setPaymentMethod("PAYOS_" + orderCode);
+            paymentRepository.save(savedPayment);
 
             // Giá trong database đã được bỏ 3 số 0 (VD: 2500000 -> 2500), đủ điều kiện >= 2000đ của PayOS
             int amount = booking.getTotalPrice().intValue();
@@ -143,8 +145,7 @@ public class PaymentServiceImpl implements PaymentService {
         
         if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
             try {
-                Long paymentId = Long.parseLong(orderCodeStr);
-                Payment payment = paymentRepository.findById(paymentId).orElse(null);
+                Payment payment = paymentRepository.findByPaymentMethod("PAYOS_" + orderCodeStr).orElse(null);
                 
                 if (payment != null) {
                     Booking booking = payment.getBooking();
@@ -181,14 +182,14 @@ public class PaymentServiceImpl implements PaymentService {
     public void checkPendingPayOSPayments() {
         System.out.println("[CronJob] Bắt đầu kiểm tra các giao dịch PayOS đang chờ...");
         
-        // Find all payments that are PENDING and use PAYOS_BANK_TRANSFER
+        // Find all payments that are PENDING and use PAYOS
         List<Payment> pendingPayments = paymentRepository.findAll().stream()
-                .filter(p -> "PENDING".equals(p.getPaymentStatus()) && "PAYOS_BANK_TRANSFER".equals(p.getPaymentMethod()))
+                .filter(p -> "PENDING".equals(p.getPaymentStatus()) && p.getPaymentMethod() != null && p.getPaymentMethod().startsWith("PAYOS_"))
                 .collect(Collectors.toList());
 
         for (Payment payment : pendingPayments) {
             try {
-                long orderCode = payment.getId();
+                long orderCode = Long.parseLong(payment.getPaymentMethod().replace("PAYOS_", ""));
                 vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
 
                 if ("PAID".equals(paymentLink.getStatus().name())) {
@@ -233,8 +234,7 @@ public class PaymentServiceImpl implements PaymentService {
             String desc = data.getDesc(); // Để biết lý do
 
             if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
-                Long paymentId = Long.parseLong(orderCodeStr);
-                Payment payment = paymentRepository.findById(paymentId).orElse(null);
+                Payment payment = paymentRepository.findByPaymentMethod("PAYOS_" + orderCodeStr).orElse(null);
                 
                 if (payment != null) {
                     Booking booking = payment.getBooking();
