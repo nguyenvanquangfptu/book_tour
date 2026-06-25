@@ -219,6 +219,8 @@
     "noDateText": "Please select a departure date",
     "noDateCartTitle": "No date selected",
     "noDateCartText": "Please select a departure date to add to cart",
+    "invalidDateTitle": "Invalid date",
+    "invalidDateText": "Departure date must be greater than current date. Please select again.",
     "successTitle": "Success!",
     "addCartSuccess": "Tour added to cart successfully!<br><br><b>Your cart currently has {{count}} tours</b>",
     "soldOutBadge": "Sorry, this trip is fully booked!",

@@ -29,7 +29,7 @@ public class ContactMessage {
     @Column(nullable = false)
     private String subject;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "text")
     private String message;
 
     @Column(nullable = false)
