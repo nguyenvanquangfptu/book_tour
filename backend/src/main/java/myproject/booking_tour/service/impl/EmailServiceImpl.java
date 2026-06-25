@@ -64,7 +64,7 @@ public class EmailServiceImpl implements EmailService {
             String url = "https://api.brevo.com/v3/smtp/email";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("api-key", brevoApiKey);
+            headers.set("api-key", brevoApiKey.trim());
             headers.set("Content-Type", "application/json");
             headers.set("Accept", "application/json");
 
