@@ -29,10 +29,10 @@ public class AuditLog {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "old_value", columnDefinition = "TEXT")
+    @Column(name = "old_value", columnDefinition = "text")
     private String oldValue;
 
-    @Column(name = "new_value", columnDefinition = "TEXT")
+    @Column(name = "new_value", columnDefinition = "text")
     private String newValue;
 
     @Column(name = "created_at")

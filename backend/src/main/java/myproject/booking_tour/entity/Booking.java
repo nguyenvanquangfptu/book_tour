@@ -56,7 +56,7 @@ Booking {
     @Column(name = "customer_phone", length = 20)
     private String customerPhone;
 
-    @Column(name = "note", columnDefinition = "TEXT")
+    @Column(name = "note", columnDefinition = "text")
     private String note;
 
     @ManyToOne(fetch = FetchType.LAZY)
