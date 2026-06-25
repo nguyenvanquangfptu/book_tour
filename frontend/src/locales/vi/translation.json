@@ -219,6 +219,8 @@
     "noDateText": "Vui lòng chọn ngày khởi hành",
     "noDateCartTitle": "Chưa chọn ngày",
     "noDateCartText": "Vui lòng chọn ngày khởi hành để thêm vào giỏ hàng",
+    "invalidDateTitle": "Ngày không hợp lệ",
+    "invalidDateText": "Ngày khởi hành phải lớn hơn ngày hiện tại. Vui lòng chọn lại.",
     "successTitle": "Thành công!",
     "addCartSuccess": "Đã thêm tour vào giỏ hàng thành công!<br><br><b>Giỏ hàng của bạn hiện đang có {{count}} tour</b>",
     "soldOutBadge": "Rất tiếc, chuyến này đã hết chỗ!",

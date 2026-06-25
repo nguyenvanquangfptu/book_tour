@@ -24,7 +24,7 @@ public class Accommodation {
     @Column(nullable = false, length = 255)
     private String address;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String description;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
