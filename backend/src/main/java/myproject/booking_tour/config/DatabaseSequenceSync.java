@@ -18,7 +18,11 @@ public class DatabaseSequenceSync {
     @EventListener(ApplicationReadyEvent.class)
     public void syncSequences() {
         try {
-            String[] tables = {"tour_schedules", "bookings", "tours", "users", "vouchers", "reviews"};
+            String[] tables = {
+                "accommodations", "audit_logs", "bookings", "contact_messages", 
+                "password_reset_tokens", "payments", "reviews", "roles", 
+                "tours", "tour_schedules", "users", "utilities", "vouchers"
+            };
             for (String table : tables) {
                 try {
                     String sql = String.format("SELECT setval(pg_get_serial_sequence('%s', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM %s", table, table);
