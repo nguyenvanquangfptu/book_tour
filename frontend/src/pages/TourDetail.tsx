@@ -91,6 +91,21 @@ const TourDetail: React.FC = () => {
       });
       return;
     }
+
+    const selected = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
+
+    if (selected <= today) {
+      Swal.fire({
+        icon: 'warning',
+        title: t('tourDetail.invalidDateTitle'),
+        text: t('tourDetail.invalidDateText'),
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
     navigate(`/checkout/${id}`, { 
       state: { 
         tourId: tour.id, 
@@ -117,6 +132,21 @@ const TourDetail: React.FC = () => {
         icon: 'warning',
         title: t('tourDetail.noDateCartTitle'),
         text: t('tourDetail.noDateCartText'),
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    const selected = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
+
+    if (selected <= today) {
+      Swal.fire({
+        icon: 'warning',
+        title: t('tourDetail.invalidDateTitle'),
+        text: t('tourDetail.invalidDateText'),
         confirmButtonColor: '#3b82f6'
       });
       return;

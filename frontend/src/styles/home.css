@@ -26,7 +26,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4); /* 40% black overlay */
+  background: rgba(0, 0, 0, 0.6); /* Increased from 40% to 60% for better text readability */
 }
 
 .hero-content {
@@ -43,7 +43,8 @@
   font-size: 4rem;
   font-weight: 700;
   margin-bottom: 24px;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  color: #ffffff;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.8);
   line-height: 1.2;
 }
 
@@ -51,8 +52,8 @@
   font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 48px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  color: #ffffff;
 }
 
 /* Search Box in Hero */
@@ -277,9 +278,18 @@
   .hero-search-box {
     flex-direction: column;
     align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+  .search-input-group {
+    width: 100%;
   }
   .search-divider {
     display: none;
+  }
+  .search-btn {
+    width: 100%;
+    margin-top: 8px;
   }
   .destinations-grid, .tours-grid, .testimonials-grid {
     grid-template-columns: 1fr;

@@ -29,7 +29,7 @@ public class Review {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String comment;
 
     @CreationTimestamp
