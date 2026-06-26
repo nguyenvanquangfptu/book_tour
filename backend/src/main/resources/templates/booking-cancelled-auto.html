@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đơn đặt tour bị hủy tự động</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #e74c3c;
+            text-align: center;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .details {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #777777;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Đơn Đặt Tour Đã Bị Hủy Tự Động</h2>
+        <p>Xin chào <strong th:text="${customerName}">Khách hàng</strong>,</p>
+        
+        <p>Hệ thống của chúng tôi thông báo rằng đơn đặt tour của bạn đã bị <strong>hủy tự động</strong> do quá thời hạn thanh toán (24 giờ) kể từ khi được admin duyệt.</p>
+        
+        <div class="details">
+            <p><strong>Mã đơn hàng:</strong> <span th:text="${bookingId}"></span></p>
+            <p><strong>Tour:</strong> <span th:text="${tourName}"></span></p>
+        </div>
+        
+        <p>Rất tiếc vì sự bất tiện này. Nếu bạn vẫn có nhu cầu tham gia tour, vui lòng truy cập website và tiến hành đặt lại tour mới.</p>
+        
+        <p>Nếu bạn có bất kỳ thắc mắc nào, xin vui lòng liên hệ với bộ phận hỗ trợ khách hàng của chúng tôi.</p>
+        
+        <p>Trân trọng,<br>Đội ngũ Booking Tour</p>
+        
+        <div class="footer">
+            <p>Email này được gửi tự động, vui lòng không phản hồi.</p>
+        </div>
+    </div>
+</body>
+</html>

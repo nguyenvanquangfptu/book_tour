@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { UtilityService } from '../../services/UtilityService';
 import '../../styles/admin.css';
 
@@ -72,18 +73,29 @@ const UtilityManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa tiện ích này?')) {
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn?',
+      text: 'Bạn sẽ không thể khôi phục lại dữ liệu này!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
       try {
         await UtilityService.delete(id);
-        alert('Xóa tiện ích thành công!');
+        Swal.fire('Thành công!', 'Xóa tiện ích thành công!', 'success');
         fetchData();
       } catch (error: any) {
         console.error('Lỗi khi xóa:', error);
         // Error from backend if used in Tour
         if (error.response && error.response.data && error.response.data.message) {
-           alert(error.response.data.message);
+           Swal.fire('Lỗi', error.response.data.message, 'error');
         } else {
-           alert('Không thể xóa tiện ích này do đang được sử dụng hoặc có lỗi hệ thống. Vui lòng chuyển trạng thái sang Không hoạt động.');
+           Swal.fire('Lỗi', 'Không thể xóa tiện ích này do đang được sử dụng hoặc có lỗi hệ thống. Vui lòng chuyển trạng thái sang Không hoạt động.', 'error');
         }
       }
     }
@@ -94,10 +106,10 @@ const UtilityManagement: React.FC = () => {
     try {
       if (editingId) {
         await UtilityService.update(editingId, formData);
-        alert('Cập nhật thành công!');
+        Swal.fire('Thành công', 'Cập nhật thành công!', 'success');
       } else {
         await UtilityService.create(formData);
-        alert('Thêm mới thành công!');
+        Swal.fire('Thành công', 'Thêm mới thành công!', 'success');
       }
       setShowModal(false);
       fetchData();
