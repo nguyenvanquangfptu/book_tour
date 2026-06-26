@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaSearch, FaSuitcase } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import TourCard from '../components/TourCard';
 import { TourService } from '../services/TourService';
@@ -16,7 +16,6 @@ const Home: React.FC = () => {
   const { t } = useTranslation();
   
   // Search States
-  const [destination, setDestination] = useState('');
   const [destInputValue, setDestInputValue] = useState('');
   const [showDestDropdown, setShowDestDropdown] = useState(false);
   const [checkIn, setCheckIn] = useState('');
@@ -93,7 +92,7 @@ const Home: React.FC = () => {
                           <div 
                             key={dest}
                             style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', color: '#0f172a', textAlign: 'left', fontWeight: 600, fontSize: '0.9rem' }}
-                            onMouseDown={() => { setDestInputValue(dest); setDestination(dest); }}
+                            onMouseDown={() => { setDestInputValue(dest); }}
                           >
                             📍 {dest}
                           </div>

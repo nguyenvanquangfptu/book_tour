@@ -25,7 +25,6 @@ const Navbar: React.FC = () => {
   const allDestinations = optionsData?.destinations || [];
 
   // Compact Search States
-  const [destination, setDestination] = useState('');
   const [destInputValue, setDestInputValue] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -131,7 +130,7 @@ const Navbar: React.FC = () => {
                 {allDestinations
                   .filter((d: string) => destInputValue === '' || allDestinations.includes(destInputValue) || d.toLowerCase().includes(destInputValue.toLowerCase()))
                   .map((dest: string) => (
-                  <div key={dest} className="dest-dropdown-item" onClick={(e) => { e.stopPropagation(); setDestInputValue(dest); setDestination(dest); setDestDropdownOpen(false); }}>
+                  <div key={dest} className="dest-dropdown-item" onClick={(e) => { e.stopPropagation(); setDestInputValue(dest); setDestDropdownOpen(false); }}>
                     <span className="dest-icon">📍</span> {dest}
                   </div>
                 ))}
