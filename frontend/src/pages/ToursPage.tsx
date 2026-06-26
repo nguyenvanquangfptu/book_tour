@@ -38,8 +38,6 @@ const ToursPage: React.FC = () => {
   // 1. Fetch Tour Options
   const { data: optionsData } = useTourOptions();
   const allDestinations = optionsData?.destinations || [];
-  const allTourTypes = optionsData?.tourTypes || [];
-  const allTransports = optionsData?.transports || [];
 
   // 2. Fetch Tours
   const [sortBy, sortDir] = sortOption.split('_');
@@ -113,10 +111,6 @@ const ToursPage: React.FC = () => {
     setPage(0);
   }, [checkIn, checkOut, guests]);
 
-  const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setDestination(e.target.value);
-    setPage(0);
-  };
 
   const clearFilters = () => {
     setKeyword('');
@@ -134,19 +128,7 @@ const ToursPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleTypeToggle = (type: string) => {
-    setSelectedTypes(prev => 
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
-    setPage(0);
-  };
 
-  const handleTransportToggle = (transport: string) => {
-    setSelectedTransports(prev => 
-      prev.includes(transport) ? prev.filter(t => t !== transport) : [...prev, transport]
-    );
-    setPage(0);
-  };
 
   return (
     <div className="page-wrapper" style={{ background: 'var(--bg-alt)', minHeight: '100vh', paddingBottom: '80px' }}>
