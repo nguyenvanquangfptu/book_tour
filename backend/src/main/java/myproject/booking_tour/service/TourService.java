@@ -5,13 +5,14 @@ import myproject.booking_tour.dto.response.PageResponse;
 import myproject.booking_tour.dto.response.TourResponse;
 import myproject.booking_tour.dto.response.PopularDestinationResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface TourService {
 
     TourResponse getTourById(Long id);
     List<TourResponse> searchTours(String keyword);
-    PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
+    PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, Integer durationDays, Integer guests, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
     TourResponse createTour(TourRequest request);
     TourResponse updateTour(Long id, TourRequest request);
     void deleteTour(Long id);

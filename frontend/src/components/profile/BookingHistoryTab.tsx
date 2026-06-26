@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FaDownload, FaStar } from 'react-icons/fa';
 import { formatPrice } from '../../utils/formatPrice';
 import { BookingService } from '../../services/BookingService';
@@ -27,6 +27,40 @@ const BookingHistoryTab: React.FC<BookingHistoryTabProps> = ({
   const [showReviewForm, setShowReviewForm] = useState<number | null>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
   const [loading, setLoading] = useState(false);
+
+  // Filter and Sort states
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterTravelDate, setFilterTravelDate] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('bookingDate_desc');
+
+  const processedBookings = useMemo(() => {
+    let result = [...bookings];
+
+    if (filterStatus !== 'ALL') {
+      result = result.filter(b => b.status === filterStatus);
+    }
+
+    if (filterTravelDate) {
+      result = result.filter(b => {
+        if (!b.travelDate) return false;
+        // Compare just the YYYY-MM-DD part
+        const bDate = new Date(b.travelDate);
+        // Adjust for local timezone if necessary, or just use substring if it's an ISO string
+        // Usually, travelDate is like "2026-06-25T00:00:00.000Z"
+        const formattedDate = bDate.toISOString().split('T')[0];
+        return formattedDate === filterTravelDate;
+      });
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === 'price_desc') return b.totalPrice - a.totalPrice;
+      if (sortBy === 'price_asc') return a.totalPrice - b.totalPrice;
+      if (sortBy === 'bookingDate_asc') return new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime();
+      return new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime();
+    });
+
+    return result;
+  }, [bookings, filterStatus, filterTravelDate, sortBy]);
 
   const handleReviewSubmit = async (booking: any) => {
     try {
@@ -68,11 +102,40 @@ const BookingHistoryTab: React.FC<BookingHistoryTabProps> = ({
   return (
     <div>
       <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>{t('profile.bookingHistory.title')}</h2>
-      {bookings.length === 0 ? (
+      
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569' }}>{t('profile.bookingHistory.filterStatus', 'Trạng thái')}</label>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}>
+            <option value="ALL">{t('profile.bookingHistory.all', 'Tất cả')}</option>
+            <option value="PENDING">{t('profile.bookingHistory.statusPending', 'Chờ thanh toán')}</option>
+            <option value="CONFIRMED">{t('profile.bookingHistory.statusApproved', 'Đã xác nhận')}</option>
+            <option value="PAID">{t('profile.bookingHistory.statusPaid', 'Đã thanh toán')}</option>
+            <option value="CANCELLED">{t('profile.bookingHistory.statusCancelled', 'Đã hủy')}</option>
+          </select>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569' }}>{t('profile.bookingHistory.filterTravelDate', 'Ngày đi')}</label>
+          <input type="date" value={filterTravelDate} onChange={e => setFilterTravelDate(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569' }}>{t('profile.bookingHistory.sortBy', 'Sắp xếp theo')}</label>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}>
+            <option value="bookingDate_desc">{t('profile.bookingHistory.sortNewest', 'Ngày đặt (Mới nhất)')}</option>
+            <option value="bookingDate_asc">{t('profile.bookingHistory.sortOldest', 'Ngày đặt (Cũ nhất)')}</option>
+            <option value="price_asc">{t('profile.bookingHistory.sortPriceAsc', 'Giá (Thấp đến cao)')}</option>
+            <option value="price_desc">{t('profile.bookingHistory.sortPriceDesc', 'Giá (Cao đến thấp)')}</option>
+          </select>
+        </div>
+      </div>
+
+      {processedBookings.length === 0 ? (
         <p style={{ color: '#64748b' }}>{t('profile.bookingHistory.noBookings')}</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {bookings.map((booking, idx) => (
+          {processedBookings.map((booking, idx) => (
             <div key={idx} style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: '#1e293b' }}>{t('profile.bookingHistory.bookingCode')}{booking.id}</h3>
