@@ -5,6 +5,7 @@ import { BookingService } from '../../services/BookingService';
 import api from '../../api/axiosConfig';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import Swal from 'sweetalert2';
 
 interface BookingHistoryTabProps {
   bookings: any[];
@@ -55,12 +56,12 @@ const BookingHistoryTab: React.FC<BookingHistoryTabProps> = ({
       if (url) {
         window.location.href = url;
       } else {
-        alert(t('profile.bookingHistory.paymentUrlError'));
+        Swal.fire('Lỗi', t('profile.bookingHistory.paymentUrlError'), 'error');
       }
     } catch(e: any) {
       console.error('Lỗi tạo link thanh toán:', e);
       const errorMsg = e.response?.data?.message || t('profile.bookingHistory.paymentCreateError');
-      alert(errorMsg);
+      Swal.fire('Lỗi', errorMsg, 'error');
     }
   };
 

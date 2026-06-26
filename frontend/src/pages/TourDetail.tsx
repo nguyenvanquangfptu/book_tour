@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { useQuery } from '@tanstack/react-query';
 import { TourService } from '../services/TourService';
 import { useCartStore } from '../store/useCartStore';
+import { useWishlistStore } from '../store/useWishlistStore';
 import { useAuthStore } from '../store/useAuthStore';
 import TourCard from '../components/TourCard';
 import api from '../api/axiosConfig';
@@ -18,6 +19,7 @@ const TourDetail: React.FC = () => {
   const navigate = useNavigate();
   
   const { cart, addToCart } = useCartStore();
+  const { isInWishlist, toggleWishlist } = useWishlistStore();
   const currentUser = useAuthStore(state => state.user);
   
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -446,10 +448,26 @@ const TourDetail: React.FC = () => {
               )}
             </div>
 
-            <div style={{ position: 'absolute', top: '24px', right: '24px', cursor: 'pointer' }}>
-              <FaHeart style={{ color: '#cbd5e1', fontSize: '1.5rem', transition: 'color 0.2s' }} 
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'} 
-                onMouseLeave={(e) => e.currentTarget.style.color = '#cbd5e1'} 
+            <div style={{ position: 'absolute', top: '24px', right: '24px', cursor: 'pointer', zIndex: 10 }}>
+              <FaHeart 
+                style={{ 
+                  color: isInWishlist(tour.id) ? '#ef4444' : '#cbd5e1', 
+                  fontSize: '1.5rem', 
+                  transition: 'transform 0.2s, color 0.2s',
+                  transform: isInWishlist(tour.id) ? 'scale(1.1)' : 'scale(1)'
+                }} 
+                onClick={() => {
+                  toggleWishlist({
+                    id: tour.id,
+                    title: tour.title,
+                    price: tour.price,
+                    imageUrl: tour.imageUrl || (tour.images && tour.images[0]) || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
+                    destination: tour.destination,
+                    duration: tour.duration
+                  });
+                }}
+                onMouseEnter={(e) => { if (!isInWishlist(tour.id)) e.currentTarget.style.color = '#ef4444' }} 
+                onMouseLeave={(e) => { if (!isInWishlist(tour.id)) e.currentTarget.style.color = '#cbd5e1' }} 
               />
             </div>
 
