@@ -116,6 +116,12 @@
   min-width: 0;
 }
 
+.tours-content .tours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
 .tours-content-header {
   display: flex;
   justify-content: space-between;

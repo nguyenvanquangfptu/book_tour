@@ -10,7 +10,7 @@ import java.util.List;
 
 public class TourSpecification {
 
-    public static Specification<Tour> filterTours(String keyword, String destination, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports) {
+    public static Specification<Tour> filterTours(String keyword, String destination, Integer durationDays, Integer guests, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -33,6 +33,14 @@ public class TourSpecification {
             }
 
 
+
+            if (durationDays != null) {
+                predicates.add(criteriaBuilder.like(root.get("duration"), durationDays + " %"));
+            }
+
+            if (guests != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("availableSlots"), guests));
+            }
 
             if (minPrice != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
