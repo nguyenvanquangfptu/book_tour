@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import Swal from 'sweetalert2';
 import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import TicketTemplate from '../components/TicketTemplate';
@@ -14,12 +15,21 @@ import ChangePasswordTab from '../components/profile/ChangePasswordTab';
 import BillingTab from '../components/profile/BillingTab';
 import BookingHistoryTab from '../components/profile/BookingHistoryTab';
 import BookingDetailsModal from '../components/profile/BookingDetailsModal';
+import WishlistTab from '../components/profile/WishlistTab';
+import { useLocation } from 'react-router-dom';
 
 import '../styles/tourDetail.css';
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('profile');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
@@ -62,7 +72,7 @@ const ProfilePage: React.FC = () => {
           pdf.save(`Ve_E_Ticket_${booking.id}.pdf`);
         } catch (error) {
           console.error("Lỗi khi tạo PDF:", error);
-          alert(t('profile.pdfError'));
+          Swal.fire('Lỗi', t('profile.pdfError'), 'error');
         } finally {
           setIsGeneratingPDF(false);
         }
@@ -115,6 +125,8 @@ const ProfilePage: React.FC = () => {
               setMessage={setMessage} 
             />
           )}
+
+          {activeTab === 'wishlist' && <WishlistTab />}
         </div>
       </div>
 

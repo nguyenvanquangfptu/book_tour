@@ -278,6 +278,7 @@ public class BookingServiceImpl implements BookingService {
 
         // 2. status = CONFIRMED
         booking.setStatus("CONFIRMED");
+        booking.setApprovedAt(LocalDateTime.now());
 
         // (Bỏ trừ availableSlots của tour vì đã trừ theo ngày khởi hành lúc đặt)
 
@@ -350,5 +351,38 @@ public class BookingServiceImpl implements BookingService {
         // 4. save
         Booking updated = bookingRepository.save(booking);
         return bookingMapper.toResponse(updated);
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Chạy mỗi 1 giờ
+    @Transactional
+    public void autoCancelUnpaidBookings() {
+        System.out.println("[CronJob] Bắt đầu kiểm tra các đơn hàng chưa thanh toán quá 1 ngày...");
+        List<Booking> confirmedBookings = bookingRepository.findByStatus("CONFIRMED");
+        LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
+
+        for (Booking booking : confirmedBookings) {
+            LocalDateTime approvedTime = booking.getApprovedAt() != null ? booking.getApprovedAt() : booking.getBookingDate();
+            
+            if (approvedTime.isBefore(oneDayAgo)) {
+                System.out.println("[CronJob] Đang hủy tự động đơn hàng #" + booking.getId() + " do quá hạn thanh toán.");
+                
+                // Hủy booking
+                cancelBooking(booking.getId(), booking.getUser().getId());
+                
+                // Gửi email thông báo hủy
+                try {
+                    Map<String, Object> templateModel = new HashMap<>();
+                    templateModel.put("customerName", booking.getCustomerName() != null ? booking.getCustomerName() : booking.getUser().getFullName());
+                    templateModel.put("bookingId", "#" + booking.getId());
+                    templateModel.put("tourName", booking.getTour() != null ? booking.getTour().getTitle() : "Tour");
+                    
+                    String emailTo = booking.getCustomerEmail() != null ? booking.getCustomerEmail() : booking.getUser().getEmail();
+                    emailService.sendMessageUsingThymeleafTemplate(emailTo, "Thông báo: Đơn đặt tour của bạn đã bị hủy tự động", "booking-cancelled-auto", templateModel);
+                } catch (Exception e) {
+                    System.err.println("Failed to send auto-cancel email for booking #" + booking.getId() + ": " + e.getMessage());
+                }
+            }
+        }
+        System.out.println("[CronJob] Hoàn tất kiểm tra đơn hàng quá hạn.");
     }
 }

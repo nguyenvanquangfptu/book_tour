@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 import { AccommodationService } from '../../services/AccommodationService';
 import '../../styles/admin.css';
 
@@ -78,18 +79,28 @@ const AccommodationManagement: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa nơi lưu trú này?')) {
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn?',
+      text: 'Bạn sẽ không thể khôi phục lại dữ liệu này!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (result.isConfirmed) {
       try {
         await AccommodationService.delete(id);
-        alert('Xóa nơi lưu trú thành công!');
+        Swal.fire('Thành công!', 'Xóa nơi lưu trú thành công!', 'success');
         fetchData();
       } catch (error: any) {
         console.error('Lỗi khi xóa:', error);
-        // Error from backend if used in Tour
         if (error.response && error.response.data && error.response.data.message) {
-           alert(error.response.data.message);
+           Swal.fire('Lỗi', error.response.data.message, 'error');
         } else {
-           alert('Không thể xóa nơi lưu trú này do đang được sử dụng hoặc có lỗi hệ thống. Vui lòng chuyển trạng thái sang Không hoạt động.');
+           Swal.fire('Lỗi', 'Không thể xóa nơi lưu trú này do đang được sử dụng hoặc có lỗi hệ thống. Vui lòng chuyển trạng thái sang Không hoạt động.', 'error');
         }
       }
     }
@@ -100,10 +111,10 @@ const AccommodationManagement: React.FC = () => {
     try {
       if (editingId) {
         await AccommodationService.update(editingId, formData);
-        alert('Cập nhật thành công!');
+        Swal.fire('Thành công', 'Cập nhật thành công!', 'success');
       } else {
         await AccommodationService.create(formData);
-        alert('Thêm mới thành công!');
+        Swal.fire('Thành công', 'Thêm mới thành công!', 'success');
       }
       setShowModal(false);
       fetchData();

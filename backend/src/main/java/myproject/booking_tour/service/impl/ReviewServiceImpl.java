@@ -44,7 +44,7 @@ public class ReviewServiceImpl implements ReviewService {
         // Check if user has actually booked and completed/confirmed the tour
         boolean hasBooked = bookingRepository.findByUserId(user.getId()).stream()
                 .anyMatch(b -> b.getTour() != null && b.getTour().getId().equals(tour.getId()) && 
-                        ("CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus())));
+                        ("CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()) || "PAID".equals(b.getStatus())));
 
         if (!hasBooked) {
             throw new BadRequestException("Bạn phải đặt và hoàn thành tour này mới có thể đánh giá!");
