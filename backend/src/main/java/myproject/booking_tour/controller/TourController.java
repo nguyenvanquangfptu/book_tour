@@ -52,7 +52,8 @@ public class TourController {
     public ResponseEntity<ApiResponse<PageResponse<TourResponse>>> searchAndFilterTours(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String destination,
-
+            @RequestParam(required = false) Integer durationDays,
+            @RequestParam(required = false) Integer guests,
             @RequestParam(required = false) java.math.BigDecimal minPrice,
             @RequestParam(required = false) java.math.BigDecimal maxPrice,
             @RequestParam(required = false) String status,
@@ -63,7 +64,7 @@ public class TourController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDir
     ) {
-        myproject.booking_tour.dto.response.PageResponse<TourResponse> response = tourService.searchAndFilterTours(keyword, destination, minPrice, maxPrice, status, tourTypes, transports, page, size, sortBy, sortDir);
+        myproject.booking_tour.dto.response.PageResponse<TourResponse> response = tourService.searchAndFilterTours(keyword, destination, durationDays, guests, minPrice, maxPrice, status, tourTypes, transports, page, size, sortBy, sortDir);
         return ResponseEntity.ok(new ApiResponse<>(true, "Tours retrieved successfully!", response));
     }
 

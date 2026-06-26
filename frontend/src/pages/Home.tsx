@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaCalendarAlt, FaSearch, FaWallet } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaSearch, FaSuitcase } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import TourCard from '../components/TourCard';
 import { TourService } from '../services/TourService';
@@ -17,9 +17,12 @@ const Home: React.FC = () => {
   
   // Search States
   const [destination, setDestination] = useState('');
-  const [duration, setDuration] = useState('');
-  const [budget, setBudget] = useState('');
-
+  const [destInputValue, setDestInputValue] = useState('');
+  const [showDestDropdown, setShowDestDropdown] = useState(false);
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guests, setGuests] = useState('2');
+  
   // 1. Fetch Popular Destinations
   const { data: popularDestinations = [] } = useQuery({
     queryKey: ['popularDestinations'],
@@ -41,7 +44,20 @@ const Home: React.FC = () => {
   });
 
   const handleSearchClick = () => {
-    navigate(`/tours?dest=${destination}`);
+    let query = `/tours?dest=${encodeURIComponent(destInputValue)}`;
+    
+    if (checkIn && checkOut) {
+      const diffTime = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+      if (diffTime >= 0) {
+        query += `&checkIn=${checkIn}&checkOut=${checkOut}`;
+      }
+    }
+    
+    if (guests) {
+      query += `&guests=${guests}`;
+    }
+    
+    navigate(query);
   };
 
   return (
@@ -50,68 +66,76 @@ const Home: React.FC = () => {
       <section className="hero-section">
         <div className="hero-overlay"></div>
         <div className="hero-content animate-fade-up">
-          <h1 className="hero-title">{t('home.heroTitle')}</h1>
-          <p className="hero-subtitle">{t('home.heroSubtitle')}</p>
+          <h1 className="hero-title">BookTour</h1>
           
-          <div className="hero-search-box">
-            <div className="search-input-group">
-              <FaMapMarkerAlt className="search-icon" />
-              <div className="search-input-wrapper">
-                <label>{t('home.destination')}</label>
-                <select 
-                  className="search-input" 
-                  value={destination} 
-                  onChange={(e) => setDestination(e.target.value)}
-                >
-                  <option value="">Where are you going?</option>
-                  {allDestinations.map(dest => (
-                    <option key={dest} value={dest}>{dest}</option>
-                  ))}
-                </select>
+          <div className="hero-search-container">
+            <div className="hero-search-box">
+              <div className="search-input-group" style={{ position: 'relative' }}>
+                <div className="search-input-wrapper">
+                  <label>{t('searchBar.where')}</label>
+                  <input 
+                    type="text" 
+                    className="search-input" 
+                    placeholder={t('searchBar.searchDestinations')}
+                    value={destInputValue}
+                    onChange={(e) => setDestInputValue(e.target.value)}
+                    onFocus={(e) => {
+                      e.target.select();
+                      setShowDestDropdown(true);
+                    }}
+                    onBlur={() => setTimeout(() => setShowDestDropdown(false), 200)}
+                  />
+                  {showDestDropdown && allDestinations.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: '200px', overflowY: 'auto', marginTop: '8px' }}>
+                      {allDestinations
+                        .filter((d: string) => destInputValue === '' || allDestinations.includes(destInputValue) || d.toLowerCase().includes(destInputValue.toLowerCase()))
+                        .map((dest: string) => (
+                          <div 
+                            key={dest}
+                            style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', color: '#0f172a', textAlign: 'left', fontWeight: 600, fontSize: '0.9rem' }}
+                            onMouseDown={() => { setDestInputValue(dest); setDestination(dest); }}
+                          >
+                            📍 {dest}
+                          </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            <div className="search-divider"></div>
-            
-            <div className="search-input-group">
-              <FaCalendarAlt className="search-icon" />
-              <div className="search-input-wrapper">
-                <label>{t('home.duration')}</label>
-                <select 
-                  className="search-input" 
-                  value={duration} 
-                  onChange={(e) => setDuration(e.target.value)}
-                >
-                  <option value="">Any</option>
-                  <option value="1-3">1 - 3 Days</option>
-                  <option value="4-7">4 - 7 Days</option>
-                  <option value="8+">8+ Days</option>
-                </select>
+              <div className="search-divider"></div>
+              <div className="search-input-group">
+                <div className="search-input-wrapper">
+                  <label>{t('searchBar.departure')}</label>
+                  <input type="date" className="search-input" min={new Date().toISOString().split('T')[0]} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+                </div>
               </div>
+              <div className="search-divider"></div>
+              <div className="search-input-group">
+                <div className="search-input-wrapper">
+                  <label>{t('searchBar.return')}</label>
+                  <input type="date" className="search-input" min={checkIn || new Date().toISOString().split('T')[0]} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+                </div>
+              </div>
+              <div className="search-divider"></div>
+              <div className="search-input-group">
+                <div className="search-input-wrapper">
+                  <label>{t('searchBar.guests')}</label>
+                  <input type="number" min="1" className="search-input" value={guests} onChange={(e) => setGuests(e.target.value)} />
+                </div>
+              </div>
+              
+              <button className="hero-search-btn-circular" onClick={handleSearchClick}>
+                <FaSearch color="white" />
+              </button>
             </div>
 
-            <div className="search-divider"></div>
-
-            <div className="search-input-group">
-              <FaWallet className="search-icon" />
-              <div className="search-input-wrapper">
-                <label>{t('home.budget')}</label>
-                <select 
-                  className="search-input" 
-                  value={budget} 
-                  onChange={(e) => setBudget(e.target.value)}
-                >
-                  <option value="">Any Budget</option>
-                  <option value="low">Under 2.000.000đ</option>
-                  <option value="mid">2M - 5M VND</option>
-                  <option value="high">Above 5.000.000đ</option>
-                </select>
-              </div>
+            <div className="hero-dest-tags">
+              {popularDestinations.slice(0, 5).map((dest: any) => (
+                <span key={dest.id || dest.name} onClick={() => navigate(`/tours?destination=${dest.id}`)}>
+                  {dest.name.toUpperCase()}
+                </span>
+              ))}
             </div>
-            
-            <button className="btn btn-primary search-btn" onClick={handleSearchClick}>
-              <FaSearch /> {t('home.search')}
-            </button>
           </div>
         </div>
       </section>
@@ -149,12 +173,17 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Tours */}
+      {/* Hot Deals */}
       <section className="tours-section">
         <div className="container">
-          <div className="section-header animate-fade-up">
-            <h2 className="section-title">{t('home.featuredTours')}</h2>
-            <p className="section-subtitle">{t('home.handpickedTours')}</p>
+          <div className="section-header animate-fade-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 className="section-title" style={{ textAlign: 'left', marginBottom: '0' }}>Hot Deals</h2>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="nav-arrow-btn">{'<'}</button>
+              <button className="nav-arrow-btn">{'>'}</button>
+            </div>
           </div>
 
           {toursLoading ? (

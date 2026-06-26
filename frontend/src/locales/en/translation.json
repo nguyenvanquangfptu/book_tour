@@ -385,6 +385,14 @@
       "departure": "Departure",
       "guests": "Guests",
       "totalAmount": "Total Amount",
+      "filterStatus": "Status",
+      "filterTravelDate": "Departure Date",
+      "sortBy": "Sort By",
+      "sortNewest": "Booking Date (Newest)",
+      "sortOldest": "Booking Date (Oldest)",
+      "sortPriceAsc": "Price (Low to High)",
+      "sortPriceDesc": "Price (High to Low)",
+      "all": "All",
       "status": "Status",
       "actions": "Actions",
       "statusPending": "Pending Approval",
@@ -495,5 +503,12 @@
       "close": "Close",
       "writeReview": "Write a review for this tour"
     }
+  },
+  "searchBar": {
+    "where": "Where",
+    "searchDestinations": "Search Destinations",
+    "departure": "Departure",
+    "return": "Return",
+    "guests": "Guests"
   }
 }
