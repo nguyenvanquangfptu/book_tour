@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUser, FaHistory, FaLock, FaFileInvoiceDollar, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaHistory, FaLock, FaFileInvoiceDollar, FaSignOutAlt, FaHeart } from 'react-icons/fa';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({ activeTab, setActiveTab
   const tabs = [
     { id: 'profile', label: t('profile.sidebar.personalInfo'), icon: <FaUser /> },
     { id: 'bookings', label: t('profile.sidebar.bookingHistory'), icon: <FaHistory /> },
+    { id: 'wishlist', label: t('navbar.wishlist'), icon: <FaHeart /> },
     { id: 'password', label: t('profile.sidebar.changePassword'), icon: <FaLock /> },
     { id: 'billing', label: t('profile.sidebar.billing'), icon: <FaFileInvoiceDollar /> },
   ];

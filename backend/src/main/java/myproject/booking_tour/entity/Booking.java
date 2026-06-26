@@ -38,6 +38,9 @@ Booking {
     @Column(name = "travel_date")
     private LocalDate travelDate;
 
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
     @Column(name = "number_of_people", nullable = false)
     private Integer numberOfPeople;
 

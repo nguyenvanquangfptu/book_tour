@@ -131,10 +131,10 @@ const Navbar: React.FC = () => {
                 <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                   <FaUser /> {t('navbar.profile')}
                 </Link>
-                <div className="dropdown-item" onClick={() => { navigate('/profile'); setDropdownOpen(false); }}>
+                <div className="dropdown-item" onClick={() => { navigate('/profile', { state: { tab: 'bookings' } }); setDropdownOpen(false); }}>
                   <FaHistory /> {t('navbar.myBooking')}
                 </div>
-                <div className="dropdown-item" onClick={() => { navigate('/tours'); setDropdownOpen(false); }}>
+                <div className="dropdown-item" onClick={() => { navigate('/profile', { state: { tab: 'wishlist' } }); setDropdownOpen(false); }}>
                   <FaHeart /> {t('navbar.wishlist')}
                 </div>
                 <div className="dropdown-divider"></div>
