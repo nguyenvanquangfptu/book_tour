@@ -9,6 +9,7 @@ Dự án Hệ thống Đặt Tour Du lịch (Booking Tour) là một ứng dụn
 * **Ngôn ngữ:** TypeScript
 * **Quản lý State:** Zustand, TanStack React Query
 * **Routing:** React Router DOM
+* **Đa ngôn ngữ (i18n):** react-i18next
 * **Giao diện & UI:** Recharts (biểu đồ), SweetAlert2, React Icons
 * **Xử lý tài liệu:** html2canvas, jspdf, react-to-print (xuất PDF)
 * **Xác thực:** Google OAuth (`@react-oauth/google`)
@@ -78,12 +79,17 @@ Khởi chạy môi trường phát triển:
 npm run dev
 ```
 
-## ✨ Các tính năng chính dự kiến
-- Xác thực và phân quyền người dùng (JWT, Google OAuth).
-- Quản lý và hiển thị danh sách các tour du lịch.
-- Chức năng đặt tour trực tuyến.
-- Tích hợp cổng thanh toán PayOS.
-- Gửi email xác nhận tự động.
-- Quản trị viên (Admin) quản lý tour, thống kê doanh thu với biểu đồ.
-- Tải lên hình ảnh tour (thông qua Cloudinary).
-- Xuất hóa đơn/chứng từ đặt tour dưới dạng PDF.
+## ✨ Các tính năng nổi bật
+- **Đa ngôn ngữ (Bilingual):** Hỗ trợ chuyển đổi nhanh chóng giữa Tiếng Việt và Tiếng Anh trên toàn bộ giao diện.
+- **Xác thực & Bảo mật:** Đăng nhập/Đăng ký với JWT và tích hợp đăng nhập nhanh qua Google OAuth.
+- **Hệ thống tìm kiếm thông minh:** Tìm kiếm tour theo điểm đến, ngày đi, ngày về, và số lượng khách chính xác.
+- **Quản lý chỗ ngồi thực tế (Real-time slots):** Tự động kiểm tra và giới hạn số lượng khách dựa trên số lượng chỗ (slots) còn trống của từng ngày khởi hành.
+- **Giỏ hàng (Shopping Cart):** Hỗ trợ thêm nhiều tour vào giỏ hàng và thanh toán cùng lúc.
+- **Thanh toán trực tuyến:** Tích hợp cổng thanh toán PayOS hiện đại, xác thực giao dịch tự động.
+- **Email & PDF:** Gửi email thông báo tự động (Thymeleaf) và xuất vé điện tử E-Ticket dưới dạng PDF trực tiếp trên trình duyệt.
+- **Trang Quản trị (Admin Dashboard):** Thống kê doanh thu qua biểu đồ trực quan, quản lý đầy đủ Tour, Booking, Voucher, Khách sạn, Dịch vụ tiện ích.
+- **Upload Media:** Tải và quản lý hình ảnh dễ dàng qua Cloudinary.
+
+## 🚀 Triển khai (Deployment)
+- **Frontend & Backend** đã được thiết lập sẵn cấu hình để triển khai dễ dàng trên **Render** hoặc các nền tảng đám mây khác.
+- Database PostgreSQL có thể sử dụng Managed Database của Render hoặc các nhà cung cấp bên thứ ba (Supabase, Neon...).
