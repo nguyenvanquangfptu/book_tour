@@ -7,9 +7,10 @@ interface BillingTabProps {
   bookings: any[];
   triggerPrint: (booking: any) => void;
   isGeneratingPDF: boolean;
+  setSelectedBooking: (booking: any) => void;
 }
 
-const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGeneratingPDF }) => {
+const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGeneratingPDF, setSelectedBooking }) => {
   const { t } = useTranslation();
   const paidBookings = bookings.filter(b => b.status === 'PAID');
 
@@ -41,15 +42,25 @@ const BillingTab: React.FC<BillingTabProps> = ({ bookings, triggerPrint, isGener
                   {t('profile.billing.statusPaid')}
                 </span>
                 <br />
-                <button 
-                  onClick={() => triggerPrint(booking)}
-                  disabled={isGeneratingPDF}
-                  style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: isGeneratingPDF ? 'not-allowed' : 'pointer', color: '#475569', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                  onMouseEnter={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; } }}
-                  onMouseLeave={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#cbd5e1'; } }}
-                >
-                  <FaDownload /> {isGeneratingPDF ? t('profile.bookingHistory.generatingTicket') : t('profile.billing.downloadE_Ticket')}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button 
+                    onClick={() => setSelectedBooking(booking)}
+                    style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', color: '#475569', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                  >
+                    {t('profile.bookingHistory.viewDetails')}
+                  </button>
+                  <button 
+                    onClick={() => triggerPrint(booking)}
+                    disabled={isGeneratingPDF}
+                    style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: isGeneratingPDF ? 'not-allowed' : 'pointer', color: '#475569', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    onMouseEnter={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; } }}
+                    onMouseLeave={(e) => { if(!isGeneratingPDF) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#cbd5e1'; } }}
+                  >
+                    <FaDownload /> {isGeneratingPDF ? t('profile.bookingHistory.generatingTicket') : t('profile.billing.downloadE_Ticket')}
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -57,14 +57,46 @@
 }
 
 /* Search Box in Hero */
-.hero-search-box {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
+.hero-search-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hero-search-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hero-search-tab {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 20px;
-  box-shadow: var(--shadow-hover);
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.hero-search-tab.active {
+  background: #0ea5e9;
+  color: white;
+}
+
+.hero-search-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hero-search-box {
+  background: white;
+  border-radius: 40px;
+  padding: 8px 12px 8px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   text-align: left;
   flex-wrap: nowrap;
 }
@@ -77,11 +109,6 @@
   min-width: 0;
 }
 
-.search-icon {
-  font-size: 1.5rem;
-  color: var(--primary);
-}
-
 .search-input-wrapper {
   display: flex;
   flex-direction: column;
@@ -90,38 +117,70 @@
 
 .search-input-wrapper label {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
 }
 
 .search-input {
   border: none;
-  border-bottom: 2px solid transparent;
-  padding: 4px 0;
-  font-size: 1rem;
-  color: var(--text-primary);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
   outline: none;
-  transition: border-color 0.3s;
   background: transparent;
   width: 100%;
+  padding: 0;
 }
 
-.search-input:focus {
-  border-bottom-color: var(--primary);
+.search-input::placeholder {
+  color: #94a3b8;
 }
 
 .search-divider {
   width: 1px;
   height: 40px;
-  background: var(--border-color);
+  background: #e2e8f0;
+  margin: 0 12px;
 }
 
-.search-btn {
-  padding: 16px 32px;
-  font-size: 1.1rem;
-  border-radius: 12px;
-  min-width: 150px;
+.hero-search-btn-circular {
+  padding: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+  font-size: 1.2rem;
+}
+
+.hero-search-btn-circular:hover {
+  background: #0284c7;
+}
+
+.hero-dest-tags {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-dest-tags span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: color 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.hero-dest-tags span:hover {
+  color: white;
 }
 
 /* Popular Destinations */
@@ -148,7 +207,7 @@
 
 .destinations-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 24px;
 }
 
@@ -207,8 +266,28 @@
 
 .tours-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px; /* Increased from 16px to 32px */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.nav-arrow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-arrow-btn:hover {
+  background: var(--bg-alt);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* Testimonials */
@@ -256,18 +335,15 @@
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .hero-title {
     font-size: 3rem;
-  }
-  .destinations-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .tours-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .testimonials-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -291,7 +367,7 @@
     width: 100%;
     margin-top: 8px;
   }
-  .destinations-grid, .tours-grid, .testimonials-grid {
+  .testimonials-grid {
     grid-template-columns: 1fr;
   }
 }

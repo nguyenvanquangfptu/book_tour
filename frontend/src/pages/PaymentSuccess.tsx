@@ -57,7 +57,7 @@ const PaymentSuccess: React.FC = () => {
         )}
         
         <div style={{ marginTop: '30px' }}>
-          <Link to="/profile" className="btn btn-primary" style={{ marginRight: '10px' }}>{t('payment.viewBooking')}</Link>
+          <Link to="/profile" state={{ tab: 'bookings' }} className="btn btn-primary" style={{ marginRight: '10px' }}>{t('payment.viewBooking')}</Link>
           <Link to="/" className="btn btn-outline">{t('payment.home')}</Link>
         </div>
       </div>

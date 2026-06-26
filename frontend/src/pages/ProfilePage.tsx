@@ -112,7 +112,7 @@ const ProfilePage: React.FC = () => {
 
           {activeTab === 'billing' && (
             isBookingsLoading ? <p>{t('profile.loading')}</p> : 
-            <BillingTab bookings={bookings} triggerPrint={triggerPrint} isGeneratingPDF={isGeneratingPDF} />
+            <BillingTab bookings={bookings} triggerPrint={triggerPrint} isGeneratingPDF={isGeneratingPDF} setSelectedBooking={setSelectedBooking} />
           )}
 
           {activeTab === 'bookings' && (

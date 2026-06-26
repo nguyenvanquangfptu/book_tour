@@ -24,11 +24,13 @@ export interface ToursResponse {
   number: number;
 }
 
-interface FetchToursParams {
+export interface FetchToursParams {
   page?: number;
   size?: number;
   keyword?: string;
   destination?: string;
+  durationDays?: number;
+  guests?: number;
   tourType?: string;
   transport?: string;
   minPrice?: number;
@@ -44,6 +46,8 @@ export const fetchTours = async (params: FetchToursParams): Promise<ToursRespons
   if (params.size !== undefined) queryParams.append('size', params.size.toString());
   if (params.keyword) queryParams.append('keyword', params.keyword);
   if (params.destination) queryParams.append('destination', params.destination);
+  if (params.durationDays) queryParams.append('durationDays', params.durationDays.toString());
+  if (params.guests) queryParams.append('guests', params.guests.toString());
   if (params.tourType) queryParams.append('tourTypes', params.tourType);
   if (params.transport) queryParams.append('transports', params.transport);
   if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());

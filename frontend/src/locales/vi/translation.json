@@ -385,6 +385,14 @@
       "departure": "Khởi Hành",
       "guests": "Số Khách",
       "totalAmount": "Tổng Tiền",
+      "filterStatus": "Trạng thái",
+      "filterTravelDate": "Ngày đi",
+      "sortBy": "Sắp xếp theo",
+      "sortNewest": "Ngày đặt (Mới nhất)",
+      "sortOldest": "Ngày đặt (Cũ nhất)",
+      "sortPriceAsc": "Giá (Thấp đến cao)",
+      "sortPriceDesc": "Giá (Cao đến thấp)",
+      "all": "Tất cả",
       "status": "Trạng Thái",
       "actions": "Thao Tác",
       "statusPending": "Chờ Duyệt",
@@ -495,5 +503,12 @@
       "close": "Đóng",
       "writeReview": "Viết đánh giá cho tour này"
     }
+  },
+  "searchBar": {
+    "where": "Địa điểm",
+    "searchDestinations": "Tìm điểm đến",
+    "departure": "Ngày đi",
+    "return": "Ngày về",
+    "guests": "Số khách"
   }
 }
