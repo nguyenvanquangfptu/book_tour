@@ -37,12 +37,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('token', token);
     set({ user: userData, isAuthenticated: true });
+    // Fetch cart data after successful login
+    import('./useCartStore').then(({ useCartStore }) => {
+      useCartStore.getState().fetchCart();
+    });
   },
   
   logout: () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     set({ user: null, isAuthenticated: false });
+    // Clear cart data from frontend on logout
+    import('./useCartStore').then(({ useCartStore }) => {
+      useCartStore.setState({ cart: [] });
+    });
   },
 
   updateUser: (userData) => {

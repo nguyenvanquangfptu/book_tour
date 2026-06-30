@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaRegHeart } from 'react-icons/fa';
+import { FaRegHeart, FaHeart } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
+import { useWishlistStore } from '../store/useWishlistStore';
 import '../styles/tourCard.css';
 
 interface TourProps {
@@ -11,6 +12,19 @@ interface TourProps {
 const TourCard: React.FC<TourProps> = ({ tour }) => {
   const navigate = useNavigate();
   const [hasError, setHasError] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlistStore();
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist({
+      id: tour.id,
+      title: tour.title,
+      price: tour.price,
+      imageUrl: tour.imageUrl || getFallbackImage(),
+      destination: tour.destination,
+      duration: tour.duration
+    });
+  };
 
   const getFallbackImage = () => {
     // A nice travel fallback image
@@ -18,10 +32,10 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
   };
 
   return (
-    <div className="tour-card animate-fade-up">
+    <div className="tour-card animate-fade-up" onClick={() => navigate(`/tours/${tour.id}`)}>
       <div className="tour-img-container">
-        <div className="tour-wishlist-icon">
-          <FaRegHeart />
+        <div className="tour-wishlist-icon" onClick={handleWishlistClick}>
+          {isInWishlist(tour.id) ? <FaHeart style={{color: '#ef4444'}} /> : <FaRegHeart />}
         </div>
         <img 
           src={hasError ? getFallbackImage() : (tour.imageUrl || getFallbackImage())} 
@@ -63,7 +77,10 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
           </div>
           <button 
             className="btn btn-book-pill" 
-            onClick={() => navigate(`/tours/${tour.id}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/tours/${tour.id}`);
+            }}
           >
             BOOK NOW
           </button>
