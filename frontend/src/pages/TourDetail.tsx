@@ -75,6 +75,31 @@ const TourDetail: React.FC = () => {
 
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Yêu cầu đăng nhập',
+        text: 'Vui lòng đăng nhập để tiếp tục đặt tour.',
+        showCancelButton: true,
+        confirmButtonText: 'Đăng nhập',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#3b82f6'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/login', { state: { from: `/tours/${id}` } });
+        }
+      });
+      return;
+    }
+    if (guests <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Số lượng không hợp lệ',
+        text: 'Vui lòng chọn số lượng khách ít nhất là 1.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
     if (isSoldOut) {
       Swal.fire({
         icon: 'warning',
@@ -119,7 +144,32 @@ const TourDetail: React.FC = () => {
     });
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (!currentUser) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Yêu cầu đăng nhập',
+        text: 'Vui lòng đăng nhập để thêm tour vào giỏ hàng.',
+        showCancelButton: true,
+        confirmButtonText: 'Đăng nhập',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#3b82f6'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/login', { state: { from: `/tours/${id}` } });
+        }
+      });
+      return;
+    }
+    if (guests <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Số lượng không hợp lệ',
+        text: 'Vui lòng chọn số lượng khách ít nhất là 1.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
     if (isSoldOut) {
       Swal.fire({
         icon: 'warning',
@@ -154,24 +204,46 @@ const TourDetail: React.FC = () => {
       return;
     }
     
-    addToCart({
-      tourId: tour.id,
-      tourTitle: tour.title,
-      price: tour.price,
-      imageUrl: tour.imageUrl || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
-      guests: guests,
-      startDate: startDate
-    });
-    
-    const isExisting = cart.some(item => item.tourId === tour.id && item.startDate === startDate);
-    const newCount = isExisting ? cart.length : cart.length + 1;
+    const existingItem = cart.find(item => item.tourId === tour.id && item.startDate === startDate);
+    const totalRequested = guests + (existingItem ? existingItem.guests : 0);
 
-    Swal.fire({
-      icon: 'success',
-      title: t('tourDetail.successTitle'),
-      html: t('tourDetail.addCartSuccess', { count: newCount }),
-      confirmButtonColor: '#3b82f6'
-    });
+    if (totalRequested > slotsLeft) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Vượt quá số lượng',
+        text: `Bạn đã có ${existingItem ? existingItem.guests : 0} vé trong giỏ hàng. Số chỗ trống còn lại cho ngày này chỉ là ${slotsLeft}.`,
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    try {
+      await addToCart({
+        tourId: tour.id,
+        tourTitle: tour.title,
+        price: tour.price,
+        imageUrl: tour.imageUrl || 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
+        guests: guests,
+        startDate: startDate
+      });
+      
+      const isExisting = cart.some(item => item.tourId === tour.id && item.startDate === startDate);
+      const newCount = isExisting ? cart.length : cart.length + 1;
+
+      Swal.fire({
+        icon: 'success',
+        title: t('tourDetail.successTitle'),
+        html: t('tourDetail.addCartSuccess', { count: newCount }),
+        confirmButtonColor: '#3b82f6'
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Đã có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại sau.',
+        confirmButtonColor: '#ef4444'
+      });
+    }
   };
 
   if (tourLoading) {

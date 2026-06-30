@@ -224,10 +224,16 @@ const Home: React.FC = () => {
           <div className="testimonials-grid">
             {recentReviews.length > 0 ? (
               recentReviews.slice(0, 3).map((review, idx) => (
-                <div key={review.id} className="testimonial-card animate-fade-up" style={{ animationDelay: `${idx * 0.1}s` }}>
+                <div 
+                  key={review.id} 
+                  className="testimonial-card animate-fade-up" 
+                  style={{ animationDelay: `${idx * 0.1}s`, cursor: review.tourId ? 'pointer' : 'default', transition: 'transform 0.3s, box-shadow 0.3s' }}
+                  onClick={() => review.tourId && navigate(`/tours/${review.tourId}`)}
+                  title={review.tourId ? "Nhấn để xem chi tiết tour này" : ""}
+                >
                   <div className="stars">{'⭐'.repeat(review.rating)}</div>
                   <p className="quote">"{review.comment}"</p>
-                  <h4 className="author">- {review.username}</h4>
+                  <h4 className="author">- {review.username || review.fullName || 'Người dùng'}</h4>
                 </div>
               ))
             ) : (
