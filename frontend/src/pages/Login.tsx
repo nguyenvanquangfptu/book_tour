@@ -46,7 +46,6 @@ const Login: React.FC = () => {
       console.error('Login error full details:', err);
       const errorMsg = err.response?.data?.message || err.message || t('auth.loginFail');
       setError(errorMsg);
-      Swal.fire('Lỗi đăng nhập', "Chi tiết lỗi: " + errorMsg + "\nNếu có chữ Network Error, hãy báo cho AI biết!", 'error');
     } finally {
       setLoading(false);
     }
@@ -71,7 +70,6 @@ const Login: React.FC = () => {
       console.error('Google login error full details:', err);
       const errorMsg = err.response?.data?.message || err.message || t('auth.googleLoginFail');
       setError(errorMsg);
-      Swal.fire('Lỗi đăng nhập Google', "Chi tiết lỗi: " + errorMsg + "\nNếu có chữ Network Error, hãy báo cho AI biết!", 'error');
     } finally {
       setLoading(false);
     }
