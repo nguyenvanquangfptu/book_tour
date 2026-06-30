@@ -4,7 +4,6 @@ import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
 import { useTranslation } from 'react-i18next';
-import Swal from 'sweetalert2';
 import '../styles/auth.css';
 
 const Login: React.FC = () => {
