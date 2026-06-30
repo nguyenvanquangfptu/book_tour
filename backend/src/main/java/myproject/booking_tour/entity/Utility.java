@@ -18,7 +18,8 @@ public class Utility {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(columnDefinition = "text")
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.LONGVARCHAR)
+    @Column(name = "description")
     private String description;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaRegHeart } from 'react-icons/fa';
+import { FaRegHeart, FaHeart } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
+import { useWishlistStore } from '../store/useWishlistStore';
 import '../styles/tourCard.css';
 
 interface TourProps {
@@ -11,20 +12,73 @@ interface TourProps {
 const TourCard: React.FC<TourProps> = ({ tour }) => {
   const navigate = useNavigate();
   const [hasError, setHasError] = useState(false);
+  const { isInWishlist, toggleWishlist } = useWishlistStore();
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist({
+      id: tour.id,
+      title: tour.title,
+      price: tour.price,
+      imageUrl: tour.imageUrl || getFallbackImage(),
+      destination: tour.destination,
+      duration: tour.duration
+    });
+  };
 
   const getFallbackImage = () => {
     // A nice travel fallback image
     return 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1000&q=80';
   };
 
+  const images = tour.images && tour.images.length > 0 ? [...tour.images] : [];
+  if (tour.imageUrl && !images.includes(tour.imageUrl)) {
+    images.unshift(tour.imageUrl);
+  }
+  if (images.length === 0) {
+    images.push(getFallbackImage());
+  }
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const hoverIntervalRef = useRef<any>(null);
+
+  const handleMouseEnter = () => {
+    if (images.length > 1 && !hoverIntervalRef.current) {
+      hoverIntervalRef.current = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % images.length);
+        setHasError(false);
+      }, 1200);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverIntervalRef.current) {
+      clearInterval(hoverIntervalRef.current);
+      hoverIntervalRef.current = null;
+    }
+    setCurrentImageIndex(0); // Trở về ảnh đầu tiên khi ngừng hover
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverIntervalRef.current) {
+        clearInterval(hoverIntervalRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="tour-card animate-fade-up">
-      <div className="tour-img-container">
-        <div className="tour-wishlist-icon">
-          <FaRegHeart />
+    <div className="tour-card animate-fade-up" onClick={() => navigate(`/tours/${tour.id}`)}>
+      <div 
+        className="tour-img-container" 
+        onMouseEnter={handleMouseEnter} 
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="tour-wishlist-icon" onClick={handleWishlistClick}>
+          {isInWishlist(tour.id) ? <FaHeart style={{color: '#ef4444'}} /> : <FaRegHeart />}
         </div>
         <img 
-          src={hasError ? getFallbackImage() : (tour.imageUrl || getFallbackImage())} 
+          src={hasError ? getFallbackImage() : images[currentImageIndex]} 
           alt={tour.title} 
           className="tour-img" 
           onError={() => {
@@ -33,12 +87,21 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
             }
           }}
         />
-        <div className="tour-carousel-dots">
-          <span className="dot active"></span>
-          <span className="dot"></span>
-          <span className="dot"></span>
-          <span className="dot"></span>
-        </div>
+        {images.length > 1 && (
+          <div className="tour-carousel-dots">
+            {images.map((_, idx) => (
+              <span 
+                key={idx} 
+                className={`dot ${idx === currentImageIndex ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(idx);
+                  setHasError(false);
+                }}
+              ></span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="tour-info">
@@ -63,7 +126,10 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
           </div>
           <button 
             className="btn btn-book-pill" 
-            onClick={() => navigate(`/tours/${tour.id}`)}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/tours/${tour.id}`);
+            }}
           >
             BOOK NOW
           </button>
