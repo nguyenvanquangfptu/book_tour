@@ -85,7 +85,15 @@ const CartPage: React.FC = () => {
                 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                   <button 
-                    onClick={() => removeFromCart(item.tourId, item.startDate)}
+                    onClick={async () => {
+                      if (item.id) {
+                        try {
+                          await removeFromCart(item.id);
+                        } catch (error) {
+                          console.error("Failed to remove item", error);
+                        }
+                      }
+                    }}
                     style={{ padding: '10px 16px', background: '#fee2e2', border: 'none', borderRadius: '10px', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, transition: 'all 0.2s' }}
                     onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
                     onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
