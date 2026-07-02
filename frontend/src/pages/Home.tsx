@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaStar } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import TourCard from '../components/TourCard';
 import { TourService } from '../services/TourService';
@@ -231,7 +231,11 @@ const Home: React.FC = () => {
                   onClick={() => review.tourId && navigate(`/tours/${review.tourId}`)}
                   title={review.tourId ? "Nhấn để xem chi tiết tour này" : ""}
                 >
-                  <div className="stars">{'⭐'.repeat(review.rating)}</div>
+                  <div className="stars" style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <FaStar key={star} style={{ color: star <= review.rating ? '#f59e0b' : '#cbd5e1', fontSize: '1.2rem' }} />
+                    ))}
+                  </div>
                   <p className="quote">"{review.comment}"</p>
                   <h4 className="author">- {review.username || review.fullName || 'Người dùng'}</h4>
                 </div>
@@ -239,17 +243,29 @@ const Home: React.FC = () => {
             ) : (
               <>
                 <div className="testimonial-card animate-fade-up">
-                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <div className="stars" style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <FaStar key={star} style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    ))}
+                  </div>
                   <p className="quote">"{t('home.fallbackReview1')}"</p>
                   <h4 className="author">- Nguyễn Văn A</h4>
                 </div>
                 <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <div className="stars" style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <FaStar key={star} style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    ))}
+                  </div>
                   <p className="quote">"{t('home.fallbackReview2')}"</p>
                   <h4 className="author">- Trần Thị B</h4>
                 </div>
                 <div className="testimonial-card animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                  <div className="stars" style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <FaStar key={star} style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    ))}
+                  </div>
                   <p className="quote">"{t('home.fallbackReview3')}"</p>
                   <h4 className="author">- John Doe</h4>
                 </div>

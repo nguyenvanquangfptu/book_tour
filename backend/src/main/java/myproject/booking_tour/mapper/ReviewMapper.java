@@ -25,6 +25,7 @@ public class ReviewMapper {
             response.setUserId(review.getUser().getId());
             response.setUsername(review.getUser().getUsername());
             response.setFullName(review.getUser().getFullName());
+            response.setAvatar(review.getUser().getAvatar());
         }
         response.setRating(review.getRating());
         response.setComment(review.getComment());

@@ -403,18 +403,29 @@ const TourDetail: React.FC = () => {
                   {(showAllReviews ? reviews : reviews.slice(0, 4)).map((review: any) => (
                     <div key={review.id} style={{padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px'}}>
                       <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px'}}>
-                        <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'white'}}>
-                          {(review.fullName || review.username || 'U').charAt(0).toUpperCase()}
-                        </div>
+                        {review.avatar ? (
+                          <img src={review.avatar} alt="avatar" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} />
+                        ) : (
+                          <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'white'}}>
+                            {(review.fullName || review.username || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <h4 style={{margin: 0}}>{review.fullName || review.username || 'Khách hàng'}</h4>
                           <span style={{fontSize: '0.8rem', color: '#64748b'}}>
                             {new Date(review.createdAt || Date.now()).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
-                        <div style={{marginLeft: 'auto', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '10px'}}>
-                          <span>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
-                          {currentUser && currentUser.email === review.email && (
+                        <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                          <div style={{ display: 'flex' }}>
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <FaStar 
+                                key={star} 
+                                style={{ color: star <= review.rating ? '#f59e0b' : '#cbd5e1', fontSize: '1rem' }} 
+                              />
+                            ))}
+                          </div>
+                          {currentUser && (currentUser.id === review.userId || currentUser.username === review.username) && (
                             <button 
                               onClick={() => {
                                 setEditingReviewId(review.id);
