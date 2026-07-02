@@ -32,6 +32,11 @@ export const TourService = {
     return response.data?.data || response.data;
   },
 
+  getTourBySlug: async (slug: string) => {
+    const response = await api.get(`/tours/slug/${slug}`);
+    return response.data?.data || response.data;
+  },
+
   getTourReviews: async (tourId: string | number) => {
     const response = await api.get(`/reviews/tour/${tourId}`);
     return response.data?.data || response.data;

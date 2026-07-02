@@ -29,11 +29,13 @@ public class Tour {
     @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(unique = true, length = 255)
+    private String slug;
+
     @Column(length = 100)
     private String destination;
 
-    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.LONGVARCHAR)
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(nullable = false, precision = 12, scale = 2)

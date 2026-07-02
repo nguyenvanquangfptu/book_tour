@@ -15,7 +15,7 @@ import '../styles/tourDetail.css';
 
 const TourDetail: React.FC = () => {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   
   const { cart, addToCart } = useCartStore();
@@ -33,16 +33,18 @@ const TourDetail: React.FC = () => {
 
   // 1. Fetch Tour Detail
   const { data: tour, isLoading: tourLoading } = useQuery({
-    queryKey: ['tour', id],
-    queryFn: () => TourService.getTourById(id!),
-    enabled: !!id,
+    queryKey: ['tour', slug],
+    queryFn: () => TourService.getTourBySlug(slug!),
+    enabled: !!slug,
   });
+
+  const tourId = tour?.id;
 
   // 2. Fetch Reviews
   const { data: reviews = [] } = useQuery({
-    queryKey: ['reviews', id],
-    queryFn: () => TourService.getTourReviews(id!),
-    enabled: !!id,
+    queryKey: ['reviews', tourId],
+    queryFn: () => TourService.getTourReviews(tourId!),
+    enabled: !!tourId,
   });
 
   // 3. Fetch Related Tours
@@ -51,16 +53,16 @@ const TourDetail: React.FC = () => {
     queryFn: () => TourService.getTours(0, 4, '', tour?.destination, '', '', undefined, 'id', 'ASC', [], [], 'ACTIVE,SOLD_OUT'),
     enabled: !!tour?.destination,
   });
-  const relatedTours = (relatedToursResponse?.content || []).filter((t: any) => t.id.toString() !== id).slice(0, 3);
+  const relatedTours = (relatedToursResponse?.content || []).filter((t: any) => t.id !== tourId).slice(0, 3);
 
   // 4. Fetch Available Slots
   const { data: availableSlotsForDate = null } = useQuery({
-    queryKey: ['tourSlots', id, startDate],
+    queryKey: ['tourSlots', tourId, startDate],
     queryFn: async () => {
-      const res: any = await api.get(`/tours/${id}/schedules?date=${startDate}`);
+      const res: any = await api.get(`/tours/${tourId}/schedules?date=${startDate}`);
       return res.data; // res is already the response body due to axios interceptor
     },
-    enabled: !!(startDate && id),
+    enabled: !!(startDate && tourId),
     staleTime: 0, // Always fetch fresh slot data
   });
 
@@ -71,7 +73,7 @@ const TourDetail: React.FC = () => {
   useEffect(() => {
     // Scroll to top when loading new tour
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [id]);
+  }, [slug]);
 
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +88,7 @@ const TourDetail: React.FC = () => {
         confirmButtonColor: '#3b82f6'
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate('/login', { state: { from: `/tours/${id}` } });
+          navigate('/login', { state: { from: `/tours/${slug}` } });
         }
       });
       return;
@@ -133,7 +135,7 @@ const TourDetail: React.FC = () => {
       });
       return;
     }
-    navigate(`/checkout/${id}`, { 
+    navigate(`/checkout/${tour.slug || tour.id}`, { 
       state: { 
         tourId: tour.id, 
         guests, 
@@ -156,7 +158,7 @@ const TourDetail: React.FC = () => {
         confirmButtonColor: '#3b82f6'
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate('/login', { state: { from: `/tours/${id}` } });
+          navigate('/login', { state: { from: `/tours/${slug}` } });
         }
       });
       return;

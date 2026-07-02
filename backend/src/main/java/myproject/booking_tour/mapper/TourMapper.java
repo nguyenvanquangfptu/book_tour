@@ -60,6 +60,7 @@ public class TourMapper {
         }
         TourResponse response = new TourResponse();
         response.setId(tour.getId());
+        response.setSlug(tour.getSlug());
         response.setTitle(tour.getTitle());
         response.setDestination(tour.getDestination());
         response.setDescription(tour.getDescription());
