@@ -16,6 +16,7 @@ public class BookingResponse {
     private Long userId;
     private String customerName;
     private Long tourId;
+    private String tourSlug;
     private String tourTitle;
     private Integer numberOfPeople;
     private BigDecimal totalPrice;

@@ -26,6 +26,11 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
     @EntityGraph(attributePaths = {"accommodations", "utilities"})
     List<Tour> findAll();
 
+    @EntityGraph(attributePaths = {"accommodations", "utilities"})
+    java.util.Optional<Tour> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
+
     List<Tour> findByStatus(String status);
     List<Tour> findByTitleContainingIgnoreCaseAndStatusNot(String keyword, String status);
     List<Tour> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);

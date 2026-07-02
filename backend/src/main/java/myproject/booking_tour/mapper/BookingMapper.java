@@ -39,6 +39,7 @@ public class BookingMapper {
         try {
             if (booking.getTour() != null) {
                 response.setTourId(booking.getTour().getId());
+                response.setTourSlug(booking.getTour().getSlug());
                 response.setTourTitle(booking.getTour().getTitle());
                 response.setDestination(booking.getTour().getDestination());
             }
