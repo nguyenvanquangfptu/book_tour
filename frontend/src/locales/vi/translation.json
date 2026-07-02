@@ -56,6 +56,8 @@
     "loginSubtitle": "Vui lòng đăng nhập để tiếp tục",
     "usernameLabel": "Tên đăng nhập",
     "usernamePlaceholder": "Nhập tên đăng nhập",
+    "loginUsernameLabel": "Tên đăng nhập hoặc Email",
+    "loginUsernamePlaceholder": "Nhập tên đăng nhập hoặc email",
     "passwordLabel": "Mật khẩu",
     "passwordPlaceholder": "Nhập mật khẩu",
     "forgotPasswordLink": "Quên mật khẩu?",

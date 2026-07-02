@@ -56,6 +56,8 @@
     "loginSubtitle": "Please login to continue",
     "usernameLabel": "Username",
     "usernamePlaceholder": "Enter username",
+    "loginUsernameLabel": "Username or Email",
+    "loginUsernamePlaceholder": "Enter username or email",
     "passwordLabel": "Password",
     "passwordPlaceholder": "Enter password",
     "forgotPasswordLink": "Forgot password?",

@@ -19,10 +19,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -180,7 +182,7 @@ public class PaymentServiceImpl implements PaymentService {
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 1800000) // 30 minutes
     @Transactional
     public void checkPendingPayOSPayments() {
-        System.out.println("[CronJob] Bắt đầu kiểm tra các giao dịch PayOS đang chờ...");
+        log.info("[CronJob] Bắt đầu kiểm tra các giao dịch PayOS đang chờ...");
         
         // Find all payments that are PENDING and use PAYOS
         List<Payment> pendingPayments = paymentRepository.findAll().stream()
@@ -193,7 +195,7 @@ public class PaymentServiceImpl implements PaymentService {
                 vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
 
                 if ("PAID".equals(paymentLink.getStatus().name())) {
-                    System.out.println("[CronJob] Tìm thấy đơn hàng đã thanh toán: PaymentID=" + orderCode);
+                    log.info("[CronJob] Tìm thấy đơn hàng đã thanh toán: PaymentID={}", orderCode);
                     
                     Booking booking = payment.getBooking();
                     if (!"PAID".equals(booking.getStatus())) {
@@ -205,7 +207,7 @@ public class PaymentServiceImpl implements PaymentService {
                     payment.setPaymentDate(LocalDateTime.now());
                     paymentRepository.save(payment);
                 } else if ("CANCELLED".equals(paymentLink.getStatus().name()) || "EXPIRED".equals(paymentLink.getStatus().name())) {
-                    System.out.println("[CronJob] Đơn hàng đã hủy/hết hạn: PaymentID=" + orderCode);
+                    log.info("[CronJob] Đơn hàng đã hủy/hết hạn: PaymentID={}", orderCode);
                     Booking booking = payment.getBooking();
                     if (!"CANCELLED".equals(booking.getStatus())) {
                         bookingService.cancelBooking(booking.getId(), booking.getUser().getId());

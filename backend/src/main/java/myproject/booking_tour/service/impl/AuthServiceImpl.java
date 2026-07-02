@@ -14,11 +14,13 @@ import myproject.booking_tour.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -27,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final myproject.booking_tour.repository.PasswordResetTokenRepository tokenRepository;
     private final myproject.booking_tour.service.EmailService emailService;
+    private final myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository;
 
     @Override
     @Transactional
@@ -70,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsernameOrEmailIgnoreCase(request.getUsername(), request.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("Invalid username or password!"));
 
         // Check password matching
@@ -205,16 +208,16 @@ public class AuthServiceImpl implements AuthService {
         );
         tokenRepository.save(resetToken);
 
-        System.out.println("=================================================");
-        System.out.println("MÃ OTP KHÔI PHỤC MẬT KHẨU CHO EMAIL " + email + ": " + tokenString);
-        System.out.println("=================================================");
+        log.info("=================================================");
+        log.info("MÃ OTP KHÔI PHỤC MẬT KHẨU CHO EMAIL {}: {}", email, tokenString);
+        log.info("=================================================");
 
         try {
             java.util.Map<String, Object> model = new java.util.HashMap<>();
             model.put("resetToken", tokenString);
             emailService.sendMessageUsingThymeleafTemplate(user.getEmail(), "Khôi phục mật khẩu", "reset-password", model);
         } catch (Exception e) {
-            System.err.println("Failed to send reset password email: " + e.getMessage());
+            log.error("Failed to send reset password email: {}", e.getMessage());
         }
     }
 
@@ -239,5 +242,22 @@ public class AuthServiceImpl implements AuthService {
 
         // Delete token after successful use
         tokenRepository.delete(resetToken);
+    }
+
+    @Override
+    @Transactional
+    public void logout(String token) {
+        if (token != null && token.startsWith(myproject.booking_tour.security.SecurityConstants.TOKEN_PREFIX)) {
+            token = token.substring(myproject.booking_tour.security.SecurityConstants.TOKEN_PREFIX.length());
+        }
+        
+        try {
+            java.util.Date expiryDate = jwtService.extractExpiration(token);
+            myproject.booking_tour.entity.InvalidatedToken invalidatedToken = new myproject.booking_tour.entity.InvalidatedToken(token, expiryDate);
+            invalidatedTokenRepository.save(invalidatedToken);
+            log.info("Token added to blacklist successfully.");
+        } catch (Exception e) {
+            log.error("Could not blacklist token: {}", e.getMessage());
+        }
     }
 }

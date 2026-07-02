@@ -8,6 +8,7 @@ import myproject.booking_tour.exception.BadRequestException;
 import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.VoucherMapper;
 import myproject.booking_tour.repository.VoucherRepository;
+import myproject.booking_tour.repository.AuditLogRepository;
 import myproject.booking_tour.service.VoucherService;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class VoucherServiceImpl implements VoucherService {
 
     private final VoucherRepository voucherRepository;
     private final VoucherMapper voucherMapper;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     public List<VoucherResponse> getAllVouchers() {
@@ -51,6 +53,15 @@ public class VoucherServiceImpl implements VoucherService {
         }
         Voucher voucher = voucherMapper.toEntity(request);
         Voucher savedVoucher = voucherRepository.save(voucher);
+
+        myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+        log.setEntityName("Voucher");
+        log.setEntityId(savedVoucher.getId());
+        log.setAction("CREATE_VOUCHER");
+        log.setNewValue("Code: " + savedVoucher.getCode() + ", Discount: " + savedVoucher.getDiscountAmount());
+        log.setUserId(0L);
+        auditLogRepository.save(log);
+
         return voucherMapper.toResponse(savedVoucher);
     }
 
@@ -66,6 +77,15 @@ public class VoucherServiceImpl implements VoucherService {
 
         voucherMapper.updateEntityFromRequest(voucher, request);
         Voucher updatedVoucher = voucherRepository.save(voucher);
+
+        myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+        log.setEntityName("Voucher");
+        log.setEntityId(updatedVoucher.getId());
+        log.setAction("UPDATE_VOUCHER");
+        log.setNewValue("Code: " + updatedVoucher.getCode() + ", Discount: " + updatedVoucher.getDiscountAmount());
+        log.setUserId(0L);
+        auditLogRepository.save(log);
+
         return voucherMapper.toResponse(updatedVoucher);
     }
 

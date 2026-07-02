@@ -47,6 +47,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
+            // Check if token is in blacklist
+            myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository = 
+                org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(request.getServletContext())
+                .getBean(myproject.booking_tour.repository.InvalidatedTokenRepository.class);
+
+            if (invalidatedTokenRepository.existsById(jwt)) {
+                // Token is blacklisted
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token is invalidated (logged out)");
+                return;
+            }
+
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
+import { FaUser, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,14 +89,14 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
             <div className="input-group">
-              <label className="input-label">{t('auth.usernameLabel')}</label>
+              <label className="input-label">{t('auth.loginUsernameLabel')}</label>
               <div className="auth-input-wrapper">
-                <FaEnvelope className="auth-icon" />
+                <FaUser className="auth-icon" />
                 <input 
                   type="text" 
                   name="username"
                   className="input-field" 
-                  placeholder={t('auth.usernamePlaceholder')}
+                  placeholder={t('auth.loginUsernamePlaceholder')}
                   value={formData.username}
                   onChange={handleInputChange}
                   autoComplete="username"
@@ -114,7 +115,7 @@ const Login: React.FC = () => {
               <div className="auth-input-wrapper">
                 <FaLock className="auth-icon" />
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   name="password"
                   className="input-field" 
                   placeholder={t('auth.passwordPlaceholder')}
@@ -125,6 +126,14 @@ const Login: React.FC = () => {
                   onFocus={() => setIsPasswordFocused(true)}
                   required 
                 />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '15px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
             </div>
 

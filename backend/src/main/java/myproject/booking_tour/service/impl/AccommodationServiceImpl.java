@@ -7,15 +7,11 @@ import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.AccommodationMapper;
 import myproject.booking_tour.repository.AccommodationRepository;
 import myproject.booking_tour.service.AccommodationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
