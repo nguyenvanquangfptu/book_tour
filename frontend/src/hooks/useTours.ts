@@ -3,6 +3,7 @@ import api from '../api/axiosConfig';
 
 export interface Tour {
   id: number;
+  slug?: string;
   title: string;
   description: string;
   price: number;

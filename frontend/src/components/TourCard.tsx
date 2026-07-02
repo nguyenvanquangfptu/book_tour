@@ -68,7 +68,7 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
   }, []);
 
   return (
-    <div className="tour-card animate-fade-up" onClick={() => navigate(`/tours/${tour.id}`)}>
+    <div className="tour-card animate-fade-up" onClick={() => navigate(`/tours/${tour.slug || tour.id}`)}>
       <div 
         className="tour-img-container" 
         onMouseEnter={handleMouseEnter} 
@@ -128,7 +128,7 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
             className="btn btn-book-pill" 
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/tours/${tour.id}`);
+              navigate(`/tours/${tour.slug || tour.id}`);
             }}
           >
             BOOK NOW

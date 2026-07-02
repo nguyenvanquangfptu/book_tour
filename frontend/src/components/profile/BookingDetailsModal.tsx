@@ -148,7 +148,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ selectedBooki
         <div style={{ padding: '20px 30px', background: '#fff', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '15px', justifyContent: 'flex-end', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
           {selectedBooking.tourId && (
             <button 
-              onClick={() => navigate(`/tours/${selectedBooking.tourId}`)}
+              onClick={() => navigate(`/tours/${selectedBooking.tourSlug || selectedBooking.tourId}`)}
               style={{ background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
               onMouseOver={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
               onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}

@@ -20,6 +20,7 @@ public class ReviewMapper {
         response.setId(review.getId());
         if (review.getTour() != null) {
             response.setTourId(review.getTour().getId());
+            response.setTourSlug(review.getTour().getSlug());
         }
         if (review.getUser() != null) {
             response.setUserId(review.getUser().getId());

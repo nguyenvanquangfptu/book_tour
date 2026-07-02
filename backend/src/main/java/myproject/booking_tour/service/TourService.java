@@ -11,6 +11,7 @@ import java.util.List;
 public interface TourService {
 
     TourResponse getTourById(Long id);
+    TourResponse getTourBySlug(String slug);
     List<TourResponse> searchTours(String keyword);
     PageResponse<TourResponse> searchAndFilterTours(String keyword, String destination, Integer durationDays, Integer guests, BigDecimal minPrice, BigDecimal maxPrice, String status, List<String> tourTypes, List<String> transports, int page, int size, String sortBy, String sortDir);
     TourResponse createTour(TourRequest request);
@@ -21,4 +22,5 @@ public interface TourService {
     myproject.booking_tour.dto.response.TourOptionsResponse getTourOptions();
     List<TourResponse> getDeletedTours();
     void restoreTour(Long id);
+    TourResponse changeStatus(Long id, String status);
 }

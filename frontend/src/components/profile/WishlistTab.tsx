@@ -49,7 +49,7 @@ const WishlistTab: React.FC = () => {
                   <div style={{ color: '#f97316', fontWeight: 'bold', fontSize: '1.1rem' }}>
                     {item.price.toLocaleString('vi-VN')} VNĐ
                   </div>
-                  <Link to={`/tours/${item.id}`} style={{ padding: '8px 15px', background: '#3b82f6', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+                  <Link to={`/tours/${item.slug || item.id}`} style={{ padding: '8px 15px', background: '#3b82f6', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
                     Chi tiết
                   </Link>
                 </div>
