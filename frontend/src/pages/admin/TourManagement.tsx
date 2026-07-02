@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaMapMarkerAlt, FaClock, FaSearch, FaFilter, FaUndo } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
@@ -7,6 +7,7 @@ import { formatPrice } from '../../utils/formatPrice';
 
 const TourManagement: React.FC = () => {
   const [tours, setTours] = useState<any[]>([]);
+  const [deletedTours, setDeletedTours] = useState<any[]>([]);
   const [accommodations, setAccommodations] = useState<any[]>([]);
   const [utilities, setUtilities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,12 +18,13 @@ const TourManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [priceFilter, setPriceFilter] = useState('ALL');
   const [destinationFilter, setDestinationFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE', 'SOLD_OUT'
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE', 'SOLD_OUT', 'TRASH'
 
   // Lấy danh sách địa điểm độc nhất từ tours
-  const uniqueDestinations = Array.from(new Set(tours.map(tour => tour.destination).filter(d => d))).sort();
+  const uniqueDestinations = Array.from(new Set([...tours, ...deletedTours].map(tour => tour.destination).filter(d => d))).sort();
 
-  const filteredTours = tours.filter(tour => {
+  const sourceTours = statusFilter === 'TRASH' ? deletedTours : tours;
+  const filteredTours = sourceTours.filter(tour => {
     const matchSearch = tour.title.toLowerCase().includes(searchTerm.toLowerCase());
     
     let matchPrice = true;
@@ -36,7 +38,7 @@ const TourManagement: React.FC = () => {
     }
 
     let matchStatus = true;
-    if (statusFilter !== 'ALL') {
+    if (statusFilter !== 'ALL' && statusFilter !== 'TRASH') {
       matchStatus = tour.status === statusFilter;
     }
 
@@ -66,6 +68,10 @@ const TourManagement: React.FC = () => {
       const data = await TourService.getTours(0, 100);
       if (data && data.content) {
         setTours(data.content);
+      }
+      const trashData = await TourService.getDeletedTours();
+      if (trashData) {
+        setDeletedTours(trashData);
       }
     } catch (error) {
       console.error('Failed to fetch tours', error);
@@ -285,6 +291,40 @@ const TourManagement: React.FC = () => {
       } catch (error: any) {
         console.error('Lỗi khi xóa', error);
         const errorMsg = error.response?.data?.message || 'Xóa thất bại';
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: errorMsg,
+          confirmButtonColor: '#3b82f6'
+        });
+      }
+    }
+  };
+
+  const handleRestore = async (id: number) => {
+    const result = await Swal.fire({
+      title: 'Xác nhận khôi phục?',
+      text: "Bạn có chắc chắn muốn khôi phục Tour này?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy',
+      customClass: {
+        confirmButton: 'rounded-button',
+        cancelButton: 'rounded-button'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await TourService.restoreTour(id);
+        fetchTours();
+        Swal.fire('Thành công!', 'Tour đã được khôi phục.', 'success');
+      } catch (error: any) {
+        console.error('Lỗi khi khôi phục', error);
+        const errorMsg = error.response?.data?.message || 'Khôi phục thất bại';
         Swal.fire({
           icon: 'error',
           title: 'Lỗi',
@@ -560,6 +600,12 @@ const TourManagement: React.FC = () => {
             >
               Bản nháp ({tours.filter(t => t.status === 'INACTIVE').length})
             </button>
+            <button 
+              onClick={() => setStatusFilter('TRASH')} 
+              style={{ padding: '10px 20px', borderRadius: '30px', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s', border: 'none', background: statusFilter === 'TRASH' ? '#334155' : '#fff', color: statusFilter === 'TRASH' ? '#fff' : '#64748b', boxShadow: statusFilter === 'TRASH' ? '0 4px 6px rgba(51, 65, 85, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)' }}
+            >
+              Thùng rác ({deletedTours.length})
+            </button>
           </div>
 
           {/* Bộ lọc */}
@@ -670,6 +716,7 @@ const TourManagement: React.FC = () => {
                       <select 
                         value={tour.status}
                         onChange={(e) => handleStatusChange(tour, e.target.value)}
+                        disabled={statusFilter === 'TRASH'}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -681,10 +728,11 @@ const TourManagement: React.FC = () => {
                           backgroundColor: tour.status === 'ACTIVE' ? 'rgba(22, 163, 74, 0.1)' : tour.status === 'SOLD_OUT' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                           color: tour.status === 'ACTIVE' ? '#16a34a' : tour.status === 'SOLD_OUT' ? '#ef4444' : '#64748b',
                           border: `1px solid ${tour.status === 'ACTIVE' ? 'rgba(22, 163, 74, 0.2)' : tour.status === 'SOLD_OUT' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 116, 139, 0.2)'}`,
-                          cursor: 'pointer',
+                          cursor: statusFilter === 'TRASH' ? 'not-allowed' : 'pointer',
                           outline: 'none',
-                          appearance: 'none', // hide native arrow on some browsers for cleaner look
-                          textAlign: 'center'
+                          appearance: 'none',
+                          textAlign: 'center',
+                          opacity: statusFilter === 'TRASH' ? 0.6 : 1
                         }}
                       >
                         <option value="ACTIVE" style={{ color: '#000', backgroundColor: '#fff' }}>Đang bán</option>
@@ -694,12 +742,20 @@ const TourManagement: React.FC = () => {
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="actions-container" style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="action-btn btn-edit-modern" onClick={() => handleEdit(tour)} title="Sửa Tour">
-                          <FaEdit />
-                        </button>
-                        <button className="action-btn btn-delete-modern" onClick={() => handleDelete(tour.id)} title="Xóa Tour">
-                          <FaTrash />
-                        </button>
+                        {statusFilter === 'TRASH' ? (
+                          <button className="action-btn" style={{ background: '#dcfce7', color: '#16a34a' }} onClick={() => handleRestore(tour.id)} title="Khôi phục">
+                            <FaUndo />
+                          </button>
+                        ) : (
+                          <>
+                            <button className="action-btn btn-edit-modern" onClick={() => handleEdit(tour)} title="Sửa Tour">
+                              <FaEdit />
+                            </button>
+                            <button className="action-btn btn-delete-modern" onClick={() => handleDelete(tour.id)} title="Xóa Tour">
+                              <FaTrash />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaLock, FaUserPlus } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaUserPlus, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,8 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // States to prevent autofill
   const [focusStates, setFocusStates] = useState({
@@ -176,17 +178,24 @@ const Register: React.FC = () => {
               <div className="auth-input-wrapper">
                 <FaLock className="auth-icon" />
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   name="password"
                   className="input-field" 
-                  placeholder={t('auth.createPasswordPlaceholder')}
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={formData.password}
                   onChange={handleInputChange}
-                  autoComplete="new-password"
                   readOnly={!focusStates.password}
                   onFocus={() => handleFocus('password')}
                   required 
                 />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '15px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
               {isPasswordShort && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>{t('auth.passwordShort')}</span>}
             </div>
@@ -196,7 +205,7 @@ const Register: React.FC = () => {
               <div className="auth-input-wrapper">
                 <FaLock className="auth-icon" />
                 <input 
-                  type="password" 
+                  type={showConfirmPassword ? "text" : "password"} 
                   name="confirmPassword"
                   className="input-field" 
                   placeholder={t('auth.confirmPasswordPlaceholder')}
@@ -207,6 +216,14 @@ const Register: React.FC = () => {
                   onFocus={() => handleFocus('confirmPassword')}
                   required 
                 />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{ position: 'absolute', right: '15px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
               {isPasswordMismatch && <span style={{color: '#e74c3c', fontSize: '13px', marginTop: '4px', display: 'block', textAlign: 'left', fontWeight: '500'}}>{t('auth.passwordMismatch')}</span>}
             </div>

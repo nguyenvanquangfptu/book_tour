@@ -164,6 +164,15 @@ public class TourServiceImpl implements TourService {
         tour.setHighlights(request.getHighlights());
         
         if (request.getItinerary() != null) {
+            myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+            log.setEntityName("Tour");
+            log.setEntityId(tour.getId());
+            log.setAction("UPDATE_ITINERARY");
+            log.setOldValue("Old itinerary size: " + (tour.getItinerary() != null ? tour.getItinerary().size() : 0));
+            log.setNewValue("New itinerary size: " + request.getItinerary().size());
+            log.setUserId(0L);
+            auditLogRepository.save(log);
+
             tour.getItinerary().clear();
             List<myproject.booking_tour.entity.TourItinerary> newItinerary = request.getItinerary().stream().map(dto -> {
                 myproject.booking_tour.entity.TourItinerary item = new myproject.booking_tour.entity.TourItinerary();
@@ -177,6 +186,16 @@ public class TourServiceImpl implements TourService {
 
         // Only update availableSlots if explicitly provided, otherwise preserve existing or calculate
         if (request.getAvailableSlots() != null) {
+            if (tour.getAvailableSlots() != null && !tour.getAvailableSlots().equals(request.getAvailableSlots())) {
+                myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+                log.setEntityName("Tour");
+                log.setEntityId(tour.getId());
+                log.setAction("UPDATE_AVAILABLE_SLOTS");
+                log.setOldValue(String.valueOf(tour.getAvailableSlots()));
+                log.setNewValue(String.valueOf(request.getAvailableSlots()));
+                log.setUserId(0L);
+                auditLogRepository.save(log);
+            }
             tour.setAvailableSlots(request.getAvailableSlots());
         }
         
@@ -220,15 +239,30 @@ public class TourServiceImpl implements TourService {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
         
-        if (bookingRepository.existsByTourId(id)) {
-            // Soft delete to preserve booking history
-            tour.setStatus("DELETED");
-            tourRepository.save(tour);
-        } else {
-            // Hard delete
-            tourScheduleRepository.deleteByTourId(id);
-            tourRepository.delete(tour);
-        }
+        myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+        log.setEntityName("Tour");
+        log.setEntityId(tour.getId());
+        log.setAction("DELETE_TOUR");
+        log.setOldValue("Title: " + tour.getTitle() + ", Price: " + tour.getPrice());
+        log.setUserId(0L); 
+        auditLogRepository.save(log);
+
+        tourRepository.delete(tour);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TourResponse> getDeletedTours() {
+        return tourRepository.findDeletedTours().stream()
+                .map(tourMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
+    public void restoreTour(Long id) {
+        tourRepository.restoreTour(id);
     }
 
     private int parseDurationDays(String duration) {

@@ -9,6 +9,8 @@ import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.UserMapper;
 import myproject.booking_tour.repository.UserRepository;
 import myproject.booking_tour.service.UserService;
+import myproject.booking_tour.repository.AuditLogRepository;
+import myproject.booking_tour.entity.AuditLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,6 +89,14 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        AuditLog log = new AuditLog();
+        log.setEntityName("User");
+        log.setEntityId(user.getId());
+        log.setAction("CHANGE_PASSWORD");
+        log.setUserId(userId);
+        log.setNewValue("Password has been changed");
+        auditLogRepository.save(log);
     }
 
     @Override

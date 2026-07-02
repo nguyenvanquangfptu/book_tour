@@ -56,7 +56,7 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
         setMessage({ text: t('profile.userInfo.successMsg'), type: 'success' });
         const user = useAuthStore.getState().user;
         if (user) {
-          useAuthStore.setState({ user: { ...user, avatar: url } });
+          useAuthStore.getState().updateUser({ avatar: url, avatarUrl: url });
         }
         queryClient.invalidateQueries({ queryKey: ['profile'] });
       }

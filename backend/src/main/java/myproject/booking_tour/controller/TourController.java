@@ -85,4 +85,16 @@ public class TourController {
         tourService.deleteTour(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Tour deleted successfully!", null));
     }
+
+    @GetMapping("/trash")
+    public ResponseEntity<ApiResponse<List<TourResponse>>> getDeletedTours() {
+        List<TourResponse> tours = tourService.getDeletedTours();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Deleted tours retrieved successfully!", tours));
+    }
+
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreTour(@PathVariable Long id) {
+        tourService.restoreTour(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tour restored successfully!", null));
+    }
 }

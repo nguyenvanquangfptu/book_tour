@@ -30,10 +30,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
@@ -356,7 +358,7 @@ public class BookingServiceImpl implements BookingService {
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Chạy mỗi 1 giờ
     @Transactional
     public void autoCancelUnpaidBookings() {
-        System.out.println("[CronJob] Bắt đầu kiểm tra các đơn hàng chưa thanh toán quá 1 ngày...");
+        log.info("[CronJob] Bắt đầu kiểm tra các đơn hàng chưa thanh toán quá 1 ngày...");
         List<Booking> confirmedBookings = bookingRepository.findByStatus("CONFIRMED");
         LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
 
@@ -364,7 +366,7 @@ public class BookingServiceImpl implements BookingService {
             LocalDateTime approvedTime = booking.getApprovedAt() != null ? booking.getApprovedAt() : booking.getBookingDate();
             
             if (approvedTime.isBefore(oneDayAgo)) {
-                System.out.println("[CronJob] Đang hủy tự động đơn hàng #" + booking.getId() + " do quá hạn thanh toán.");
+                log.info("[CronJob] Đang hủy tự động đơn hàng #{} do quá hạn thanh toán.", booking.getId());
                 
                 // Hủy booking
                 cancelBooking(booking.getId(), booking.getUser().getId());
@@ -379,10 +381,10 @@ public class BookingServiceImpl implements BookingService {
                     String emailTo = booking.getCustomerEmail() != null ? booking.getCustomerEmail() : booking.getUser().getEmail();
                     emailService.sendMessageUsingThymeleafTemplate(emailTo, "Thông báo: Đơn đặt tour của bạn đã bị hủy tự động", "booking-cancelled-auto", templateModel);
                 } catch (Exception e) {
-                    System.err.println("Failed to send auto-cancel email for booking #" + booking.getId() + ": " + e.getMessage());
+                    log.error("Failed to send auto-cancel email for booking #{}: {}", booking.getId(), e.getMessage());
                 }
             }
         }
-        System.out.println("[CronJob] Hoàn tất kiểm tra đơn hàng quá hạn.");
+        log.info("[CronJob] Hoàn tất kiểm tra đơn hàng quá hạn.");
     }
 }

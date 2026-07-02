@@ -50,4 +50,12 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
 
     @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM Tour t JOIN t.utilities u WHERE u.id = :utilityId")
     boolean existsByUtilityId(@org.springframework.data.repository.query.Param("utilityId") Long utilityId);
+
+    @Query(value = "SELECT * FROM tours WHERE is_deleted = true", nativeQuery = true)
+    List<Tour> findDeletedTours();
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "UPDATE tours SET is_deleted = false WHERE id = :tourId", nativeQuery = true)
+    void restoreTour(@org.springframework.data.repository.query.Param("tourId") Long tourId);
 }
