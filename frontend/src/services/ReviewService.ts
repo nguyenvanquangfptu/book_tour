@@ -6,6 +6,7 @@ export interface ReviewResponse {
   username: string;
   fullName?: string;
   tourId: number;
+  tourSlug?: string;
   rating: number;
   comment: string;
   createdAt: string;
