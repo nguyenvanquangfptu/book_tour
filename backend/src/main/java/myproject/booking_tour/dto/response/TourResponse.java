@@ -14,6 +14,7 @@ import myproject.booking_tour.dto.TourItineraryDto;
 @AllArgsConstructor
 public class TourResponse {
     private Long id;
+    private String slug;
     private String title;
     private String destination;
     private String description;

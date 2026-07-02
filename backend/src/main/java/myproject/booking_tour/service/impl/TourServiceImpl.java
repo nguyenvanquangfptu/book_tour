@@ -62,6 +62,26 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional(readOnly = true)
+    public TourResponse getTourBySlug(String slug) {
+        Tour tour = tourRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour not found with slug: " + slug));
+        return tourMapper.toResponse(tour);
+    }
+
+    private String generateUniqueSlug(String title) {
+        String baseSlug = myproject.booking_tour.utils.SlugUtils.toSlug(title);
+        String slug = baseSlug;
+        int counter = 1;
+        while (tourRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + counter;
+            counter++;
+        }
+        return slug;
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TourResponse> searchTours(String keyword) {
         return tourRepository.findByTitleContainingIgnoreCaseAndStatusNot(keyword, "DELETED").stream()
                 .map(tourMapper::toResponse)
@@ -94,6 +114,8 @@ public class TourServiceImpl implements TourService {
     @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
     public TourResponse createTour(TourRequest request) {
         Tour tour = tourMapper.toEntity(request);
+        
+        tour.setSlug(generateUniqueSlug(tour.getTitle()));
 
         // Map Accommodations from set of IDs in Request
         if (request.getAccommodationIds() != null && !request.getAccommodationIds().isEmpty()) {
@@ -137,6 +159,9 @@ public class TourServiceImpl implements TourService {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
 
+        if (!tour.getTitle().equals(request.getTitle()) || tour.getSlug() == null || tour.getSlug().isEmpty()) {
+            tour.setSlug(generateUniqueSlug(request.getTitle()));
+        }
         tour.setTitle(request.getTitle());
         tour.setDestination(request.getDestination());
         tour.setDescription(request.getDescription());
@@ -312,5 +337,35 @@ public class TourServiceImpl implements TourService {
             tourRepository.findDistinctTourTypes(),
             tourRepository.findDistinctTransports()
         );
+    }
+
+    @Override
+    @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
+    public TourResponse changeStatus(Long id, String status) {
+        Tour tour = tourRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
+
+        if ("ACTIVE".equals(status)) {
+            boolean hasInactiveAcc = tour.getAccommodations().stream()
+                    .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
+            if (hasInactiveAcc) {
+                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
+            }
+        }
+
+        tour.setStatus(status);
+        
+        myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
+        log.setEntityName("Tour");
+        log.setEntityId(tour.getId());
+        log.setAction("CHANGE_STATUS");
+        log.setOldValue(tour.getStatus());
+        log.setNewValue(status);
+        log.setUserId(0L); 
+        auditLogRepository.save(log);
+
+        tour = tourRepository.save(tour);
+        return tourMapper.toResponse(tour);
     }
 }

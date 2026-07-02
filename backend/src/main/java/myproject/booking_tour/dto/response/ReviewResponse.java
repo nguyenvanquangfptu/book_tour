@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class ReviewResponse {
     private Long id;
     private Long tourId;
+    private String tourSlug;
     private Long userId;
     private String username;
     private String fullName;

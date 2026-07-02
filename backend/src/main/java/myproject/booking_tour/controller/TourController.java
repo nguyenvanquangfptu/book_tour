@@ -40,6 +40,12 @@ public class TourController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Tour details retrieved successfully!", tour));
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ApiResponse<TourResponse>> getTourBySlug(@PathVariable String slug) {
+        TourResponse tour = tourService.getTourBySlug(slug);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tour details retrieved successfully!", tour));
+    }
+
     @GetMapping("/{id}/schedules")
     public ResponseEntity<ApiResponse<Integer>> getAvailableSlots(
             @PathVariable Long id,
@@ -96,5 +102,13 @@ public class TourController {
     public ResponseEntity<ApiResponse<Void>> restoreTour(@PathVariable Long id) {
         tourService.restoreTour(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Tour restored successfully!", null));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<TourResponse>> changeTourStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        TourResponse tour = tourService.changeStatus(id, status);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tour status updated to " + status + " successfully!", tour));
     }
 }

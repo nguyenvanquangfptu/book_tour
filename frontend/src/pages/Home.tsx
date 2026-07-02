@@ -228,7 +228,7 @@ const Home: React.FC = () => {
                   key={review.id} 
                   className="testimonial-card animate-fade-up" 
                   style={{ animationDelay: `${idx * 0.1}s`, cursor: review.tourId ? 'pointer' : 'default', transition: 'transform 0.3s, box-shadow 0.3s' }}
-                  onClick={() => review.tourId && navigate(`/tours/${review.tourId}`)}
+                  onClick={() => review.tourId && navigate(`/tours/${review.tourSlug || review.tourId}`)}
                   title={review.tourId ? "Nhấn để xem chi tiết tour này" : ""}
                 >
                   <div className="stars" style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>

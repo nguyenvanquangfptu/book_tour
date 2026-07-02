@@ -61,6 +61,23 @@ public class DataInitializerConfig {
             }
 
             // Seed Tours if empty is handled by SQL script
+
+            // Generate slug for existing tours
+            java.util.List<Tour> allTours = tourRepository.findAll();
+            boolean needSave = false;
+            for (Tour t : allTours) {
+                if (t.getSlug() == null || t.getSlug().trim().isEmpty()) {
+                    String baseSlug = myproject.booking_tour.utils.SlugUtils.toSlug(t.getTitle());
+                    String slug = baseSlug;
+                    int counter = 1;
+                    while (tourRepository.existsBySlug(slug)) {
+                        slug = baseSlug + "-" + counter;
+                        counter++;
+                    }
+                    t.setSlug(slug);
+                    tourRepository.save(t); // save immediately to update existsBySlug for next iterations
+                }
+            }
         };
     }
 }
