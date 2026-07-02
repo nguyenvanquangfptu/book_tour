@@ -54,4 +54,13 @@ public class AuthController {
         AuthResponse response = authService.loginWithGoogle(idToken);
         return ResponseEntity.ok(new ApiResponse<>(true, "Google login successful!", response));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(jakarta.servlet.http.HttpServletRequest request) {
+        String authHeader = request.getHeader(myproject.booking_tour.security.SecurityConstants.AUTH_HEADER);
+        if (authHeader != null && authHeader.startsWith(myproject.booking_tour.security.SecurityConstants.TOKEN_PREFIX)) {
+            authService.logout(authHeader);
+        }
+        return ResponseEntity.ok(new ApiResponse<>(true, "Logged out successfully!", null));
+    }
 }

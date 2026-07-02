@@ -191,8 +191,8 @@ const Navbar: React.FC = () => {
           {isAuthenticated && user ? (
             <div className="avatar-dropdown" ref={dropdownRef}>
               <div className="avatar-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="Avatar" />
+                {(user.avatarUrl || user.avatar) ? (
+                  <img src={user.avatarUrl || user.avatar} alt="Avatar" />
                 ) : (
                   getInitials(user.fullName || user.username || 'User')
                 )}

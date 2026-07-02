@@ -28,9 +28,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   fetchCart: async () => {
     set({ isLoading: true });
     try {
-      const response = await api.get('/cart');
-      if (response.data && response.data.data) {
-        set({ cart: response.data.data.items || [] });
+      const response = await api.get('/cart') as any;
+      if (response && response.data) {
+        set({ cart: response.data.items || [] });
       }
     } catch (error) {
       console.error('Failed to fetch cart', error);
@@ -48,9 +48,9 @@ export const useCartStore = create<CartState>((set, get) => ({
         tourId: newItem.tourId,
         guests: newItem.guests,
         startDate: newItem.startDate
-      });
-      if (response.data && response.data.data) {
-        set({ cart: response.data.data.items || [] });
+      }) as any;
+      if (response && response.data) {
+        set({ cart: response.data.items || [] });
       }
     } catch (error) {
       console.error('Failed to add to cart', error);
@@ -63,9 +63,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   removeFromCart: async (itemId) => {
     set({ isLoading: true });
     try {
-      const response = await api.delete(`/cart/remove/${itemId}`);
-      if (response.data && response.data.data) {
-        set({ cart: response.data.data.items || [] });
+      const response = await api.delete(`/cart/remove/${itemId}`) as any;
+      if (response && response.data) {
+        set({ cart: response.data.items || [] });
       }
     } catch (error) {
       console.error('Failed to remove from cart', error);

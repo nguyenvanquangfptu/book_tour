@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "tours")
 @SQLDelete(sql = "UPDATE tours SET is_deleted = true WHERE id=?")
-@Where(clause = "is_deleted = false")
+@SQLRestriction("is_deleted = false")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

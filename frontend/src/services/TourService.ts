@@ -50,5 +50,15 @@ export const TourService = {
   deleteTour: async (id: string | number) => {
     const response = await api.delete(`/tours/${id}`);
     return response.data;
+  },
+
+  getDeletedTours: async () => {
+    const response = await api.get('/tours/trash');
+    return response.data?.data || response.data;
+  },
+
+  restoreTour: async (id: string | number) => {
+    const response = await api.put(`/tours/${id}/restore`);
+    return response.data;
   }
 };
