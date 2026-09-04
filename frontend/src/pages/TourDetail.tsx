@@ -542,6 +542,20 @@ const TourDetail: React.FC = () => {
                   transform: isInWishlist(tour.id) ? 'scale(1.1)' : 'scale(1)'
                 }} 
                 onClick={() => {
+                  if (!currentUser) {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'Yêu cầu đăng nhập',
+                      text: 'Vui lòng đăng nhập để lưu tour vào danh sách yêu thích.',
+                      showCancelButton: true,
+                      confirmButtonText: 'Đăng nhập',
+                      cancelButtonText: 'Hủy',
+                      confirmButtonColor: '#3b82f6'
+                    }).then((result) => {
+                      if (result.isConfirmed) navigate('/login', { state: { from: `/tours/${slug}` } });
+                    });
+                    return;
+                  }
                   toggleWishlist({
                     id: tour.id,
                     title: tour.title,

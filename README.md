@@ -50,6 +50,12 @@ docker-compose up -d
 ```
 *Lưu ý:* Cơ sở dữ liệu mặc định là `booktour_db`, user: `postgres`, mật khẩu: `quang`, port: `5435`.
 
+**Schema database:** không cần import file SQL thủ công. Toàn bộ schema được quản lý bằng **Flyway**, đặt tại `backend/src/main/resources/db/migration/`. Lần đầu chạy backend trên một database rỗng, Flyway tự động áp dụng `V1__init_schema.sql` để tạo đủ 18 bảng. Mỗi thay đổi schema về sau được thêm dưới dạng file mới (`V2__...sql`, `V3__...sql`) — không sửa file migration đã chạy.
+
+Sau khi Flyway chạy xong, Hibernate ở chế độ `ddl-auto=validate` sẽ đối chiếu 17 entity với schema thật và báo lỗi ngay khi khởi động nếu có sai lệch.
+
+> **Lưu ý khi triển khai:** ứng dụng đặt `TimeZone.setDefault(UTC)` trong `BookingTourApplication.main()`. Từ migration `V10` các cột thời gian là `TIMESTAMPTZ`, và việc dùng chúng cùng các trường `LocalDateTime` chỉ đúng khi JVM chạy ở UTC — **không được xóa dòng `setDefault` đó**.
+
 ### 2. Chạy Backend
 Mở một terminal mới và di chuyển vào thư mục `backend`:
 ```bash

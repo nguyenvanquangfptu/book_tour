@@ -56,7 +56,7 @@ export const fetchTours = async (params: FetchToursParams): Promise<ToursRespons
   if (params.sortBy) queryParams.append('sortBy', params.sortBy);
   if (params.sortDir) queryParams.append('sortDir', params.sortDir);
   if (params.status) queryParams.append('status', params.status);
-  else queryParams.append('status', 'ACTIVE,SOLD_OUT');
+  else queryParams.append('status', 'ACTIVE');
 
   const response = await api.get(`/tours/search?${queryParams.toString()}`);
   return response.data?.data || response.data;

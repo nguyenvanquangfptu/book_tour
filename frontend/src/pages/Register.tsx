@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock, FaUserPlus, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
+import { useAuthStore } from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import '../styles/auth.css';
 
 const Register: React.FC = () => {
   const { t } = useTranslation();
+  const { login } = useAuthStore();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -81,14 +83,15 @@ const Register: React.FC = () => {
       const { credential } = credentialResponse;
       const data = await AuthService.googleLogin(credential);
       if (data && data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({
+        login({
           id: data.userId,
           username: data.username,
-          role: data.role
-        }));
+          role: data.role,
+          fullName: data.fullName,
+          email: data.email,
+          avatarUrl: data.avatar
+        }, data.token);
         navigate('/');
-        window.location.reload();
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.googleLoginFail'));

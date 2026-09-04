@@ -8,6 +8,7 @@ import { UserService } from '../services/UserService';
 import { BookingService } from '../services/BookingService';
 import TicketTemplate from '../components/TicketTemplate';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '../store/useAuthStore';
 
 import ProfileSidebar from '../components/profile/ProfileSidebar';
 import UserInfoTab from '../components/profile/UserInfoTab';
@@ -43,6 +44,20 @@ const ProfilePage: React.FC = () => {
     queryKey: ['profile'],
     queryFn: () => UserService.getMyProfile(),
   });
+
+  const updateUser = useAuthStore((state) => state.updateUser);
+  
+  useEffect(() => {
+    if (profile) {
+      updateUser({
+        fullName: profile.fullName,
+        avatar: profile.avatar || profile.avatarUrl,
+        avatarUrl: profile.avatar || profile.avatarUrl,
+        username: profile.username,
+        email: profile.email
+      });
+    }
+  }, [profile, updateUser]);
 
   const { data: bookings = [], isLoading: isBookingsLoading } = useQuery({
     queryKey: ['bookings'],

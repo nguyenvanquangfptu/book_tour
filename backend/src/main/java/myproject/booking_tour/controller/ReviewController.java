@@ -49,8 +49,8 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Long id, Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         reviewService.deleteReview(id, username);
         return ResponseEntity.ok(new ApiResponse<>(true, "Review deleted successfully!", null));
     }

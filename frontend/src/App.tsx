@@ -21,6 +21,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
 import ScrollToTop from './components/ScrollToTop';
 import PublicLayout from './components/PublicLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -46,44 +47,48 @@ const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <Router>
         <ScrollToTop />
-        <div className="app">
-          <Routes>
-              {/* Public Routes with Navbar and Footer */}
-              <Route element={<PublicLayout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/tours" element={<ToursPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/tours/:slug" element={<TourDetail />} />
-                <Route path="/checkout/:id" element={<Checkout />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/payment-result" element={<PaymentResult />} />
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/cancel" element={<PaymentCancel />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-                <Route path="/refund-policy" element={<RefundPolicyPage />} />
-              </Route>
+            <div className="app">
+              <Routes>
+                  {/* Public Routes with Navbar and Footer */}
+                  <Route element={<PublicLayout />}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/tours" element={<ToursPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/tours/:slug" element={<TourDetail />} />
+                    <Route path="/checkout/:id" element={<Checkout />} />
+                    <Route path="/cart" element={<CartPage />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/profile" element={<ProfilePage />} />
+                    </Route>
+                    <Route path="/payment-result" element={<PaymentResult />} />
+                    <Route path="/payment/success" element={<PaymentSuccess />} />
+                    <Route path="/payment/cancel" element={<PaymentCancel />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                    <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                  </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="tours" element={<TourManagement />} />
-                <Route path="bookings" element={<BookingManagement />} />
-                <Route path="vouchers" element={<VoucherManagement />} />
-                <Route path="accommodations" element={<AccommodationManagement />} />
-                <Route path="utilities" element={<UtilityManagement />} />
-              </Route>
+                  {/* Admin Routes */}
+                  <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="tours" element={<TourManagement />} />
+                      <Route path="bookings" element={<BookingManagement />} />
+                      <Route path="vouchers" element={<VoucherManagement />} />
+                      <Route path="accommodations" element={<AccommodationManagement />} />
+                      <Route path="utilities" element={<UtilityManagement />} />
+                    </Route>
+                  </Route>
 
-              {/* Fallback route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
+                  {/* Fallback route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
       </Router>
     </QueryClientProvider>
   );
