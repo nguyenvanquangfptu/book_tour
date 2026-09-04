@@ -62,6 +62,21 @@ Booking {
     @Column(name = "note", columnDefinition = "text")
     private String note;
 
+    /**
+     * Lich khoi hanh (ngay dau tien) ma booking nay chiem cho.
+     *
+     * LUU Y: mot booking thuc te chiem cho cua NHIEU dong tour_schedules - mot
+     * dong cho moi ngay trong suot thoi gian tour (xem
+     * BookingServiceImpl.validateAndDeductTourSchedule). Cot nay chi tro toi
+     * NGAY KHOI HANH, dung y nghia voi truong travelDate ben duoi, va ton tai
+     * de co khoa ngoai that thay vi lien ket ngam qua cap
+     * (tour_id, travel_date). Neu sau nay can theo doi day du ca N ngay thi
+     * phai them bang trung gian booking_schedules.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id")
+    private TourSchedule schedule;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "voucher_id")
     private Voucher voucher;

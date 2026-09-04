@@ -51,10 +51,17 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Webhook cua cong thanh toan khong duoc chan: PayOS retry theo backoff,
+        // dinh 429 la mat luon thong bao da thanh toan.
+        if (path.startsWith("/api/payment/payos_transfer_handler")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String clientIP = getClientIP(request);
         Bucket bucket;
 
-        if (path.startsWith("/api/v1/auth/")) {
+        if (path.startsWith("/api/auth/")) {
             bucket = authBuckets.computeIfAbsent(clientIP, k -> createNewAuthBucket());
         } else {
             bucket = apiBuckets.computeIfAbsent(clientIP, k -> createNewApiBucket());

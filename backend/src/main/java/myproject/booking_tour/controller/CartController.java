@@ -21,7 +21,7 @@ public class CartController {
         if (authentication != null && authentication.getPrincipal() instanceof myproject.booking_tour.security.CustomUserDetails) {
             return ((myproject.booking_tour.security.CustomUserDetails) authentication.getPrincipal()).getUser().getId();
         }
-        throw new RuntimeException("User not authenticated");
+        throw new myproject.booking_tour.exception.BadRequestException("User not authenticated");
     }
 
     @GetMapping

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import myproject.booking_tour.dto.request.PaymentRequest;
 import myproject.booking_tour.dto.response.ApiResponse;
 import myproject.booking_tour.dto.response.PaymentResponse;
+import myproject.booking_tour.security.CustomUserDetails;
 import myproject.booking_tour.service.PaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,14 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    private CustomUserDetails getCurrentUserDetails() {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            return (CustomUserDetails) authentication.getPrincipal();
+        }
+        throw new myproject.booking_tour.exception.BadRequestException("User is not authenticated");
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(@Valid @RequestBody PaymentRequest request) {
         PaymentResponse response = paymentService.createPayment(request);
@@ -26,13 +35,17 @@ public class PaymentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PaymentResponse>> getPaymentById(@PathVariable Long id) {
-        PaymentResponse response = paymentService.getPaymentById(id);
+        CustomUserDetails userDetails = getCurrentUserDetails();
+        boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
+        PaymentResponse response = paymentService.getPaymentById(id, userDetails.getUser().getId(), isAdmin);
         return ResponseEntity.ok(new ApiResponse<>(true, "Payment invoice details retrieved successfully!", response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PaymentResponse>>> getAllPayments() {
-        List<PaymentResponse> list = paymentService.getAllPayments();
+        CustomUserDetails userDetails = getCurrentUserDetails();
+        boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
+        List<PaymentResponse> list = paymentService.getAllPayments(userDetails.getUser().getId(), isAdmin);
         return ResponseEntity.ok(new ApiResponse<>(true, "All payment invoices retrieved successfully!", list));
     }
 

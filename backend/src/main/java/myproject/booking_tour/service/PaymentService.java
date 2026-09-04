@@ -9,11 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface PaymentService {
     PaymentResponse createPayment(PaymentRequest request);
-    PaymentResponse getPaymentById(Long id);
+    PaymentResponse getPaymentById(Long id, Long userId, boolean isAdmin);
     PaymentResponse updatePaymentStatus(Long id, String status);
-    List<PaymentResponse> getAllPayments();
+    List<PaymentResponse> getAllPayments(Long userId, boolean isAdmin);
     List<PaymentResponse> getPaymentsByBookingId(Long bookingId);
     String createPaymentUrl(Long bookingId, HttpServletRequest request);
     PaymentResponse processPayOSCallback(Map<String, String> params);
     void processPayOSWebhook(vn.payos.model.webhooks.Webhook webhookBody);
+    Long getPaymentOwnerUserIdByOrderCode(String orderCode);
 }

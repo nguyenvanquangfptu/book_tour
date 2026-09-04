@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FaRegHeart, FaHeart } from 'react-icons/fa';
 import { formatPrice } from '../utils/formatPrice';
 import { useWishlistStore } from '../store/useWishlistStore';
+import { useAuthStore } from '../store/useAuthStore';
+import Swal from 'sweetalert2';
 import '../styles/tourCard.css';
 
 interface TourProps {
@@ -13,9 +15,28 @@ const TourCard: React.FC<TourProps> = ({ tour }) => {
   const navigate = useNavigate();
   const [hasError, setHasError] = useState(false);
   const { isInWishlist, toggleWishlist } = useWishlistStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Wishlist gio luu o server theo tai khoan, khong con luu trong trinh
+    // duyet nua -> phai dang nhap moi dung duoc.
+    if (!isAuthenticated) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Yêu cầu đăng nhập',
+        text: 'Vui lòng đăng nhập để lưu tour vào danh sách yêu thích.',
+        showCancelButton: true,
+        confirmButtonText: 'Đăng nhập',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#3b82f6'
+      }).then((result) => {
+        if (result.isConfirmed) navigate('/login');
+      });
+      return;
+    }
+
     toggleWishlist({
       id: tour.id,
       title: tour.title,

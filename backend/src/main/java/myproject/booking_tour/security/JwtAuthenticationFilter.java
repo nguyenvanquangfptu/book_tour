@@ -23,6 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
+    @Autowired
+    private myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -47,12 +50,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // Check if token is in blacklist
-            myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository = 
-                org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(request.getServletContext())
-                .getBean(myproject.booking_tour.repository.InvalidatedTokenRepository.class);
-
-            if (invalidatedTokenRepository.existsById(jwt)) {
+            // Danh sach den luu SHA-256 cua token chu khong luu token goc,
+            // nen phai bam truoc khi tra cuu (xem JwtService.hashToken).
+            if (invalidatedTokenRepository.existsById(jwtService.hashToken(jwt))) {
                 // Token is blacklisted
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token is invalidated (logged out)");

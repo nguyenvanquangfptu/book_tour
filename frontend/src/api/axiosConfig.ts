@@ -28,7 +28,9 @@ api.interceptors.response.use(
                           originalRequest.url?.includes('/auth/google') || 
                           originalRequest.url?.includes('/auth/register');
 
-    if (error.response && (error.response.status === 401 || error.response.status === 403) && !isAuthRequest) {
+    // 401 = phiên đăng nhập không hợp lệ/hết hạn -> đăng xuất.
+    // 403 = đã đăng nhập nhưng không đủ quyền -> không đăng xuất, để component tự xử lý thông báo.
+    if (error.response && error.response.status === 401 && !isAuthRequest) {
       const token = localStorage.getItem('token');
       if (token) {
         localStorage.removeItem('token');

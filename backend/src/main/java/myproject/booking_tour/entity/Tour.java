@@ -4,12 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
 
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -71,11 +68,28 @@ public class Tour {
     @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = id)")
     private Integer bookedCount;
 
-    @Column(name = "review_count")
-    private Integer reviewCount = 0;
+    /*
+     * reviewCount va rating truoc day la HAI COT THAT trong bang tours, duoc
+     * ReviewServiceImpl.updateTourRating() cap nhat bang tay moi khi co review
+     * them/sua/xoa. Van de cua du lieu phi chuan hoa: khong co gi dam bao chung
+     * dong bo - chi can mot luong nao do quen goi ham cap nhat la so lieu lech
+     * vinh vien, va khong ai phat hien ra.
+     *
+     * Chuyen sang @Formula: Hibernate tinh truc tiep tu bang reviews o moi lan
+     * SELECT nen KHONG BAO GIO lech. Cung cach ma bookedCount o tren dang lam.
+     *
+     * Danh doi: moi lan doc tour phai chay them subquery. Chap nhan duoc vi
+     * reviews da co index idx_reviews_tour tren cot tour_id (migration V2).
+     *
+     * Hai truong nay CHI DOC - goi setter khong con y nghia gi.
+     */
+    @org.hibernate.annotations.Formula(
+            "(SELECT COUNT(r.id) FROM reviews r WHERE r.tour_id = id)")
+    private Integer reviewCount;
 
-    @Column(name = "rating")
-    private Double rating = 0.0;
+    @org.hibernate.annotations.Formula(
+            "(SELECT COALESCE(AVG(CAST(r.rating AS DOUBLE PRECISION)), 0) FROM reviews r WHERE r.tour_id = id)")
+    private Double rating;
 
     // Many-to-Many with Accommodations
     @ManyToMany
