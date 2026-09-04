@@ -75,7 +75,13 @@ public class TourMapper {
         response.setTransport(tour.getTransport());
         response.setBookedCount(tour.getBookedCount());
         response.setReviewCount(tour.getReviewCount());
-        response.setRating(tour.getRating());
+        // rating do @Formula tinh tu AVG() nen la so thap phan day du
+        // (vd 4.3333...). Lam tron 1 chu so o day - viec trinh bay thuoc ve
+        // tang mapper, khong nen nhet vao SQL cua @Formula (cu phap lam tron
+        // khac nhau giua PostgreSQL that va H2 dung trong test).
+        response.setRating(tour.getRating() == null
+                ? 0.0
+                : Math.round(tour.getRating() * 10.0) / 10.0);
 
         boolean isAdmin = false;
         try {

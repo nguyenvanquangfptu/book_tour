@@ -43,6 +43,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/accommodations/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/utilities/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payment/payos_transfer_handler").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/payment/payos_transfer_handler/verify").hasAnyRole("CUSTOMER", "ADMIN")
                 
                 // Admin specific endpoints
                 .requestMatchers(HttpMethod.POST, "/api/tours/**").hasRole("ADMIN")
@@ -68,7 +70,28 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/bookings/*/cancel").hasAnyRole("CUSTOMER", "ADMIN")
                 .requestMatchers("/api/bookings/**").hasRole("ADMIN")
                 
+                .requestMatchers(HttpMethod.PUT, "/api/payments/*/status").hasRole("ADMIN")
                 .requestMatchers("/api/payments/**").hasAnyRole("CUSTOMER", "ADMIN")
+
+                // Voucher Endpoints
+                .requestMatchers(HttpMethod.GET, "/api/vouchers/**").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/vouchers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").hasRole("ADMIN")
+
+                // Admin Dashboard Endpoints
+                .requestMatchers("/api/admin/dashboard/**").hasRole("ADMIN")
+
+                // Contact Message Endpoints
+                .requestMatchers(HttpMethod.POST, "/api/contacts").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/contacts/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/contacts/**").hasRole("ADMIN")
+
+                // Upload Endpoints
+                .requestMatchers("/api/upload/**").hasAnyRole("CUSTOMER", "ADMIN")
+
+                // Wishlist Endpoints - luon gan voi tai khoan dang dang nhap
+                .requestMatchers("/api/wishlist/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                 // All other requests require authentication
                 .anyRequest().authenticated()

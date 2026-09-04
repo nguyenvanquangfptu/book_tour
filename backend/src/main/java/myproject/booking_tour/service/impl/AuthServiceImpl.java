@@ -66,7 +66,10 @@ public class AuthServiceImpl implements AuthService {
                 token,
                 savedUser.getId(),
                 savedUser.getUsername(),
-                role.getName()
+                role.getName(),
+                savedUser.getFullName(),
+                savedUser.getEmail(),
+                savedUser.getAvatar()
         );
     }
 
@@ -88,7 +91,10 @@ public class AuthServiceImpl implements AuthService {
                 token,
                 user.getId(),
                 user.getUsername(),
-                user.getRole() != null ? user.getRole().getName() : "CUSTOMER"
+                user.getRole() != null ? user.getRole().getName() : "CUSTOMER",
+                user.getFullName(),
+                user.getEmail(),
+                user.getAvatar()
         );
     }
 
@@ -148,7 +154,10 @@ public class AuthServiceImpl implements AuthService {
                         token,
                         user.getId(),
                         user.getUsername(),
-                        user.getRole() != null ? user.getRole().getName() : "CUSTOMER"
+                        user.getRole() != null ? user.getRole().getName() : "CUSTOMER",
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getAvatar()
                 );
             } else {
                 throw new UnauthorizedException("Invalid ID token.");
@@ -202,7 +211,7 @@ public class AuthServiceImpl implements AuthService {
         tokenRepository.deleteByUser(user);
 
         // Generate 6 digit OTP
-        String tokenString = String.format("%06d", new java.util.Random().nextInt(1000000));
+        String tokenString = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
         myproject.booking_tour.entity.PasswordResetToken resetToken = new myproject.booking_tour.entity.PasswordResetToken(
                 tokenString, user, now.plusMinutes(5)
         );
@@ -253,7 +262,10 @@ public class AuthServiceImpl implements AuthService {
         
         try {
             java.util.Date expiryDate = jwtService.extractExpiration(token);
-            myproject.booking_tour.entity.InvalidatedToken invalidatedToken = new myproject.booking_tour.entity.InvalidatedToken(token, expiryDate);
+            // Luu SHA-256 cua token chu khong luu chinh token (xem JwtService.hashToken).
+            // JwtAuthenticationFilter phai bam giong het nhu vay khi kiem tra.
+            myproject.booking_tour.entity.InvalidatedToken invalidatedToken =
+                    new myproject.booking_tour.entity.InvalidatedToken(jwtService.hashToken(token), expiryDate);
             invalidatedTokenRepository.save(invalidatedToken);
             log.info("Token added to blacklist successfully.");
         } catch (Exception e) {

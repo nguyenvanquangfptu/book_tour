@@ -11,22 +11,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import myproject.booking_tour.dto.response.PopularDestinationResponse;
 
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.domain.Page;
 
 @Repository
 public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificationExecutor<Tour> {
 
-    @EntityGraph(attributePaths = {"accommodations", "utilities"})
-    Page<Tour> findAll(Pageable pageable);
+    // KHONG dung @EntityGraph fetch dong thoi "accommodations" (Set) va "utilities" (List):
+    // SQL sinh ra tich Descartes |accommodations| x |utilities|. Hibernate khu trung lap cho Set,
+    // nhung List (bag) thi khong -> moi utility bi lap lai |accommodations| lan.
+    // Ngoai ra fetch collection kem Pageable con gay HHH000104 (phan trang trong bo nho).
+    //
+    // Thay bang hibernate.default_batch_fetch_size trong application.properties: Hibernate gom
+    // viec load collection cua N tour thanh 1 query "WHERE tour_id IN (?,?,...)" -> het N+1,
+    // khong sinh tich Descartes, va ap dung cho MOI duong dan truy van (ke ca findAll(spec, pageable)
+    // cua JpaSpecificationExecutor - noi @EntityGraph khong the voi toi).
 
-    @EntityGraph(attributePaths = {"accommodations", "utilities"})
-    java.util.Optional<Tour> findById(Long id);
-
-    @EntityGraph(attributePaths = {"accommodations", "utilities"})
-    List<Tour> findAll();
-
-    @EntityGraph(attributePaths = {"accommodations", "utilities"})
     java.util.Optional<Tour> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
@@ -56,10 +54,25 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
     @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM Tour t JOIN t.utilities u WHERE u.id = :utilityId")
     boolean existsByUtilityId(@org.springframework.data.repository.query.Param("utilityId") Long utilityId);
 
-    @Query(value = "SELECT * FROM tours WHERE is_deleted = true", nativeQuery = true)
+    // Native query de lach @SQLRestriction("is_deleted = false") tren entity Tour.
+    // Vi Hibernate KHONG viet lai SQL cua native query, no cung khong tu chen 3
+    // field @Formula (bookedCount, reviewCount, rating) vao SELECT nhu voi JPQL
+    // -> phai tu viet ra day, neu khong se loi "column bookedCount not found".
+    // Alias dat trong dau nhay kep de PostgreSQL giu nguyen camelCase, khop dung
+    // ten property. Khong trich dan thi Postgres ha thanh bookedcount va phai
+    // trong cay vao viec ResultSet.findColumn cua driver tra cuu khong phan biet
+    // hoa thuong - dung duoc nhung mong manh, khong nen dua vao.
+    @Query(value = """
+            SELECT t.*,
+              (SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = t.id) AS "bookedCount",
+              (SELECT COUNT(r.id) FROM reviews r WHERE r.tour_id = t.id) AS "reviewCount",
+              (SELECT COALESCE(AVG(CAST(r.rating AS DOUBLE PRECISION)), 0) FROM reviews r WHERE r.tour_id = t.id) AS "rating"
+            FROM tours t
+            WHERE t.is_deleted = true
+            """, nativeQuery = true)
     List<Tour> findDeletedTours();
 
-    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     @org.springframework.transaction.annotation.Transactional
     @Query(value = "UPDATE tours SET is_deleted = false WHERE id = :tourId", nativeQuery = true)
     void restoreTour(@org.springframework.data.repository.query.Param("tourId") Long tourId);

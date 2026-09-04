@@ -30,6 +30,14 @@ public class Payment {
     @Column(name = "payment_method", length = 50)
     private String paymentMethod;
 
+    /**
+     * Ma don hang ben PayOS. Truoc day duoc nhet chung vao paymentMethod duoi
+     * dang "PAYOS_<orderCode>" khien khong the dat UNIQUE va khong index duoc.
+     * Cot nay co rang buoc UNIQUE - do chinh la thu bao dam webhook idempotent.
+     */
+    @Column(name = "order_code", length = 50, unique = true)
+    private String orderCode;
+
     @Column(name = "payment_status", length = 50)
     private String paymentStatus;
 

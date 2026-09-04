@@ -52,11 +52,28 @@ public class TourServiceImpl implements TourService {
         return tourRepository.findPopularDestinations(PageRequest.of(0, limit));
     }
 
+    /**
+     * Chi ADMIN moi duoc xem tour khong o trang thai ACTIVE (de sua/xem truoc).
+     * Voi nguoi dung thuong, tour INACTIVE hoac SOLD_OUT phai coi nhu khong ton
+     * tai - nem 404 chu KHONG nem 403, vi 403 se xac nhan "co tour o slug nay"
+     * va lo thong tin cho nguoi do biet slug.
+     *
+     * Chot chan nam o service chu khong o frontend: /tours/slug/{slug} la
+     * endpoint cong khai, ai cung goi truc tiep duoc.
+     */
+    private void assertVisible(Tour tour, String identifier) {
+        if (!"ACTIVE".equals(tour.getStatus())
+                && !myproject.booking_tour.security.SecurityUtil.isAdmin()) {
+            throw new ResourceNotFoundException("Tour not found: " + identifier);
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public TourResponse getTourById(Long id) {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
+        assertVisible(tour, String.valueOf(id));
         return tourMapper.toResponse(tour);
     }
 
@@ -65,6 +82,7 @@ public class TourServiceImpl implements TourService {
     public TourResponse getTourBySlug(String slug) {
         Tour tour = tourRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with slug: " + slug));
+        assertVisible(tour, slug);
         return tourMapper.toResponse(tour);
     }
 
@@ -173,8 +191,7 @@ public class TourServiceImpl implements TourService {
             log.setAction("UPDATE_PRICE");
             log.setOldValue(tour.getPrice().toString());
             log.setNewValue(request.getPrice().toString());
-            // Assuming system action since we don't have current user context here
-            log.setUserId(0L); 
+            log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
             auditLogRepository.save(log);
         }
         
@@ -195,7 +212,7 @@ public class TourServiceImpl implements TourService {
             log.setAction("UPDATE_ITINERARY");
             log.setOldValue("Old itinerary size: " + (tour.getItinerary() != null ? tour.getItinerary().size() : 0));
             log.setNewValue("New itinerary size: " + request.getItinerary().size());
-            log.setUserId(0L);
+            log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
             auditLogRepository.save(log);
 
             tour.getItinerary().clear();
@@ -218,7 +235,7 @@ public class TourServiceImpl implements TourService {
                 log.setAction("UPDATE_AVAILABLE_SLOTS");
                 log.setOldValue(String.valueOf(tour.getAvailableSlots()));
                 log.setNewValue(String.valueOf(request.getAvailableSlots()));
-                log.setUserId(0L);
+                log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
                 auditLogRepository.save(log);
             }
             tour.setAvailableSlots(request.getAvailableSlots());
@@ -269,7 +286,7 @@ public class TourServiceImpl implements TourService {
         log.setEntityId(tour.getId());
         log.setAction("DELETE_TOUR");
         log.setOldValue("Title: " + tour.getTitle() + ", Price: " + tour.getPrice());
-        log.setUserId(0L); 
+        log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
         tourRepository.delete(tour);
@@ -354,15 +371,15 @@ public class TourServiceImpl implements TourService {
             }
         }
 
-        tour.setStatus(status);
-        
         myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
         log.setEntityName("Tour");
         log.setEntityId(tour.getId());
         log.setAction("CHANGE_STATUS");
         log.setOldValue(tour.getStatus());
         log.setNewValue(status);
-        log.setUserId(0L); 
+
+        tour.setStatus(status);
+        log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
         tour = tourRepository.save(tour);

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import myproject.booking_tour.dto.request.LoginRequest;
 import myproject.booking_tour.dto.request.RegisterRequest;
+import myproject.booking_tour.dto.request.ResetPasswordRequest;
 import myproject.booking_tour.dto.response.ApiResponse;
 import myproject.booking_tour.dto.response.AuthResponse;
 import myproject.booking_tour.service.AuthService;
@@ -40,8 +41,8 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
-        authService.resetPassword(token, newPassword);
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(new ApiResponse<>(true, "Password reset successfully!", null));
     }
 
