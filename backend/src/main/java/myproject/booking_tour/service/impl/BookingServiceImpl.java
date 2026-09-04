@@ -71,7 +71,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // 3. Xử lý logic kiểm tra và trừ quỹ chỗ theo ngày khởi hành
-        validateAndDeductTourSchedule(tour, request);
+        TourSchedule departureSchedule = validateAndDeductTourSchedule(tour, request);
 
         // 4. Tạo Booking
         Booking booking = new Booking();
@@ -89,6 +89,9 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus("PENDING");
         booking.setBookingDate(LocalDateTime.now());
         booking.setTravelDate(request.getTravelDate());
+        // Khoa ngoai that toi lich khoi hanh (truoc day chi lien ket ngam qua
+        // cap tour_id + travel_date, database khong the bao ve)
+        booking.setSchedule(departureSchedule);
         
         booking.setCustomerName(request.getCustomerName() != null ? request.getCustomerName() : user.getFullName());
         booking.setCustomerEmail(request.getCustomerEmail() != null ? request.getCustomerEmail() : user.getEmail());
@@ -119,7 +122,13 @@ public class BookingServiceImpl implements BookingService {
         return 1;
     }
 
-    private void validateAndDeductTourSchedule(Tour tour, BookingRequest request) {
+    /**
+     * Kiem tra du cho va tru cho cho TAT CA cac ngay ma tour dien ra.
+     *
+     * @return dong tour_schedules cua NGAY KHOI HANH (da co id sau khi luu),
+     *         de booking giu duoc khoa ngoai that toi lich khoi hanh.
+     */
+    private TourSchedule validateAndDeductTourSchedule(Tour tour, BookingRequest request) {
         if (request.getTravelDate() == null) {
             throw new BadRequestException("Travel date is required");
         }
@@ -161,7 +170,10 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Batch save
-        tourScheduleRepository.saveAll(schedulesToSave);
+        List<TourSchedule> savedSchedules = tourScheduleRepository.saveAll(schedulesToSave);
+
+        // Phan tu dau tien ung voi startDate (vong lap chay tu i = 0)
+        return savedSchedules.isEmpty() ? null : savedSchedules.get(0);
     }
 
     private BigDecimal applyVoucherAndCalculatePrice(BookingRequest request, Booking booking, BigDecimal totalPrice) {
@@ -205,6 +217,7 @@ public class BookingServiceImpl implements BookingService {
 
         voucher.setUsedCount(voucher.getUsedCount() + 1);
         voucherRepository.save(voucher);
+        booking.setVoucher(voucher);
 
         return finalPrice;
     }

@@ -1,0 +1,35 @@
+-- =============================================================================
+-- V9: Bo hai cot phi chuan hoa tours.rating va tours.review_count
+-- =============================================================================
+-- VAN DE: hai cot nay la ban sao cua du lieu da co trong bang reviews, duoc
+-- ReviewServiceImpl.updateTourRating() cap nhat bang tay moi khi review
+-- them/sua/xoa. Khong co gi dam bao chung dong bo: chi can mot luong quen goi
+-- ham cap nhat (them review qua SQL tay, xoa user keo theo review, mot API moi
+-- viet thieu) la so lieu lech vinh vien va khong ai phat hien ra.
+--
+-- Doi chieu truoc migration cho thay hien tai VAN khop - day la luc tot de doi,
+-- khong phai don du lieu.
+--
+-- GIAI PHAP: chuyen thanh @Formula tren entity Tour, Hibernate tinh truc tiep
+-- tu bang reviews o moi lan SELECT nen khong bao gio lech. Dung dung cach ma
+-- truong bookedCount da lam san trong du an.
+--
+-- DANH DOI: moi lan doc tour phat sinh them subquery. Chap nhan duoc vi
+-- migration V2 da tao index idx_reviews_tour tren reviews(tour_id).
+--
+-- Di kem thay doi code:
+--   - Tour: hai truong doi sang @Formula (chi doc)
+--   - TourMapper: lam tron rating 1 chu so o tang mapper
+--   - ReviewServiceImpl: xoa ham updateTourRating va 3 loi goi
+--
+-- KHONG anh huong API: TourResponse van co du hai truong rating/reviewCount,
+-- frontend khong phai sua gi.
+--
+-- Neu can quay lai: viet migration moi them lai cot roi backfill bang
+--     UPDATE tours t SET review_count = (SELECT COUNT(*) FROM reviews r
+--         WHERE r.tour_id = t.id);
+-- (Flyway khong ho tro undo, luon di toi bang migration moi.)
+-- =============================================================================
+
+ALTER TABLE tours DROP COLUMN rating;
+ALTER TABLE tours DROP COLUMN review_count;

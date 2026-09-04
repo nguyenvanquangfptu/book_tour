@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../api/axiosConfig';
 
 interface User {
   id: number;
@@ -44,6 +45,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   logout: () => {
+    // Báo backend đưa token vào blacklist trước khi xoá khỏi client
+    api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     set({ user: null, isAuthenticated: false });

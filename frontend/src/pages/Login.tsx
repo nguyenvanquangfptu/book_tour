@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { FaUser, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthService } from '../services/AuthService';
+import { useAuthStore } from '../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import '../styles/auth.css';
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
+  const { login } = useAuthStore();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -31,19 +33,19 @@ const Login: React.FC = () => {
     try {
       const data = await AuthService.login(formData);
       if (data && data.token) {
-        // Lưu token và user info
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({
+        login({
           id: data.userId,
           username: data.username,
-          role: data.role
-        }));
+          role: data.role,
+          fullName: data.fullName,
+          email: data.email,
+          avatarUrl: data.avatar
+        }, data.token);
         
-        // Chuyển hướng về trang chủ và tải lại trang để navbar nhận diện trạng thái login
+        // Chuyển hướng về trang chủ
         window.location.href = '/';
       }
     } catch (err: any) {
-      console.error('Login error full details:', err);
       const errorMsg = err.response?.data?.message || err.message || t('auth.loginFail');
       setError(errorMsg);
     } finally {
@@ -58,12 +60,14 @@ const Login: React.FC = () => {
       const { credential } = credentialResponse;
       const data = await AuthService.googleLogin(credential);
       if (data && data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({
+        login({
           id: data.userId,
           username: data.username,
-          role: data.role
-        }));
+          role: data.role,
+          fullName: data.fullName,
+          email: data.email,
+          avatarUrl: data.avatar
+        }, data.token);
         window.location.href = '/';
       }
     } catch (err: any) {
