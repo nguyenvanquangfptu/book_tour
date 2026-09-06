@@ -3,7 +3,6 @@ package myproject.booking_tour.security;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import myproject.booking_tour.repository.InvalidatedTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,18 +12,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.io.PrintWriter;
 import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
-
-    /** Gia tri bam gia lap - noi dung khong quan trong, chi can nhat quan. */
-    private static final String TOKEN_HASH = "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00";
 
     @Mock
     private JwtService jwtService;
@@ -46,9 +41,6 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     private UserDetails userDetails;
-
-    @Mock
-    private InvalidatedTokenRepository invalidatedTokenRepository;
 
     @BeforeEach
     void setUp() {
@@ -85,40 +77,54 @@ class JwtAuthenticationFilterTest {
         when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn(username);
         when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
-        
-        // Danh sach den luu SHA-256 cua token, khong luu token goc
-        when(jwtService.hashToken(token)).thenReturn(TOKEN_HASH);
-        when(invalidatedTokenRepository.existsById(TOKEN_HASH)).thenReturn(false);
         when(jwtService.isTokenValid(token, username)).thenReturn(true);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         verify(filterChain, times(1)).doFilter(request, response);
     }
 
+    /**
+     * Access token het han khong con bi filter chan bang 401 tu no. Filter chi
+     * de request di tiep ma khong gan danh tinh; endpoint can quyen se roi vao
+     * RestAuthenticationEntryPoint va tra 401 - do la tin hieu frontend dung de
+     * goi /api/auth/refresh.
+     */
     @Test
-    void doFilterInternal_ShouldReturnUnauthorized_WhenTokenIsBlacklisted() throws Exception {
-        String token = "blacklisted-token";
+    void doFilterInternal_ShouldContinueUnauthenticated_WhenTokenIsExpired() throws Exception {
+        String token = "expired-token";
+
+        when(request.getHeader(SecurityConstants.AUTH_HEADER)).thenReturn(SecurityConstants.TOKEN_PREFIX + token);
+        when(jwtService.extractUsername(token))
+                .thenThrow(new io.jsonwebtoken.ExpiredJwtException(null, null, "expired"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
+        verify(response, never()).setStatus(anyInt());
+    }
+
+    /**
+     * Filter KHONG con tra bat ky danh sach den nao. Voi access token 15 phut,
+     * viec thu hoi som duoc lo boi refresh token; doi lai moi request tren toan
+     * he thong bot mot query xuong database.
+     */
+    @Test
+    void doFilterInternal_ShouldNotAuthenticate_WhenSignatureIsInvalid() throws Exception {
+        String token = "tampered-token";
         String username = "testuser";
 
         when(request.getHeader(SecurityConstants.AUTH_HEADER)).thenReturn(SecurityConstants.TOKEN_PREFIX + token);
         when(jwtService.extractUsername(token)).thenReturn(username);
         when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
-        
-        when(jwtService.hashToken(token)).thenReturn(TOKEN_HASH);
-        when(invalidatedTokenRepository.existsById(TOKEN_HASH)).thenReturn(true);
-
-        PrintWriter writer = mock(PrintWriter.class);
-        when(response.getWriter()).thenReturn(writer);
+        when(userDetails.getUsername()).thenReturn(username);
+        when(jwtService.isTokenValid(token, username)).thenReturn(false);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        verify(response, times(1)).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(writer, times(1)).write(anyString());
-        verifyNoInteractions(filterChain);
-
-        // Phai tra cuu bang HASH chu khong phai token goc - neu mot trong hai
-        // ben (logout / filter) quen bam thi danh sach den mat tac dung im lang.
-        verify(invalidatedTokenRepository, never()).existsById(token);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
     }
 }

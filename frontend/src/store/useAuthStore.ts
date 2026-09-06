@@ -45,7 +45,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   logout: () => {
-    // Báo backend đưa token vào blacklist trước khi xoá khỏi client
+    // Bắt buộc gọi backend: nó thu hồi cả family refresh token và xoá cookie
+    // httpOnly — thứ mà JavaScript ở đây không tự xoá được. Chỉ xoá localStorage
+    // thì phiên vẫn sống 30 ngày phía server.
     api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('user');
     localStorage.removeItem('token');

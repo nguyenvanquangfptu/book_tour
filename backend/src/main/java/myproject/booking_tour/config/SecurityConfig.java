@@ -27,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CustomUserDetailsService userDetailsService;
+    private final myproject.booking_tour.security.RestAuthenticationEntryPoint authenticationEntryPoint;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -96,6 +97,9 @@ public class SecurityConfig {
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )
+            // 401 cho "chua dang nhap" thay vi 403 mac dinh. Frontend dua vao
+            // dung ma nay de biet luc nao can goi /api/auth/refresh.
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )

@@ -3,6 +3,8 @@ package myproject.booking_tour.service.impl;
 import myproject.booking_tour.dto.request.LoginRequest;
 import myproject.booking_tour.dto.request.RegisterRequest;
 import myproject.booking_tour.dto.response.AuthResponse;
+import myproject.booking_tour.dto.response.AuthResult;
+import myproject.booking_tour.entity.RefreshToken;
 import myproject.booking_tour.entity.Role;
 import myproject.booking_tour.entity.User;
 import myproject.booking_tour.exception.BadRequestException;
@@ -10,6 +12,8 @@ import myproject.booking_tour.exception.UnauthorizedException;
 import myproject.booking_tour.repository.RoleRepository;
 import myproject.booking_tour.repository.UserRepository;
 import myproject.booking_tour.service.AuthService;
+import myproject.booking_tour.service.RefreshTokenService;
+import myproject.booking_tour.security.ClientMetadata;
 import myproject.booking_tour.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,11 +33,32 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final myproject.booking_tour.repository.PasswordResetTokenRepository tokenRepository;
     private final myproject.booking_tour.service.EmailService emailService;
-    private final myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository;
+    private final RefreshTokenService refreshTokenService;
+
+    /**
+     * Ba cua ngo vao he thong - dang ky, dang nhap, dang nhap Google - deu ket
+     * thuc o day: mot access token 15 phut kem mot phien refresh 30 ngay moi.
+     */
+    private AuthResult startSession(User user, ClientMetadata client) {
+        RefreshTokenService.IssuedToken refresh = refreshTokenService.startSession(user, client);
+        return new AuthResult(toAuthResponse(user), refresh.rawValue(), refresh.expiresAt());
+    }
+
+    private AuthResponse toAuthResponse(User user) {
+        return new AuthResponse(
+                jwtService.generateToken(user.getUsername()),
+                user.getId(),
+                user.getUsername(),
+                user.getRole() != null ? user.getRole().getName() : "CUSTOMER",
+                user.getFullName(),
+                user.getEmail(),
+                user.getAvatar()
+        );
+    }
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResult register(RegisterRequest request, ClientMetadata client) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Username is already taken!");
         }
@@ -59,23 +84,12 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Generate real JWT token
-        String token = jwtService.generateToken(savedUser.getUsername());
-
-        return new AuthResponse(
-                token,
-                savedUser.getId(),
-                savedUser.getUsername(),
-                role.getName(),
-                savedUser.getFullName(),
-                savedUser.getEmail(),
-                savedUser.getAvatar()
-        );
+        return startSession(savedUser, client);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    @Transactional
+    public AuthResult login(LoginRequest request, ClientMetadata client) {
         User user = userRepository.findByUsernameOrEmailIgnoreCase(request.getUsername(), request.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("Invalid username or password!"));
 
@@ -84,17 +98,27 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid username or password!");
         }
 
-        // Generate real JWT token
-        String token = jwtService.generateToken(user.getUsername());
+        return startSession(user, client);
+    }
 
-        return new AuthResponse(
-                token,
-                user.getId(),
-                user.getUsername(),
-                user.getRole() != null ? user.getRole().getName() : "CUSTOMER",
-                user.getFullName(),
-                user.getEmail(),
-                user.getAvatar()
+    /**
+     * Doi refresh token lay cap token moi.
+     *
+     * KHONG dat @Transactional o day. RefreshTokenService.rotate() da tu quan ly
+     * giao dich cua no voi noRollbackFor(TokenReuseException) - boc them mot
+     * giao dich ben ngoai se khien ngoai le do lam quay lui viec thu hoi family,
+     * dung co che phat hien dung lai thanh vo dung.
+     */
+    @Override
+    public AuthResult refresh(String refreshToken, ClientMetadata client) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new UnauthorizedException("Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.");
+        }
+        RefreshTokenService.Rotation rotation = refreshTokenService.rotate(refreshToken, client);
+        return new AuthResult(
+                toAuthResponse(rotation.user()),
+                rotation.token().rawValue(),
+                rotation.token().expiresAt()
         );
     }
 
@@ -103,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse loginWithGoogle(String idTokenString) {
+    public AuthResult loginWithGoogle(String idTokenString, ClientMetadata client) {
         try {
             com.google.api.client.http.HttpTransport transport = new com.google.api.client.http.javanet.NetHttpTransport();
             com.google.api.client.json.JsonFactory jsonFactory = new com.google.api.client.json.gson.GsonFactory();
@@ -149,16 +173,7 @@ public class AuthServiceImpl implements AuthService {
                     user = userRepository.save(user);
                 }
 
-                String token = jwtService.generateToken(user.getUsername());
-                return new AuthResponse(
-                        token,
-                        user.getId(),
-                        user.getUsername(),
-                        user.getRole() != null ? user.getRole().getName() : "CUSTOMER",
-                        user.getFullName(),
-                        user.getEmail(),
-                        user.getAvatar()
-                );
+                return startSession(user, client);
             } else {
                 throw new UnauthorizedException("Invalid ID token.");
             }
@@ -251,25 +266,23 @@ public class AuthServiceImpl implements AuthService {
 
         // Delete token after successful use
         tokenRepository.delete(resetToken);
+
+        // Doi mat khau thi moi phien cu deu phai chet. Neu ke tan cong dang giu
+        // mot refresh token con han thi day la cach duy nhat cat duoc no - va
+        // day cung la viec nguoi dung nghi rang minh dang lam khi doi mat khau.
+        refreshTokenService.revokeAllSessions(user.getId(), RefreshToken.RevocationReason.PASSWORD_RESET);
     }
 
+    /**
+     * Dang xuat: thu hoi ca family refresh token.
+     *
+     * Access token dang cam KHONG bi vo hieu hoa ngay - no tu het han trong toi
+     * da 15 phut. Doi lai he thong khong con phai tra danh sach den o moi
+     * request. Dieu quan trong la ke nao cam duoc token cu cung khong the doi
+     * lay token moi nua.
+     */
     @Override
-    @Transactional
-    public void logout(String token) {
-        if (token != null && token.startsWith(myproject.booking_tour.security.SecurityConstants.TOKEN_PREFIX)) {
-            token = token.substring(myproject.booking_tour.security.SecurityConstants.TOKEN_PREFIX.length());
-        }
-        
-        try {
-            java.util.Date expiryDate = jwtService.extractExpiration(token);
-            // Luu SHA-256 cua token chu khong luu chinh token (xem JwtService.hashToken).
-            // JwtAuthenticationFilter phai bam giong het nhu vay khi kiem tra.
-            myproject.booking_tour.entity.InvalidatedToken invalidatedToken =
-                    new myproject.booking_tour.entity.InvalidatedToken(jwtService.hashToken(token), expiryDate);
-            invalidatedTokenRepository.save(invalidatedToken);
-            log.info("Token added to blacklist successfully.");
-        } catch (Exception e) {
-            log.error("Could not blacklist token: {}", e.getMessage());
-        }
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeSession(refreshToken);
     }
 }

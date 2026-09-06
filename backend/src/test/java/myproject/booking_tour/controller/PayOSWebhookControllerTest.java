@@ -28,11 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class PayOSWebhookControllerTest {
 
-    // JwtAuthenticationFilter nay inject repository nay; @WebMvcTest khong nap
-    // tang repository nen phai mock.
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository;
-
     @org.springframework.boot.test.mock.mockito.MockBean
     private JwtService jwtService;
 
