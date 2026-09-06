@@ -51,6 +51,28 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Tham so trong duong dan hoac query sai kieu - vi du GET /api/payments/abc
+     * trong khi {id} phai la so.
+     *
+     * Day la loi cua BEN GOI, phai tra 400. Truoc khi co handler nay no roi vao
+     * handleGeneralException va thanh 500 kem nguyen stack trace ghi o muc ERROR
+     * - bat ky URL rac nao cung do day duoc log, va cai 500 khien nguoi doc
+     * tuong may chu hong.
+     *
+     * Truong hop lam lo ra dieu nay: sau khi go bo GET /api/payments/payos-callback,
+     * duong dan cu roi vao mapping /api/payments/{id} va Spring co ep chuoi
+     * "payos-callback" thanh Long.
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<?>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        log.warn("Tham so '{}' sai kieu: nhan duoc '{}'", ex.getName(), ex.getValue());
+        ApiResponse<?> response = new ApiResponse<>(false,
+                "Tham số '" + ex.getName() + "' không hợp lệ.", null);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGeneralException(Exception ex) {
         log.error("Lỗi hệ thống nghiêm trọng: ", ex);
