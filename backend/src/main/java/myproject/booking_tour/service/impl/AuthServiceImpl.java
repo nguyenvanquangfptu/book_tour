@@ -189,29 +189,42 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new myproject.booking_tour.exception.ResourceNotFoundException("User not found with email: " + email));
+        // KHONG BAO GIO tiet lo email co ton tai hay khong.
+        //
+        // Truoc day dong nay la .orElseThrow(ResourceNotFoundException) va tra
+        // ve 404 kem nguyen van "User not found with email: x@y.com" - bien
+        // endpoint nay thanh cong cu do danh sach tai khoan da dang ky. Cau
+        // "sent to email if it exists" ma controller tra ve khi do la vo nghia.
+        //
+        // Moi nhanh duoi day deu ket thuc bang return binh thuong. Ly do that
+        // su chi di vao log cua may chu.
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        if (user == null) {
+            log.info("Yeu cau khoi phuc mat khau cho email khong ton tai - bo qua im lang");
+            return;
+        }
 
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
-        // Check Ban
+        // Dang bi khoa do yeu cau qua nhieu lan
         if (user.getForgotPasswordBanUntil() != null && user.getForgotPasswordBanUntil().isAfter(now)) {
-            long hours = java.time.Duration.between(now, user.getForgotPasswordBanUntil()).toHours();
-            throw new BadRequestException("Bạn đã yêu cầu quá 3 lần. Vui lòng thử lại sau " + (hours > 0 ? hours : 1) + " giờ.");
+            log.warn("User {} dang bi khoa khoi phuc mat khau den {}", user.getId(), user.getForgotPasswordBanUntil());
+            return;
         }
 
-        // Reset if ban expired
+        // Khoa da het han -> cho lam lai tu dau
         if (user.getForgotPasswordBanUntil() != null && user.getForgotPasswordBanUntil().isBefore(now)) {
             user.setForgotPasswordAttempts(0);
             user.setForgotPasswordBanUntil(null);
         }
 
-        // Check Cooldown
-        if (user.getForgotPasswordLastAttempt() != null && java.time.Duration.between(user.getForgotPasswordLastAttempt(), now).toMinutes() < 1) {
-            throw new BadRequestException("Vui lòng đợi 1 phút trước khi yêu cầu lại mã mới.");
+        // Cooldown 1 phut giua hai lan xin ma
+        if (user.getForgotPasswordLastAttempt() != null
+                && java.time.Duration.between(user.getForgotPasswordLastAttempt(), now).toMinutes() < 1) {
+            log.info("User {} xin ma lai qua som - bo qua", user.getId());
+            return;
         }
 
-        // Update tracking
         int attempts = user.getForgotPasswordAttempts() == null ? 0 : user.getForgotPasswordAttempts();
         user.setForgotPasswordAttempts(attempts + 1);
         user.setForgotPasswordLastAttempt(now);
@@ -222,23 +235,30 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        // Delete old tokens
+        // Moi user chi co dung mot ma song tai mot thoi diem
         tokenRepository.deleteByUser(user);
 
-        // Generate 6 digit OTP
-        String tokenString = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
-        myproject.booking_tour.entity.PasswordResetToken resetToken = new myproject.booking_tour.entity.PasswordResetToken(
-                tokenString, user, now.plusMinutes(5)
-        );
+        // SecureRandom chu khong phai Random: day la gia tri doi duoc mat khau.
+        String otp = String.format("%06d", new java.security.SecureRandom().nextInt(1000000));
+
+        // Database chi luu SHA-256 cua ma, khong luu ban goc - cung ly do nhu
+        // refresh_tokens. Ban goc chi ton tai trong email gui di.
+        myproject.booking_tour.entity.PasswordResetToken resetToken =
+                new myproject.booking_tour.entity.PasswordResetToken(
+                        myproject.booking_tour.security.TokenHasher.sha256Hex(otp),
+                        user,
+                        now.plusMinutes(5));
         tokenRepository.save(resetToken);
 
-        log.info("=================================================");
-        log.info("MÃ OTP KHÔI PHỤC MẬT KHẨU CHO EMAIL {}: {}", email, tokenString);
-        log.info("=================================================");
+        // KHONG BAO GIO ghi ma OTP vao log. Truoc day o day co mot dong log.info
+        // in thang ma kem email - ai doc duoc logs/app.log la chiem duoc moi tai
+        // khoan. Log bi doi xu nhu du lieu khong nhay cam: no duoc day len dich
+        // vu tap trung, duoc sao luu, duoc dan ra khi debug.
+        log.info("Da tao ma khoi phuc mat khau cho user {} (het han {})", user.getId(), now.plusMinutes(5));
 
         try {
             java.util.Map<String, Object> model = new java.util.HashMap<>();
-            model.put("resetToken", tokenString);
+            model.put("resetToken", otp);
             emailService.sendMessageUsingThymeleafTemplate(user.getEmail(), "Khôi phục mật khẩu", "reset-password", model);
         } catch (Exception e) {
             log.error("Failed to send reset password email: {}", e.getMessage());
@@ -248,7 +268,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        myproject.booking_tour.entity.PasswordResetToken resetToken = tokenRepository.findByToken(token)
+        // Bam truoc khi tra cuu: database chi luu SHA-256 cua ma.
+        myproject.booking_tour.entity.PasswordResetToken resetToken = tokenRepository
+                .findByTokenHash(myproject.booking_tour.security.TokenHasher.sha256Hex(token))
                 .orElseThrow(() -> new BadRequestException("Invalid token!"));
 
         if (resetToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {

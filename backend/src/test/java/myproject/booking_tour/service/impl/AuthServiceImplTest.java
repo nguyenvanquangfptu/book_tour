@@ -17,6 +17,7 @@ import myproject.booking_tour.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -141,5 +142,62 @@ class AuthServiceImplTest {
         authService.logout("some-refresh-token");
 
         verify(refreshTokenService, times(1)).revokeSession("some-refresh-token");
+    }
+
+    /**
+     * Email khong ton tai phai ket thuc IM LANG, khong duoc nem ngoai le.
+     *
+     * Truoc day cho nay la .orElseThrow(ResourceNotFoundException) va tra ve 404
+     * kem nguyen van "User not found with email: x@y.com" - bien endpoint nay
+     * thanh cong cu do danh sach tai khoan da dang ky.
+     */
+    @Test
+    void forgotPassword_ShouldStaySilent_WhenEmailDoesNotExist() {
+        when(userRepository.findByEmailIgnoreCase("khongtontai@example.com"))
+                .thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> authService.forgotPassword("khongtontai@example.com"));
+
+        // Khong tao ma, khong gui mail - ben ngoai khong the phan biet duoc
+        // truong hop nay voi truong hop email co that.
+        verifyNoInteractions(tokenRepository, emailService);
+    }
+
+    /**
+     * Ma OTP goc chi duoc di vao email. Database chi nhan ban bam SHA-256.
+     */
+    @Test
+    void forgotPassword_ShouldStoreOnlyTheHash_AndEmailTheRawCode() throws Exception {
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+
+        authService.forgotPassword("test@test.com");
+
+        ArgumentCaptor<myproject.booking_tour.entity.PasswordResetToken> saved =
+                ArgumentCaptor.forClass(myproject.booking_tour.entity.PasswordResetToken.class);
+        verify(tokenRepository).save(saved.capture());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<java.util.Map<String, Object>> model = ArgumentCaptor.forClass(java.util.Map.class);
+        verify(emailService).sendMessageUsingThymeleafTemplate(
+                eq("test@test.com"), anyString(), eq("reset-password"), model.capture());
+
+        String rawOtp = (String) model.getValue().get("resetToken");
+        assertEquals(6, rawOtp.length(), "OTP phai la 6 chu so");
+
+        String storedHash = saved.getValue().getTokenHash();
+        assertEquals(64, storedHash.length(), "SHA-256 hex luon 64 ky tu");
+        assertNotEquals(rawOtp, storedHash, "Ma goc KHONG duoc nam trong database");
+        assertEquals(myproject.booking_tour.security.TokenHasher.sha256Hex(rawOtp), storedHash);
+    }
+
+    /** Dang bi khoa cung phai im lang - khong duoc de lo rang email nay co that. */
+    @Test
+    void forgotPassword_ShouldStaySilent_WhenUserIsBanned() {
+        mockUser.setForgotPasswordBanUntil(LocalDateTime.now().plusHours(2));
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+
+        assertDoesNotThrow(() -> authService.forgotPassword("test@test.com"));
+
+        verifyNoInteractions(tokenRepository, emailService);
     }
 }
