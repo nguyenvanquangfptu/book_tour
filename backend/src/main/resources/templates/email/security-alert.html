@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Cảnh báo bảo mật</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #b00020; text-align: center;">Cảnh báo bảo mật</h2>
+
+        <p>Xin chào <strong th:text="${fullName}">bạn</strong>,</p>
+
+        <p>
+            Hệ thống vừa phát hiện một phiên đăng nhập của bạn được sử dụng lại theo cách
+            bất thường. Điều này thường có nghĩa là thông tin đăng nhập của phiên đó đã bị
+            sao chép sang một thiết bị khác.
+        </p>
+
+        <p>
+            Để đảm bảo an toàn, <strong>toàn bộ phiên đăng nhập liên quan đã bị thu hồi ngay
+            lập tức</strong>. Bạn sẽ cần đăng nhập lại.
+        </p>
+
+        <div style="margin: 25px 0; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #b00020;">
+            <p style="margin: 5px 0;"><strong>Thời điểm phát hiện:</strong>
+                <span th:text="${#temporals.format(detectedAt, 'HH:mm:ss dd/MM/yyyy')} + ' (UTC)'">--</span>
+            </p>
+            <p style="margin: 5px 0;"><strong>Địa chỉ IP:</strong>
+                <span th:text="${ipAddress}">--</span>
+            </p>
+            <p style="margin: 5px 0;"><strong>Trình duyệt:</strong>
+                <span th:text="${userAgent}">--</span>
+            </p>
+        </div>
+
+        <p><strong>Bạn nên làm gì?</strong></p>
+        <ul>
+            <li>Nếu địa chỉ IP và trình duyệt ở trên <strong>không phải của bạn</strong>:
+                hãy đổi mật khẩu ngay. Việc đổi mật khẩu sẽ thu hồi mọi phiên đăng nhập
+                trên tất cả thiết bị.</li>
+            <li>Nếu đúng là bạn: nhiều khả năng đây chỉ là sự cố kết nối. Bạn chỉ cần đăng
+                nhập lại như bình thường.</li>
+        </ul>
+
+        <p style="margin-top: 30px;">Trân trọng,<br>Đội ngũ Booking Tour</p>
+    </div>
+</body>
+</html>

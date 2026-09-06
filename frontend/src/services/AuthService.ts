@@ -16,10 +16,10 @@ export const AuthService = {
     return response.data;
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  },
+  // Không còn logout() ở đây. Xoá localStorage là chưa đủ: cookie refresh_token
+  // vẫn sống 30 ngày phía server, ai lấy được nó vẫn xin được access token mới.
+  // Đăng xuất phải đi qua useAuthStore.logout() để gọi POST /auth/logout và thu
+  // hồi cả family refresh token.
 
   getCurrentUser: () => {
     const userStr = localStorage.getItem('user');

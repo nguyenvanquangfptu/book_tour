@@ -8,7 +8,7 @@ public class SecurityUtil {
     /**
      * Id cua nguoi dung dang dang nhap, hoac null neu khong co ai (tac vu chay
      * nen: scheduler, webhook cua cong thanh toan).
-     *
+     * <p>
      * Truoc day cac cho ghi audit log dung gia tri gia userId = 0 vi khong lay
      * duoc user - ma trong bang users khong he co id = 0, khien khong the dat
      * khoa ngoai va nhat ky khong biet ai da thao tac. null moi la cach dung de
