@@ -17,7 +17,7 @@ class JwtServiceTest {
         jwtService = new JwtService();
         // Set properties that are usually injected by @Value
         ReflectionTestUtils.setField(jwtService, "secretKey", "ThisIsAVeryLongSecretKeyForTestingPurposeOnly1234567890!");
-        ReflectionTestUtils.setField(jwtService, "jwtExpiration", 3600000L); // 1 hour
+        ReflectionTestUtils.setField(jwtService, "accessExpiration", 900000L); // 15 phut
     }
 
     @Test

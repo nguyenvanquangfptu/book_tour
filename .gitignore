@@ -46,3 +46,10 @@ database/
 *.sqlite
 pgdata/
 data/
+
+# NGOAI TRU: migration cua Flyway BAT BUOC phai duoc git theo doi.
+# Quy tac "*.sql" o tren vo tinh loai bo ca thu muc nay - ma neu migration khong
+# nam trong ma nguon thi Flyway vo nghia: nguoi khac clone repo ve se khong co
+# schema, dung lai dung van de ban dau.
+!backend/src/main/resources/db/migration/
+!backend/src/main/resources/db/migration/*.sql

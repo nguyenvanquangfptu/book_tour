@@ -11,23 +11,37 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
 
+/**
+ * Access token: JWT HS256 song 15 phut, xac thuc hoan toan stateless.
+ *
+ * Vong doi ngan la thu duy nhat gioi han thiet hai khi token lot ra ngoai -
+ * khong co danh sach den, khong co cach thu hoi som. Muon cat quyen truy cap
+ * cua mot phien thi thu hoi refresh token cua no (RefreshTokenService); access
+ * token dang cam se tu het han trong toi da 15 phut.
+ */
 @Service
 public class JwtService {
+
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.access-expiration}")
+    private long accessExpiration;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** So mili giay access token con song - frontend dung de chu dong lam moi. */
+    public long getAccessExpirationMs() {
+        return accessExpiration;
     }
 
     public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .expiration(new Date(System.currentTimeMillis() + accessExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -55,39 +69,6 @@ public class JwtService {
 
     private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
-    }
-
-    /**
-     * SHA-256 cua token, dang hex 64 ky tu - dung lam khoa trong bang
-     * invalidated_tokens thay vi luu chinh chuoi JWT.
-     *
-     * Ba ly do:
-     *   1. Do dai co dinh 64 ky tu. Cot cu la VARCHAR(255) trong khi entity khai
-     *      1024; voi username dai (cot username cho phep 100 ky tu) token that
-     *      co the vuot 255 -> INSERT that bai luc logout. Bam xong thi khong
-     *      bao gio con phu thuoc vao do dai token.
-     *   2. Index nho va nhanh hon nhieu so voi chuoi vai tram ky tu.
-     *   3. Neu lo ban sao database, ke tan cong khong lay duoc token con hieu
-     *      luc - vi ham bam mot chieu.
-     *
-     * LUU Y: ham nay phai duoc dung o CA HAI noi - luc ghi (logout) va luc kiem
-     * tra (JwtAuthenticationFilter). Neu chi sua mot ben, danh sach den se im
-     * lang mat tac dung.
-     */
-    public String hashToken(String token) {
-        try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] bytes = digest.digest(token.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(bytes.length * 2);
-            for (byte b : bytes) {
-                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
-                hex.append(Character.forDigit(b & 0xF, 16));
-            }
-            return hex.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            // SHA-256 la thuat toan bat buoc co trong moi JVM
-            throw new IllegalStateException("Khong tim thay thuat toan SHA-256", e);
-        }
     }
 
     public Boolean isTokenValid(String token, String username) {
