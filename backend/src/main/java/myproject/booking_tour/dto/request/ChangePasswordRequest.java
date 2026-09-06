@@ -1,7 +1,7 @@
 package myproject.booking_tour.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import myproject.booking_tour.validation.StrongPassword;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ public class ChangePasswordRequest {
     private String oldPassword;
 
     @NotBlank(message = "New password is required")
-    @Size(min = 6, message = "New password must be at least 6 characters")
+    @StrongPassword
     private String newPassword;
 
     @NotBlank(message = "Confirm password is required")
