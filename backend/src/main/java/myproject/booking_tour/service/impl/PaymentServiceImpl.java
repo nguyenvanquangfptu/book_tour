@@ -196,51 +196,6 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponse(dummy);
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 1800000) // 30 minutes
-    @Transactional
-    public void checkPendingPayOSPayments() {
-        log.info("[CronJob] Bắt đầu kiểm tra các giao dịch PayOS đang chờ...");
-        
-        // Find all payments that are PENDING and use PAYOS
-        // Truoc day phai findAll() roi loc trong bo nho vi ma don hang bi nhet
-        // chung vao payment_method. Gio loc thang tren database, co index.
-        List<Payment> pendingPayments =
-                paymentRepository.findByPaymentStatusAndOrderCodeNotNull("PENDING");
-
-        for (Payment payment : pendingPayments) {
-            try {
-                long orderCode = Long.parseLong(payment.getOrderCode());
-                vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
-
-                if ("PAID".equals(paymentLink.getStatus().name())) {
-                    log.info("[CronJob] Tìm thấy đơn hàng đã thanh toán: PaymentID={}", orderCode);
-                    
-                    Booking booking = payment.getBooking();
-                    if (!"PAID".equals(booking.getStatus())) {
-                        booking.setStatus("PAID");
-                        bookingRepository.save(booking);
-                    }
-                    
-                    payment.setPaymentStatus("SUCCESS");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                } else if ("CANCELLED".equals(paymentLink.getStatus().name()) || "EXPIRED".equals(paymentLink.getStatus().name())) {
-                    log.info("[CronJob] Đơn hàng đã hủy/hết hạn: PaymentID={}", orderCode);
-                    Booking booking = payment.getBooking();
-                    if (!"CANCELLED".equals(booking.getStatus())) {
-                        bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
-                    }
-                    payment.setPaymentStatus("FAILED");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                }
-            } catch (Exception e) {
-                System.err.println("[CronJob] Lỗi kiểm tra PaymentID=" + payment.getId() + ": " + e.getMessage());
-            }
-        }
-        System.out.println("[CronJob] Hoàn tất kiểm tra.");
-    }
-
     @Override
     @Transactional
     public void processPayOSWebhook(vn.payos.model.webhooks.Webhook webhookBody) {
