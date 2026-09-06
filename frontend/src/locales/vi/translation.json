@@ -306,15 +306,9 @@
     "home": "Về Trang Chủ",
     "cancelTitle": "Thanh toán bị hủy!",
     "cancelText": "Giao dịch thanh toán PayOS đã bị hủy bỏ. Đơn đặt tour của bạn chưa được thanh toán thành công.",
-    "tryAgain": "Thử lại",
     "resultTitle": "Kết quả thanh toán",
-    "successResultText": "Cảm ơn bạn đã đặt tour. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.",
-    "failTitle": "Thanh toán thất bại!",
-    "failText": "Giao dịch đã bị hủy hoặc xảy ra lỗi. Vui lòng thử lại sau.",
     "verifyFail": "Xác thực thanh toán thất bại.",
     "verifyError": "Lỗi kết nối khi xác thực thanh toán.",
-    "processingResult": "Đang xử lý kết quả thanh toán...",
-    "dontClose": "Vui lòng không đóng trình duyệt!",
     "exploreOthers": "Khám Phá Tour Khác"
   },
   "ticketTemplate": {
