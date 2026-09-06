@@ -41,11 +41,25 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     /**
      * Thu hoi moi token con song trong mot family.
      *
-     * clearAutomatically: lenh UPDATE nay chay thang xuong database, khong di
-     * qua persistence context. Phai xoa context di neu khong cac thuc the dang
-     * quan ly se giu trang thai cu.
+     * PHAI CO CA HAI CO, va thu tu giua chung la ly do:
+     *
+     *   flushAutomatically - ghi cac thay doi dang cho xuong database TRUOC khi
+     *       chay lenh UPDATE nay. Thieu no la mot loi da tung xay ra that:
+     *       resetPassword() dat mat khau moi roi goi revokeAllForUser(); mat
+     *       khau moi con nam trong persistence context chua duoc flush, lenh
+     *       bulk chay thang xuong DB bo qua no, roi clearAutomatically xoa sach
+     *       context - cuon theo ca mat khau moi lan lenh xoa ma OTP. API tra ve
+     *       200 "doi mat khau thanh cong" trong khi mat khau khong he doi.
+     *
+     *   clearAutomatically - xoa context SAU khi chay, vi lenh UPDATE khong di
+     *       qua persistence context nen cac thuc the dang quan ly se giu trang
+     *       thai cu neu khong xoa.
+     *
+     * Loai loi nay VO HINH voi test dung mock: khong co persistence context that
+     * thi khong co gi de flush hay clear. Chi test tich hop moi bat duoc - xem
+     * RefreshTokenRepositoryTest.
      */
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE RefreshToken t
                SET t.revokedAt = :now, t.revokedReason = :reason
@@ -68,7 +82,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     boolean existsByFamilyIdAndRevokedReason(UUID familyId, RefreshToken.RevocationReason revokedReason);
 
     /** Thu hoi moi phien cua mot nguoi - dung khi doi mat khau. */
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE RefreshToken t
                SET t.revokedAt = :now, t.revokedReason = :reason
@@ -83,8 +97,12 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      * Xoa han cac ban ghi da het han. An toan voi khoa ngoai parent_id vi cot do
      * la ON DELETE SET NULL, va vi ca family chung mot expires_at nen thuong bi
      * xoa tron mot luot.
+     *
+     * @Transactional dat ngay day de moi lenh don la mot giao dich doc lap -
+     * TokenCleanupScheduler co y khong mo transaction bao ca hai bang.
      */
     @Modifying
+    @org.springframework.transaction.annotation.Transactional
     @Query("DELETE FROM RefreshToken t WHERE t.expiresAt <= :now")
     int deleteExpired(@Param("now") LocalDateTime now);
 }
