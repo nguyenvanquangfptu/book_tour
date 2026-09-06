@@ -4,7 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,17 +14,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Doc access token tu header Authorization va dung no de xac thuc request.
+ *
+ * KHONG con tra danh sach den. Truoc day moi request da xac thuc phai them mot
+ * query vao bang invalidated_tokens, doi lay viec logout vo hieu hoa token ngay
+ * lap tuc - danh doi hop ly khi token song 24 gio. Voi 15 phut thi khong con
+ * dang: logout gio thu hoi ca family refresh token (ke trom khong lam moi duoc
+ * nua), con access token cu tu chet trong toi da 15 phut.
+ */
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-
-    @Autowired
-    private myproject.booking_tour.repository.InvalidatedTokenRepository invalidatedTokenRepository;
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -43,21 +47,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
         } catch (Exception e) {
+            // Chu ky sai hoac token het han: di tiep khong xac thuc. Endpoint nao
+            // can quyen se tra 401, frontend bat 401 do de goi /api/auth/refresh.
             filterChain.doFilter(request, response);
             return;
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
-            // Danh sach den luu SHA-256 cua token chu khong luu token goc,
-            // nen phai bam truoc khi tra cuu (xem JwtService.hashToken).
-            if (invalidatedTokenRepository.existsById(jwtService.hashToken(jwt))) {
-                // Token is blacklisted
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token is invalidated (logged out)");
-                return;
-            }
 
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
