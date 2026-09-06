@@ -115,8 +115,9 @@ class UserControllerTest {
     void changeMyPassword_ShouldReturn200() throws Exception {
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setOldPassword("oldpass");
-        request.setNewPassword("newpass");
-        request.setConfirmPassword("newpass");
+        // Phai thoa @StrongPassword: >= 8 ky tu, co ca chu va so.
+        request.setNewPassword("NewPass123");
+        request.setConfirmPassword("NewPass123");
 
         mockMvc.perform(put("/api/users/profile/change-password")
                 .contentType(MediaType.APPLICATION_JSON)

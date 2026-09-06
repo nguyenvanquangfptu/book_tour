@@ -3,6 +3,7 @@ package myproject.booking_tour.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import myproject.booking_tour.validation.StrongPassword;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ public class RegisterRequest {
     private String username;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
+    @StrongPassword
     private String password;
 
     @NotBlank(message = "Email is required")

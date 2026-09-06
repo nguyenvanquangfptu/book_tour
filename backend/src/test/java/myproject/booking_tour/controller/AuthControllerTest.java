@@ -75,7 +75,8 @@ class AuthControllerTest {
         RegisterRequest request = new RegisterRequest();
         request.setUsername("testuser");
         request.setEmail("test@test.com");
-        request.setPassword("password");
+        // Phai thoa @StrongPassword: >= 8 ky tu, co ca chu va so.
+        request.setPassword("Passw0rd123");
         request.setFullName("Test User");
 
         Mockito.when(authService.register(any(RegisterRequest.class), any(ClientMetadata.class)))
