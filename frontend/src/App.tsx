@@ -12,7 +12,6 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import CartPage from './pages/CartPage';
 import ProfilePage from './pages/ProfilePage';
-import PaymentResult from './pages/PaymentResult';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import FAQPage from './pages/FAQPage';
@@ -61,7 +60,6 @@ const App: React.FC = () => {
                     <Route element={<ProtectedRoute />}>
                       <Route path="/profile" element={<ProfilePage />} />
                     </Route>
-                    <Route path="/payment-result" element={<PaymentResult />} />
                     <Route path="/payment/success" element={<PaymentSuccess />} />
                     <Route path="/payment/cancel" element={<PaymentCancel />} />
                     <Route path="/login" element={<Login />} />

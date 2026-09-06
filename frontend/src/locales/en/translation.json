@@ -306,15 +306,9 @@
     "home": "Home",
     "cancelTitle": "Payment Cancelled",
     "cancelText": "The PayOS payment transaction was cancelled. Your tour booking has not been successfully paid.",
-    "tryAgain": "Try Again",
     "resultTitle": "Payment Result",
-    "successResultText": "Thank you for booking the tour. We will contact you as soon as possible.",
-    "failTitle": "Payment Failed!",
-    "failText": "The transaction was cancelled or an error occurred. Please try again later.",
     "verifyFail": "Payment verification failed.",
     "verifyError": "Connection error when verifying payment.",
-    "processingResult": "Processing payment result...",
-    "dontClose": "Please do not close the browser!",
     "exploreOthers": "Explore Other Tours"
   },
   "ticketTemplate": {
