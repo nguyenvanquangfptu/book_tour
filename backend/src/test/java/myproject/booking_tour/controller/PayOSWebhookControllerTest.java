@@ -92,5 +92,54 @@ class PayOSWebhookControllerTest {
                 .content(jsonPayload))
                 .andExpect(status().isServiceUnavailable());
     }
+
+    private void authenticateCustomer(long userId) {
+        // addFilters = false bỏ qua JwtAuthenticationFilter nên SecurityContext
+        // phải tự dựng để chạy được chốt kiểm tra quyền trong controller.
+        myproject.booking_tour.entity.Role role = new myproject.booking_tour.entity.Role();
+        role.setName("CUSTOMER");
+        myproject.booking_tour.entity.User user = new myproject.booking_tour.entity.User();
+        user.setId(userId);
+        user.setRole(role);
+        myproject.booking_tour.security.CustomUserDetails principal =
+                new myproject.booking_tour.security.CustomUserDetails(user);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        principal, null, principal.getAuthorities()));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearContext() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void verify_ShouldRefuse_WhenOrderCodeIsNotInOurDatabase() throws Exception {
+        // Điều kiện cũ là "ownerId != null && !isAdmin && ..." nên orderCode lạ
+        // đi THẲNG qua chốt kiểm tra quyền, và code vẫn hỏi PayOS - biến endpoint
+        // thành công cụ dò trạng thái đơn hàng PayOS bất kỳ.
+        authenticateCustomer(1L);
+        Mockito.when(paymentService.getPaymentOwnerUserIdByOrderCode("999")).thenReturn(null);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/payment/payos_transfer_handler/verify")
+                        .param("orderCode", "999"))
+                .andExpect(status().isBadRequest());
+
+        Mockito.verifyNoInteractions(payOS);
+    }
+
+    @Test
+    void verify_ShouldRefuse_WhenOrderCodeBelongsToSomeoneElse() throws Exception {
+        authenticateCustomer(1L);
+        Mockito.when(paymentService.getPaymentOwnerUserIdByOrderCode("777")).thenReturn(7L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/payment/payos_transfer_handler/verify")
+                        .param("orderCode", "777"))
+                .andExpect(status().isBadRequest());
+
+        Mockito.verifyNoInteractions(payOS);
+    }
 }
 
