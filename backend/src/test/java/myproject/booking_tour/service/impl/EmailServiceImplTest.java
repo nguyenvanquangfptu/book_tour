@@ -75,4 +75,24 @@ class EmailServiceImplTest {
         // This should not throw an exception because the catch block in EmailServiceImpl catches it
         emailService.sendMessageUsingThymeleafTemplate("test@example.com", "Subject", "test-template", model);
     }
+
+    /**
+     * sendMessageUsingThymeleafTemplate luôn gắn tiền tố "email/" vào tên
+     * template, nên mọi file .html nằm ngoài templates/email/ là file KHÔNG BAO
+     * GIỜ gửi được - Thymeleaf ném TemplateInputException, và mọi nơi gọi email
+     * đều bọc try/catch nên lỗi đó im lặng.
+     *
+     * Đúng chuyện đã xảy ra với booking-cancelled-auto.html: nó nằm thẳng trong
+     * templates/, nên email báo hủy đơn tự động chưa bao giờ tới tay khách.
+     */
+    @Test
+    void everyEmailTemplate_MustLiveUnderTemplatesEmail() throws Exception {
+        java.io.File templatesDir = new java.io.File("src/main/resources/templates");
+        java.io.File[] strayTemplates = templatesDir.listFiles(
+                (dir, name) -> name.endsWith(".html"));
+
+        org.assertj.core.api.Assertions.assertThat(strayTemplates)
+                .as("template nằm ngoài templates/email/ thì không gửi được")
+                .isEmpty();
+    }
 }

@@ -95,12 +95,26 @@ class PaymentControllerTest {
 
     @Test
     void createPayOSUrl_ShouldReturn200() throws Exception {
-        Mockito.when(paymentService.createPaymentUrl(eq(1L), any())).thenReturn("http://payos.url");
+        Mockito.when(paymentService.createPaymentUrl(eq(1L), anyLong(), anyBoolean())).thenReturn("http://payos.url");
 
         mockMvc.perform(get("/api/payments/create-payos-url")
                 .param("bookingId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void createPayOSUrl_ShouldPassAuthenticatedUser_NotJustTheBookingId() throws Exception {
+        // Danh tính người gọi phải đi kèm xuống service. Trước đây endpoint chỉ
+        // truyền bookingId, nên bất kỳ tài khoản CUSTOMER nào cũng tạo được link
+        // thanh toán cho đơn của người khác.
+        Mockito.when(paymentService.createPaymentUrl(eq(1L), anyLong(), anyBoolean())).thenReturn("http://payos.url");
+
+        mockMvc.perform(get("/api/payments/create-payos-url")
+                .param("bookingId", "1"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(paymentService).createPaymentUrl(1L, 1L, false);
     }
 }
 
