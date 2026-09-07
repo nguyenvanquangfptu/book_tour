@@ -41,6 +41,25 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    /**
+     * Vi pham rang buoc toan ven cua database - gan nhu luon la hai request
+     * dong thoi cung tao mot ban ghi ma rang buoc UNIQUE chi cho phep mot
+     * (vi du hai nguoi cung dat mot ngay khoi hanh chua co dong lich).
+     *
+     * Day la TRANH CHAP, khong phai su co may chu: nguoi dung thu lai la thanh
+     * cong. Truoc khi co handler nay no roi vao handleGeneralException va thanh
+     * 500 - cung mot tinh huong tranh chap ma luc thi 409 "thu lai di", luc thi
+     * 500 "may chu hong", tuy vao viec dong du lieu da ton tai hay chua.
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("Vi phạm ràng buộc dữ liệu: {}", ex.getMostSpecificCause().getMessage());
+        ApiResponse<?> response = new ApiResponse<>(false,
+                "Dữ liệu vừa được thay đổi bởi một giao dịch khác. Vui lòng thử lại!", null);
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleValidationException(MethodArgumentNotValidException ex) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
@@ -71,6 +90,35 @@ public class GlobalExceptionHandler {
         ApiResponse<?> response = new ApiResponse<>(false,
                 "Tham số '" + ex.getName() + "' không hợp lệ.", null);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Goi dung duong dan nhung sai phuong thuc HTTP - vi du GET /api/tours,
+     * trong khi o duong dan do chi co POST (tao tour); danh sach tour nam o
+     * endpoint khac.
+     *
+     * Cung ly do voi handleTypeMismatch ngay tren: day la loi cua BEN GOI, phai
+     * tra 405. Truoc khi co handler nay no roi vao handleGeneralException va
+     * thanh 500 kem nguyen stack trace ghi o muc ERROR - nguoi doc log tuong
+     * may chu hong, con nguoi goi thi khong biet minh sai o dau.
+     *
+     * Header "Allow" la bat buoc theo dac ta HTTP cho 405, va no chinh la thu
+     * noi cho ben goi biet duong dan nay nhan phuong thuc nao.
+     */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<?>> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        log.warn("Phương thức {} không được hỗ trợ, đường dẫn này chỉ nhận {}",
+                ex.getMethod(), ex.getSupportedHttpMethods());
+
+        ApiResponse<?> response = new ApiResponse<>(false,
+                "Phương thức " + ex.getMethod() + " không được hỗ trợ cho đường dẫn này.", null);
+
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        if (ex.getSupportedHttpMethods() != null) {
+            headers.setAllow(ex.getSupportedHttpMethods());
+        }
+        return new ResponseEntity<>(response, headers, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @ExceptionHandler(Exception.class)

@@ -99,6 +99,41 @@ const BookingHistoryTab: React.FC<BookingHistoryTabProps> = ({
     }
   };
 
+  // Backend đã có PUT /api/bookings/{id}/cancel và BookingService.cancelBooking
+  // từ lâu, bộ khóa dịch cũng đã đủ (cancelConfirmTitle, yesCancel, noKeep...) -
+  // chỉ thiếu đúng nút bấm, nên khách không có cách nào tự hủy đơn.
+  const handleCancelBooking = async (bookingId: number) => {
+    const confirmation = await Swal.fire({
+      icon: 'warning',
+      title: t('profile.bookingHistory.cancelConfirmTitle'),
+      text: t('profile.bookingHistory.cancelConfirmText'),
+      showCancelButton: true,
+      confirmButtonText: t('profile.bookingHistory.yesCancel'),
+      cancelButtonText: t('profile.bookingHistory.noKeep'),
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b'
+    });
+    if (!confirmation.isConfirmed) return;
+
+    try {
+      await BookingService.cancelBooking(bookingId);
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      Swal.fire(
+        t('profile.bookingHistory.cancelSuccessTitle'),
+        t('profile.bookingHistory.cancelSuccessText'),
+        'success'
+      );
+    } catch(e: any) {
+      // Server nói rõ lý do: đơn đã thanh toán thì phải liên hệ hỗ trợ, tour đã
+      // khởi hành thì không hủy được nữa.
+      Swal.fire(
+        t('profile.bookingHistory.cancelErrorTitle'),
+        e.response?.data?.message || t('profile.bookingHistory.cancelErrorText'),
+        'error'
+      );
+    }
+  };
+
   return (
     <div>
       <h2 style={{ marginBottom: '20px', color: '#0f172a' }}>{t('profile.bookingHistory.title')}</h2>
@@ -163,11 +198,23 @@ const BookingHistoryTab: React.FC<BookingHistoryTabProps> = ({
                   {t('profile.bookingHistory.viewDetails')}
                 </button>
                 {booking.status === 'CONFIRMED' && (
-                  <button 
+                  <button
                     onClick={() => handlePayment(booking.id)}
                     style={{ background: '#10b981', border: 'none', padding: '6px 12px', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     {t('profile.bookingHistory.payNow')}
+                  </button>
+                )}
+                {/* Chỉ hai trạng thái này khách mới tự hủy được: đơn đã thanh
+                    toán phải qua bộ phận hỗ trợ để hoàn tiền (backend chặn). */}
+                {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
+                  <button
+                    onClick={() => handleCancelBooking(booking.id)}
+                    style={{ background: 'transparent', border: '1px solid #fca5a5', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', color: '#dc2626', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                  >
+                    {t('profile.bookingHistory.cancelBooking')}
                   </button>
                 )}
                 {booking.status === 'PAID' && (

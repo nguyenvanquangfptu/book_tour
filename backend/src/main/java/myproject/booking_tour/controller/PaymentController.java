@@ -58,10 +58,10 @@ public class PaymentController {
     }
 
     @GetMapping("/create-payos-url")
-    public ResponseEntity<ApiResponse<String>> createPayOSUrl(
-            @RequestParam Long bookingId,
-            jakarta.servlet.http.HttpServletRequest request) {
-        String paymentUrl = paymentService.createPaymentUrl(bookingId, request);
+    public ResponseEntity<ApiResponse<String>> createPayOSUrl(@RequestParam Long bookingId) {
+        CustomUserDetails userDetails = getCurrentUserDetails();
+        boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
+        String paymentUrl = paymentService.createPaymentUrl(bookingId, userDetails.getUser().getId(), isAdmin);
         if (paymentUrl != null && paymentUrl.startsWith("ERROR:")) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, paymentUrl, null));
         }

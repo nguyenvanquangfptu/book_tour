@@ -116,12 +116,13 @@ const Checkout: React.FC = () => {
 
     try {
       // 1. Gửi request tạo Booking
+      // Không gửi totalPrice và bookingDate: BookingRequest không có hai trường
+      // đó, backend tự tính giá từ tour.price và tự đóng dấu thời gian. Gửi lên
+      // chỉ khiến người đọc tưởng client đặt được giá.
       const bookingRequest: any = {
         tourId: state.tourId,
-        bookingDate: new Date().toISOString(),
         travelDate: state.startDate,
         numberOfPeople: state.guests,
-        totalPrice: Math.max(0, state.totalPrice - discountAmount),
         customerName: formData.fullName,
         customerEmail: formData.email,
         customerPhone: formData.phone,
@@ -146,12 +147,16 @@ const Checkout: React.FC = () => {
           navigate('/profile');
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout failed', error);
+      // Backend nói rõ lý do: hết chỗ ngày nào, còn mấy chỗ, voucher sai ở đâu.
+      // Nuốt hết rồi hiện một câu chung chung thì khách không biết phải sửa gì —
+      // và không phân biệt được lỗi thử lại được (409) với lỗi phải đổi lựa chọn.
+      const serverMessage = error.response?.data?.message;
       Swal.fire({
         icon: 'error',
         title: t('checkout.bookingErrorTitle'),
-        text: t('checkout.bookingErrorText'),
+        text: serverMessage || t('checkout.bookingErrorText'),
         confirmButtonColor: '#3b82f6'
       });
     } finally {

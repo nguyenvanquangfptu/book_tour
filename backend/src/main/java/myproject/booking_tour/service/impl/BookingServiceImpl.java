@@ -49,6 +49,10 @@ public class BookingServiceImpl implements BookingService {
     @Value("${app.admin.email}")
     private String adminEmail;
 
+    /** Ngày trong thông báo lỗi hiện theo định dạng người Việt đọc quen, không phải ISO. */
+    private static final java.time.format.DateTimeFormatter DATE_FORMAT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     @Override
     @Transactional
     public BookingResponse createBooking(BookingRequest request, Long userId) {
@@ -107,15 +111,32 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toResponse(savedBooking);
     }
 
+    /**
+     * Doc so ngay tour keo dai tu chuoi mo ta tu do ("3 ngay 2 dem", "1 tuan").
+     *
+     * Con so nay quyet dinh tru cho cua bao nhieu ngay, nen doc thieu la ban
+     * vuot cho o nhung ngay khong duoc tinh den. "1 tuan" tung roi vao nhanh
+     * "lay con so dau tien" va tra ve 1 thay vi 7 - tour ca tuan ma chi giu cho
+     * dung ngay khoi hanh.
+     */
     private int parseDurationDays(String duration) {
         if (duration == null || duration.trim().isEmpty()) return 1;
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)\\s*(ngày|day)", java.util.regex.Pattern.CASE_INSENSITIVE);
-        java.util.regex.Matcher m = p.matcher(duration);
+
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(\\d+)\\s*(ngày|ngay|day)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(duration);
         if (m.find()) {
             return Integer.parseInt(m.group(1));
         }
-        p = java.util.regex.Pattern.compile("(\\d+)");
-        m = p.matcher(duration);
+
+        m = java.util.regex.Pattern
+                .compile("(\\d+)\\s*(tuần|tuan|week)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(duration);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1)) * 7;
+        }
+
+        m = java.util.regex.Pattern.compile("(\\d+)").matcher(duration);
         if (m.find()) {
             return Integer.parseInt(m.group(1));
         }
@@ -125,55 +146,59 @@ public class BookingServiceImpl implements BookingService {
     /**
      * Kiem tra du cho va tru cho cho TAT CA cac ngay ma tour dien ra.
      *
-     * @return dong tour_schedules cua NGAY KHOI HANH (da co id sau khi luu),
-     *         de booking giu duoc khoa ngoai that toi lich khoi hanh.
+     * Moi ngay di qua dung hai cau lenh, ca hai deu nguyen tu:
+     *
+     *   1. insertIfAbsent - tao dong lich neu ngay do chua co
+     *   2. deductSlots    - tru cho, kem dieu kien "con du cho" ngay trong
+     *                       cau UPDATE
+     *
+     * Khong con doc-sua-ghi tren entity, nen khong con cua so nao de hai
+     * request chen vao giua buoc kiem tra va buoc tru. Doi lai, so cho con lai
+     * de bao loi phai doc them mot lan - nhung chi doc tren duong THAT BAI,
+     * la duong hiem.
+     *
+     * Vong lap luon chay theo thu tu ngay tang dan, giong nhau o moi request,
+     * nen hai booking chong lan nhau khong the khoa cheo (deadlock).
+     *
+     * @return dong tour_schedules cua NGAY KHOI HANH, de booking giu duoc khoa
+     *         ngoai that toi lich khoi hanh.
      */
     private TourSchedule validateAndDeductTourSchedule(Tour tour, BookingRequest request) {
         if (request.getTravelDate() == null) {
-            throw new BadRequestException("Travel date is required");
+            throw new BadRequestException("Vui lòng chọn ngày khởi hành.");
         }
         if (request.getTravelDate().isBefore(java.time.LocalDate.now())) {
             throw new BadRequestException("Ngày khởi hành không được nằm trong quá khứ");
         }
-        
+
         int days = parseDurationDays(tour.getDuration());
         int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
-        
+        int people = request.getNumberOfPeople();
+
         java.time.LocalDate startDate = request.getTravelDate();
-        java.time.LocalDate endDate = startDate.plusDays(days - 1);
 
-        List<TourSchedule> existingSchedules = tourScheduleRepository.findByTourIdAndDepartureDateBetween(tour.getId(), startDate, endDate);
-        Map<java.time.LocalDate, TourSchedule> scheduleMap = existingSchedules.stream()
-                .collect(Collectors.toMap(TourSchedule::getDepartureDate, s -> s, (s1, s2) -> s1));
-
-        List<TourSchedule> schedulesToSave = new java.util.ArrayList<>();
-
-        // Validate and prepare for deduction
         for (int i = 0; i < days; i++) {
             java.time.LocalDate checkDate = startDate.plusDays(i);
-            TourSchedule schedule = scheduleMap.getOrDefault(checkDate, null);
-            
-            if (schedule == null) {
-                schedule = new TourSchedule();
-                schedule.setTour(tour);
-                schedule.setDepartureDate(checkDate);
-                schedule.setAvailableSlots(defaultSlots);
-            }
 
-            if (schedule.getAvailableSlots() < request.getNumberOfPeople()) {
-                throw new BadRequestException("Not enough available slots for date " + checkDate + "! Only " 
-                        + schedule.getAvailableSlots() + " slots left.");
+            tourScheduleRepository.insertIfAbsent(tour.getId(), checkDate, defaultSlots);
+
+            if (tourScheduleRepository.deductSlots(tour.getId(), checkDate, people) == 0) {
+                // Khong tru duoc nghia la THAT SU khong du cho, khong phai tranh
+                // chap ky thuat - bao 400 kem so cho con lai de khach biet duong
+                // ma giam so nguoi.
+                int remaining = tourScheduleRepository
+                        .findFirstByTourIdAndDepartureDate(tour.getId(), checkDate)
+                        .map(TourSchedule::getAvailableSlots)
+                        .orElse(0);
+                throw new BadRequestException("Ngày " + checkDate.format(DATE_FORMAT) + " không đủ chỗ cho "
+                        + people + " khách, chỉ còn " + remaining + " chỗ trống.");
             }
-            
-            schedule.setAvailableSlots(schedule.getAvailableSlots() - request.getNumberOfPeople());
-            schedulesToSave.add(schedule);
         }
 
-        // Batch save
-        List<TourSchedule> savedSchedules = tourScheduleRepository.saveAll(schedulesToSave);
-
-        // Phan tu dau tien ung voi startDate (vong lap chay tu i = 0)
-        return savedSchedules.isEmpty() ? null : savedSchedules.get(0);
+        // Doc sau khi da tru: dong lich chac chan ton tai, va gia tri doc ra
+        // phan anh dung ket qua vua ghi trong cung transaction.
+        return tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), startDate)
+                .orElse(null);
     }
 
     private BigDecimal applyVoucherAndCalculatePrice(BookingRequest request, Booking booking, BigDecimal totalPrice) {
@@ -320,38 +345,88 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponse cancelBooking(Long id, Long userId) {
-        // 1. tìm booking
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!booking.getUser().getId().equals(userId) && !user.getRole().getName().equals("ADMIN")) {
-            throw new BadRequestException("You do not have permission to cancel this booking!");
+        boolean isAdmin = "ADMIN".equals(user.getRole().getName());
+
+        if (!booking.getUser().getId().equals(userId) && !isAdmin) {
+            throw new BadRequestException("Bạn không có quyền hủy đơn đặt tour này!");
         }
 
         if ("CANCELLED".equals(booking.getStatus())) {
-            throw new BadRequestException("Booking is already cancelled!");
+            throw new BadRequestException("Đơn đặt tour này đã được hủy trước đó!");
         }
 
-        // 3. Hoàn lại số chỗ trống vào TourSchedule cho tất cả các ngày diễn ra tour
+        // Don da thanh toan: huy suong se hoan lai cho va luot voucher trong khi
+        // tien van nam o PayOS, ban ghi payment van la SUCCESS, va khong co dau
+        // vet hoan tien nao. Viec hoan tien phai do nguoi that quyet dinh, nen
+        // chi admin moi huy duoc.
+        if (!isAdmin && "PAID".equals(booking.getStatus())) {
+            throw new BadRequestException(
+                    "Đơn đã thanh toán không thể tự hủy. Vui lòng liên hệ bộ phận hỗ trợ để được hoàn tiền.");
+        }
+
+        // Huy sau khi tour da khoi hanh: so cho hoan lai la cho cua mot ngay da
+        // qua nen vo nghia, nhung luot VOUCHER thi hoan that - khach di tour
+        // xong van lay lai duoc voucher da dung.
+        if (!isAdmin && booking.getTravelDate() != null
+                && booking.getTravelDate().isBefore(java.time.LocalDate.now())) {
+            throw new BadRequestException("Không thể hủy đơn của tour đã khởi hành.");
+        }
+
+        releaseBookingResources(booking);
+        booking.setStatus("CANCELLED");
+
+        Booking updated = bookingRepository.save(booking);
+        return bookingMapper.toResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelBookingBySystem(Long id, String reason) {
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null || "CANCELLED".equals(booking.getStatus())) {
+            return false;
+        }
+
+        if ("PAID".equals(booking.getStatus())) {
+            log.warn("[HuyHeThong] Bỏ qua đơn #{} ({}): đơn đã thanh toán, việc hoàn tiền phải do người thật quyết định.",
+                    id, reason);
+            return false;
+        }
+
+        releaseBookingResources(booking);
+        booking.setStatus("CANCELLED");
+        bookingRepository.save(booking);
+
+        log.info("[HuyHeThong] Đã hủy đơn #{}: {}", id, reason);
+        return true;
+    }
+
+    /**
+     * Tra lai nhung gi booking dang giu: so cho cua moi ngay tour dien ra, va
+     * luot su dung voucher.
+     *
+     * Phan hoan cho phai dung UPDATE nguyen tu giong het duong tru cho ben
+     * createBooking. Neu de lai doc-sua-ghi o day, mot lan huy chay song song
+     * voi mot lan dat se ghi de len ket qua cua lan dat: cac cau UPDATE truc
+     * tiep khong lam nhich cot version, nen khoa lac quan khong con phat hien
+     * duoc.
+     */
+    private void releaseBookingResources(Booking booking) {
         Tour tour = booking.getTour();
         if (tour != null && booking.getTravelDate() != null) {
             int days = parseDurationDays(tour.getDuration());
             java.time.LocalDate startDate = booking.getTravelDate();
             java.time.LocalDate endDate = startDate.plusDays(days - 1);
-            
-            List<TourSchedule> existingSchedules = tourScheduleRepository.findByTourIdAndDepartureDateBetween(tour.getId(), startDate, endDate);
-            for (TourSchedule schedule : existingSchedules) {
-                schedule.setAvailableSlots(schedule.getAvailableSlots() + booking.getNumberOfPeople());
-            }
-            if (!existingSchedules.isEmpty()) {
-                tourScheduleRepository.saveAll(existingSchedules);
-            }
+
+            tourScheduleRepository.restoreSlots(tour.getId(), startDate, endDate, booking.getNumberOfPeople());
         }
-        
-        // Hoàn lại Voucher (nếu có)
+
         if (booking.getVoucher() != null) {
             myproject.booking_tour.entity.Voucher voucher = booking.getVoucher();
             if (voucher.getUsedCount() > 0) {
@@ -359,45 +434,10 @@ public class BookingServiceImpl implements BookingService {
                 voucherRepository.save(voucher);
             }
         }
-
-        // 2. status = CANCELLED
-        booking.setStatus("CANCELLED");
-
-        // 4. save
-        Booking updated = bookingRepository.save(booking);
-        return bookingMapper.toResponse(updated);
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000) // Chạy mỗi 1 giờ
-    @Transactional
-    public void autoCancelUnpaidBookings() {
-        log.info("[CronJob] Bắt đầu kiểm tra các đơn hàng chưa thanh toán quá 1 ngày...");
-        List<Booking> confirmedBookings = bookingRepository.findByStatus("CONFIRMED");
-        LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
-
-        for (Booking booking : confirmedBookings) {
-            LocalDateTime approvedTime = booking.getApprovedAt() != null ? booking.getApprovedAt() : booking.getBookingDate();
-            
-            if (approvedTime.isBefore(oneDayAgo)) {
-                log.info("[CronJob] Đang hủy tự động đơn hàng #{} do quá hạn thanh toán.", booking.getId());
-                
-                // Hủy booking
-                cancelBooking(booking.getId(), booking.getUser().getId());
-                
-                // Gửi email thông báo hủy
-                try {
-                    Map<String, Object> templateModel = new HashMap<>();
-                    templateModel.put("customerName", booking.getCustomerName() != null ? booking.getCustomerName() : booking.getUser().getFullName());
-                    templateModel.put("bookingId", "#" + booking.getId());
-                    templateModel.put("tourName", booking.getTour() != null ? booking.getTour().getTitle() : "Tour");
-                    
-                    String emailTo = booking.getCustomerEmail() != null ? booking.getCustomerEmail() : booking.getUser().getEmail();
-                    emailService.sendMessageUsingThymeleafTemplate(emailTo, "Thông báo: Đơn đặt tour của bạn đã bị hủy tự động", "booking-cancelled-auto", templateModel);
-                } catch (Exception e) {
-                    log.error("Failed to send auto-cancel email for booking #{}: {}", booking.getId(), e.getMessage());
-                }
-            }
-        }
-        log.info("[CronJob] Hoàn tất kiểm tra đơn hàng quá hạn.");
-    }
+    // Viec tu dong huy don qua han da chuyen sang BookingScheduler +
+    // BookingAutoCancelService. O day no vua la @Scheduled nam trong mot
+    // @Service (kho tim), vua goi cancelBooking cua CHINH MINH nen ca luot quet
+    // dung chung mot transaction: mot don hong keo sap ca luot.
 }

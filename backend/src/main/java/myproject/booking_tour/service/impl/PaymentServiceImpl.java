@@ -34,11 +34,25 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingService bookingService;
     private final vn.payos.PayOS payOS;
 
+    /**
+     * Ghi nhan mot khoan thanh toan thu cong (vi du khach tra tien mat tai van
+     * phong). CHI ADMIN duoc goi - xem SecurityConfig.
+     *
+     * Truoc day endpoint POST /api/payments nam chung trong /api/payments/**
+     * (chi doi mot tai khoan bat ky) va phuong thuc nay khong he doc toi danh
+     * tinh nguoi goi: bat cu khach hang nao cung tao duoc ban ghi payment tren
+     * don cua nguoi khac, va doc duoc so tien phai tra cua ho qua truong amount
+     * trong response.
+     */
     @Override
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + request.getBookingId()));
+
+        if ("CANCELLED".equals(booking.getStatus())) {
+            throw new BadRequestException("Không thể ghi nhận thanh toán cho đơn đã hủy.");
+        }
 
         Payment payment = new Payment();
         payment.setBooking(booking);
@@ -73,11 +87,18 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponse(updated);
     }
 
+    /**
+     * Truoc day day la findAll() roi loc trong Java: mot khach xem hoa don cua
+     * minh keo CA BANG payments vao memory de tra ve vai dong. Loc dung, nhung
+     * chi dung cho toi khi bang lon len.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PaymentResponse> getAllPayments(Long userId, boolean isAdmin) {
-        return paymentRepository.findAll().stream()
-                .filter(p -> isAdmin || (p.getBooking() != null && p.getBooking().getUser().getId().equals(userId)))
+        List<Payment> payments = isAdmin
+                ? paymentRepository.findAll()
+                : paymentRepository.findByBookingUserId(userId);
+        return payments.stream()
                 .map(paymentMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -90,14 +111,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElse(null);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<PaymentResponse> getPaymentsByBookingId(Long bookingId) {
-        return paymentRepository.findAll().stream()
-                .filter(p -> p.getBooking().getId().equals(bookingId))
-                .map(paymentMapper::toResponse)
-                .collect(Collectors.toList());
-    }
+    // getPaymentsByBookingId da duoc go bo: khong controller nao goi toi no, va
+    // ban than no khong co chot kiem tra quyen so huu - de nguyen thi chi cho
+    // ai do noi no vao mot endpoint moi la thanh lo hong.
 
 
     @org.springframework.beans.factory.annotation.Value("${payos.return-url}")
@@ -106,11 +122,40 @@ public class PaymentServiceImpl implements PaymentService {
     @org.springframework.beans.factory.annotation.Value("${payos.cancel-url}")
     private String cancelUrl;
 
+    private String describeStatus(String status) {
+        if ("PENDING".equals(status)) return "chưa được duyệt";
+        if ("PAID".equals(status)) return "đã thanh toán";
+        if ("CANCELLED".equals(status)) return "đã hủy";
+        return "ở trạng thái hiện tại";
+    }
+
+    /**
+     * Tao link thanh toan PayOS cho MOT booking.
+     *
+     * Truoc day phuong thuc nay khong he doc toi danh tinh nguoi goi: bat cu ai
+     * co mot tai khoan CUSTOMER deu goi duoc voi bookingId cua nguoi khac, doc
+     * ra so tien phai tra cua ho, va rai ban ghi payment rac vao don hang cua
+     * ho. Day dung la lo hong da khien GET /api/payments/payos-callback bi go
+     * bo (xem PaymentController) - chi khac la no van con o day.
+     *
+     * Trang thai cung phai kiem tra: chi don DA DUOC DUYET moi cho thanh toan.
+     * Khong co chot nay thi tao duoc link cho don da huy hoac da tra tien roi,
+     * va tien vao thi khong biet ghi vao dau.
+     */
     @Override
     @Transactional
-    public String createPaymentUrl(Long bookingId, jakarta.servlet.http.HttpServletRequest request) {
+    public String createPaymentUrl(Long bookingId, Long userId, boolean isAdmin) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!isAdmin && !booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("Bạn không có quyền thanh toán cho đơn đặt tour này!");
+        }
+
+        if (!"CONFIRMED".equals(booking.getStatus())) {
+            throw new BadRequestException("Không thể tạo link thanh toán cho đơn "
+                    + describeStatus(booking.getStatus()) + ".");
+        }
 
         try {
             // Create a pending Payment record to track the transaction and use its ID as orderCode
@@ -177,9 +222,11 @@ public class PaymentServiceImpl implements PaymentService {
                         Payment saved = paymentRepository.save(payment);
                         return paymentMapper.toResponse(saved);
                     } else if ("CANCELLED".equals(realStatus) || "EXPIRED".equals(realStatus)) {
-                        if (!"CANCELLED".equals(booking.getStatus())) {
-                            bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
-                        }
+                        // cancelBookingBySystem tu bo qua don da huy va don da
+                        // thanh toan - mot link het han khong duoc phep huy don
+                        // ma khach da tra tien qua link khac.
+                        bookingService.cancelBookingBySystem(booking.getId(),
+                                "PayOS báo giao dịch " + realStatus);
                         payment.setPaymentStatus("FAILED");
                         payment.setPaymentDate(LocalDateTime.now());
                         Payment saved = paymentRepository.save(payment);
@@ -236,9 +283,8 @@ public class PaymentServiceImpl implements PaymentService {
                     payment.setPaymentDate(LocalDateTime.now());
                     paymentRepository.save(payment);
                 } else if ("CANCELLED".equals(status) || "EXPIRED".equals(status)) {
-                    if (!"CANCELLED".equals(booking.getStatus())) {
-                        bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
-                    }
+                    bookingService.cancelBookingBySystem(booking.getId(),
+                            "PayOS báo giao dịch " + status);
                     payment.setPaymentStatus("FAILED");
                     payment.setPaymentDate(LocalDateTime.now());
                     paymentRepository.save(payment);

@@ -17,6 +17,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,8 +72,8 @@ class PayOSReconciliationServiceTest {
 
         assertTrue(reconciliationService.applyStatus(1L, "CANCELLED"));
 
-        // cancelBooking la noi hoan lai so cho trong va luot dung voucher.
-        verify(bookingService).cancelBooking(42L, 7L);
+        // cancelBookingBySystem la noi hoan lai so cho trong va luot dung voucher.
+        verify(bookingService).cancelBookingBySystem(eq(42L), anyString());
         assertEquals("FAILED", payment.getPaymentStatus());
     }
 
@@ -81,7 +83,7 @@ class PayOSReconciliationServiceTest {
 
         assertTrue(reconciliationService.applyStatus(1L, "EXPIRED"));
 
-        verify(bookingService).cancelBooking(42L, 7L);
+        verify(bookingService).cancelBookingBySystem(eq(42L), anyString());
         assertEquals("FAILED", payment.getPaymentStatus());
     }
 
@@ -103,14 +105,16 @@ class PayOSReconciliationServiceTest {
     }
 
     @Test
-    void shouldNotCancelTwice_WhenBookingAlreadyCancelled() {
+    void shouldStillMarkPaymentFailed_WhenBookingAlreadyCancelled() {
         booking.setStatus("CANCELLED");
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
 
         assertTrue(reconciliationService.applyStatus(1L, "CANCELLED"));
 
-        // Khong goi lai cancelBooking - no se nem loi va hoan cho trong lan hai.
-        verifyNoInteractions(bookingService);
+        // Chot "da huy roi thi thoi" nam trong cancelBookingBySystem chu khong
+        // con nam o day - no tra ve false va khong hoan cho lan hai. Xem
+        // BookingServiceImplTest.
+        verify(bookingService).cancelBookingBySystem(eq(42L), anyString());
         assertEquals("FAILED", payment.getPaymentStatus());
     }
 

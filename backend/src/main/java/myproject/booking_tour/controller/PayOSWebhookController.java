@@ -82,7 +82,11 @@ public class PayOSWebhookController {
             myproject.booking_tour.security.CustomUserDetails userDetails = getCurrentUserDetails();
             boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
             Long ownerId = paymentService.getPaymentOwnerUserIdByOrderCode(orderCode);
-            if (ownerId != null && !isAdmin && !ownerId.equals(userDetails.getUser().getId())) {
+            // ownerId == null nghia la orderCode nay khong co trong database.
+            // Truoc day dieu kien la "ownerId != null && ..." nen truong hop do
+            // di THANG qua chot kiem tra quyen, va code van hoi PayOS - bien
+            // endpoint thanh cong cu do trang thai don hang PayOS bat ky.
+            if (!isAdmin && !userDetails.getUser().getId().equals(ownerId)) {
                 throw new myproject.booking_tour.exception.BadRequestException("Bạn không có quyền xác minh đơn hàng này!");
             }
 
