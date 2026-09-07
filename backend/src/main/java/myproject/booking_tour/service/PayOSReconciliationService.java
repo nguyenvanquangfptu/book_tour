@@ -80,9 +80,11 @@ public class PayOSReconciliationService {
         }
 
         if ("CANCELLED".equals(payOSStatus) || "EXPIRED".equals(payOSStatus)) {
-            if (!"CANCELLED".equals(booking.getStatus())) {
-                bookingService.cancelBooking(booking.getId(), booking.getUser().getId());
-            }
+            // cancelBookingBySystem tu bo qua don da huy va don da thanh toan -
+            // mot link het han khong duoc phep huy don ma khach da tra tien qua
+            // link khac.
+            bookingService.cancelBookingBySystem(booking.getId(),
+                    "PayOS báo giao dịch " + payOSStatus);
             payment.setPaymentStatus("FAILED");
             payment.setPaymentDate(LocalDateTime.now());
             paymentRepository.save(payment);
