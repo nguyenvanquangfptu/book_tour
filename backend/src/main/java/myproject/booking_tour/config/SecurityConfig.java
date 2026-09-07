@@ -72,6 +72,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/bookings/**").hasRole("ADMIN")
                 
                 .requestMatchers(HttpMethod.PUT, "/api/payments/*/status").hasRole("ADMIN")
+                // Ghi nhan thanh toan thu cong (tien mat tai van phong) - chi
+                // admin. Truoc day no roi vao dong "/api/payments/**" ben duoi,
+                // nen bat cu khach hang nao cung tao duoc ban ghi payment tren
+                // don cua nguoi khac va doc duoc so tien phai tra cua ho.
+                .requestMatchers(HttpMethod.POST, "/api/payments").hasRole("ADMIN")
                 .requestMatchers("/api/payments/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                 // Voucher Endpoints

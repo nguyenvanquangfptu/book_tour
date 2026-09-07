@@ -15,4 +15,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByOrderCode(String orderCode);
 
     List<Payment> findByPaymentStatusAndOrderCodeNotNull(String paymentStatus);
+
+    /**
+     * Hoa don cua rieng mot khach. Thay cho findAll() roi loc trong Java.
+     */
+    List<Payment> findByBookingUserId(Long userId);
 }
