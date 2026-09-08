@@ -46,10 +46,20 @@ public class TourServiceImpl implements TourService {
     private final myproject.booking_tour.repository.BookingRepository bookingRepository;
     private final TourMapper tourMapper;
 
+    /**
+     * Cot duoc phep sap xep. sortBy den thang tu query string, va Spring Data
+     * doi chieu no voi thuoc tinh cua entity: mot ten khong ton tai lam
+     * PropertyReferenceException bay ra thanh 500. Danh sach trang cho phep
+     * bien moi ten la cua nguoi goi thanh mot lua chon hop le.
+     */
+    private static final java.util.Set<String> SORTABLE_TOUR_FIELDS = java.util.Set.of(
+            "id", "title", "price", "destination", "duration", "rating", "bookedCount");
+    private static final String DEFAULT_SORT_FIELD = "id";
+
     @Override
     @org.springframework.cache.annotation.Cacheable("popularDestinations")
     public List<PopularDestinationResponse> getPopularDestinations(int limit) {
-        return tourRepository.findPopularDestinations(PageRequest.of(0, limit));
+        return tourRepository.findPopularDestinations(PageRequest.of(0, myproject.booking_tour.utils.PageableUtils.safeSize(limit)));
     }
 
     /**
@@ -112,8 +122,20 @@ public class TourServiceImpl implements TourService {
         if (!myproject.booking_tour.security.SecurityUtil.isAdmin()) {
             status = "ACTIVE";
         }
-        org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase(org.springframework.data.domain.Sort.Direction.ASC.name()) ? org.springframework.data.domain.Sort.by(sortBy).ascending() : org.springframework.data.domain.Sort.by(sortBy).descending();
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        // Endpoint nay CONG KHAI. Ba tham so duoi day di thang tu query string
+        // vao PageRequest/Sort, nen truoc do ?size=1000000 la mot lenh nap mot
+        // trieu dong khong can dang nhap, con ?page=-1 hay ?sortBy=khongtontai
+        // deu thanh 500 kem stack trace.
+        String safeSortBy = SORTABLE_TOUR_FIELDS.contains(sortBy) ? sortBy : DEFAULT_SORT_FIELD;
+        org.springframework.data.domain.Sort sort =
+                org.springframework.data.domain.Sort.Direction.DESC.name().equalsIgnoreCase(sortDir)
+                        ? org.springframework.data.domain.Sort.by(safeSortBy).descending()
+                        : org.springframework.data.domain.Sort.by(safeSortBy).ascending();
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(
+                        myproject.booking_tour.utils.PageableUtils.safePage(page),
+                        myproject.booking_tour.utils.PageableUtils.safeSize(size),
+                        sort);
         org.springframework.data.jpa.domain.Specification<Tour> spec = myproject.booking_tour.repository.specification.TourSpecification.filterTours(keyword, destination, durationDays, guests, minPrice, maxPrice, status, tourTypes, transports);
         org.springframework.data.domain.Page<Tour> tours = tourRepository.findAll(spec, pageable);
         List<TourResponse> content = tours.getContent().stream().map(tourMapper::toResponse).collect(Collectors.toList());

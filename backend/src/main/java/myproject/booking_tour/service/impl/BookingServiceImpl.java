@@ -278,7 +278,14 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size) {
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findAll(org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate")));
+        // page/size den thang tu query string: khong kep thi ?size=1000000 co nap
+        // ca bang bookings, con so am lam PageRequest.of nem IllegalArgumentException
+        // roi thanh 500.
+        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findAll(
+                org.springframework.data.domain.PageRequest.of(
+                        myproject.booking_tour.utils.PageableUtils.safePage(page),
+                        myproject.booking_tour.utils.PageableUtils.safeSize(size),
+                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate")));
         List<BookingResponse> responses = bookingPage.getContent().stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());

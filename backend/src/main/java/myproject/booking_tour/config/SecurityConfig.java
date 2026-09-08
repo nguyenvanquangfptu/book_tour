@@ -38,6 +38,13 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // Thung rac cua trang quan tri - PHAI dung TRUOC dong
+                // "GET /api/tours/**" ben duoi. Spring Security khop theo thu tu
+                // khai bao, dong dau tien trung la thang; de sau thi permitAll
+                // nuot mat va ai cung liet ke duoc tour da xoa kem gia, mo ta,
+                // lich trinh. getDeletedTours() khong co chot nao ben trong.
+                .requestMatchers(HttpMethod.GET, "/api/tours/trash").hasRole("ADMIN")
+
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
