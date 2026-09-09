@@ -475,6 +475,7 @@
       "title": "Chi Tiết Đơn Đặt Tour",
       "code": "Mã đơn",
       "tourInfo": "Thông Tin Tour",
+      "destination": "Điểm đến",
       "departure": "Khởi hành",
       "duration": "Thời lượng",
       "customerInfo": "Thông Tin Khách Hàng",
@@ -496,6 +497,7 @@
       "submittingReview": "Đang gửi...",
       "reviewSuccess": "Gửi đánh giá thành công!",
       "reviewError": "Gửi đánh giá thất bại.",
+      "viewTourPage": "Xem trang tour",
       "close": "Đóng",
       "writeReview": "Viết đánh giá cho tour này"
     }

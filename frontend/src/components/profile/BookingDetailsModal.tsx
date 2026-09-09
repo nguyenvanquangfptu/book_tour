@@ -53,7 +53,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ selectedBooki
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <div style={{ color: '#64748b', marginTop: '3px' }}><FaMapMarkerAlt /></div>
                 <div>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>{t('profile.bookingModal.none')}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>{t('profile.bookingModal.destination')}</div>
                   <div style={{ color: '#0f172a', fontWeight: '500' }}>{selectedBooking.destination || t('profile.bookingModal.none')}</div>
                 </div>
               </div>
@@ -153,7 +153,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({ selectedBooki
               onMouseOver={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
               onMouseOut={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}
             >
-              {t('profile.bookingHistory.viewDetails')}
+              {t('profile.bookingModal.viewTourPage')}
             </button>
           )}
           <button 
