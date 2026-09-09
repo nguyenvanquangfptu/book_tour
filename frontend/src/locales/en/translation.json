@@ -475,6 +475,7 @@
       "title": "Booking Details",
       "code": "Booking Code",
       "tourInfo": "Tour Information",
+      "destination": "Destination",
       "departure": "Departure Date",
       "duration": "Duration",
       "customerInfo": "Customer Information",
@@ -496,6 +497,7 @@
       "submittingReview": "Submitting...",
       "reviewSuccess": "Review submitted successfully!",
       "reviewError": "Failed to submit review.",
+      "viewTourPage": "View tour page",
       "close": "Close",
       "writeReview": "Write a review for this tour"
     }
