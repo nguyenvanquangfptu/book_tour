@@ -1,6 +1,7 @@
 package myproject.booking_tour.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import myproject.booking_tour.dto.request.VoucherRequest;
 import myproject.booking_tour.dto.response.VoucherResponse;
 import myproject.booking_tour.entity.Voucher;
@@ -46,6 +47,15 @@ public class VoucherServiceImpl implements VoucherService {
         return voucherMapper.toResponse(voucher);
     }
 
+    /**
+     * @Transactional o day khong phai trang tri: voucher va nhat ky cua no phai
+     * cung song hoac cung chet. Khong co no, moi lenh save chay trong transaction
+     * rieng - nen khi ghi audit log that bai, VOUCHER VAN DUOC TAO trong khi
+     * admin nhan thong bao loi. Do dung la chuyen da xay ra: hai voucher nam san
+     * trong bang sau hai lan bam ma man hinh bao that bai, va bam lai lan nua thi
+     * doi thanh "Voucher code already exists".
+     */
+    @Transactional
     @Override
     public VoucherResponse createVoucher(VoucherRequest request) {
         if (voucherRepository.existsByCode(request.getCode())) {
@@ -59,12 +69,13 @@ public class VoucherServiceImpl implements VoucherService {
         log.setEntityId(savedVoucher.getId());
         log.setAction("CREATE_VOUCHER");
         log.setNewValue("Code: " + savedVoucher.getCode() + ", Discount: " + savedVoucher.getDiscountAmount());
-        log.setUserId(0L);
+        log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
         return voucherMapper.toResponse(savedVoucher);
     }
 
+    @Transactional
     @Override
     public VoucherResponse updateVoucher(Long id, VoucherRequest request) {
         Voucher voucher = voucherRepository.findById(id)
@@ -83,12 +94,13 @@ public class VoucherServiceImpl implements VoucherService {
         log.setEntityId(updatedVoucher.getId());
         log.setAction("UPDATE_VOUCHER");
         log.setNewValue("Code: " + updatedVoucher.getCode() + ", Discount: " + updatedVoucher.getDiscountAmount());
-        log.setUserId(0L);
+        log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
         return voucherMapper.toResponse(updatedVoucher);
     }
 
+    @Transactional
     @Override
     public void deleteVoucher(Long id) {
         if (!voucherRepository.existsById(id)) {
