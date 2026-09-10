@@ -11,6 +11,13 @@ import { useTranslation } from 'react-i18next';
 import '../styles/pages.css';
 import '../styles/home.css';
 
+/** Khop voi PopularDestinationResponse ben backend - dung ba truong, khong co id. */
+interface PopularDestination {
+  name: string;
+  count: number;
+  image: string;
+}
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -23,7 +30,12 @@ const Home: React.FC = () => {
   const [guests, setGuests] = useState('2');
   
   // 1. Fetch Popular Destinations
-  const { data: popularDestinations = [] } = useQuery({
+  //
+  // Khai bao kieu that thay vi `any`: chinh cai `any` la ly do `dest.id` khong
+  // ton tai van bien dich sach, va hang tag ben duoi dieu huong toi
+  // /tours?destination=undefined suot mot thoi gian ma tsc van xanh.
+  // PopularDestinationResponse ben backend chi co dung ba truong nay.
+  const { data: popularDestinations = [] } = useQuery<PopularDestination[]>({
     queryKey: ['popularDestinations'],
     queryFn: () => TourService.getPopularDestinations(4),
   });
@@ -129,8 +141,8 @@ const Home: React.FC = () => {
             </div>
 
             <div className="hero-dest-tags">
-              {popularDestinations.slice(0, 5).map((dest: any) => (
-                <span key={dest.id || dest.name} onClick={() => navigate(`/tours?destination=${dest.id}`)}>
+              {popularDestinations.slice(0, 5).map((dest) => (
+                <span key={dest.name} onClick={() => navigate(`/tours?dest=${encodeURIComponent(dest.name)}`)}>
                   {dest.name.toUpperCase()}
                 </span>
               ))}
@@ -148,8 +160,8 @@ const Home: React.FC = () => {
           </div>
           
           <div className="destinations-grid">
-            {popularDestinations.length > 0 ? popularDestinations.map((dest: any, index: number) => (
-              <div className="destination-card animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }} key={index} onClick={() => navigate(`/tours?dest=${dest.name}`)}>
+            {popularDestinations.length > 0 ? popularDestinations.map((dest, index: number) => (
+              <div className="destination-card animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }} key={index} onClick={() => navigate(`/tours?dest=${encodeURIComponent(dest.name)}`)}>
                 <img 
                   src={dest.image || 'https://images.unsplash.com/photo-1596700055745-f0bbbb3d2b0e?auto=format&fit=crop&w=800&q=80'} 
                   alt={dest.name} 
