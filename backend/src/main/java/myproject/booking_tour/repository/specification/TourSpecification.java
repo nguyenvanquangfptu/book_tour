@@ -1,5 +1,6 @@
 package myproject.booking_tour.repository.specification;
 
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import myproject.booking_tour.entity.Tour;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,13 +24,30 @@ public class TourSpecification {
                 ));
             }
 
+            // Loc theo DIEM DEN, doi chieu voi chinh cot destination.
+            //
+            // Truoc day nhanh nay goi fts_match tren search_vector - y het nhanh
+            // "keyword" ngay tren, giong nhau tung ky tu. Ma search_vector gop
+            // title + destination + description, nen "loc theo diem den" thuc
+            // chat la tim kiem toan van: destination=hang dong tra ve Ninh Binh
+            // va Quang Binh (khop o mo ta), destination=bien tra ve 7 tour
+            // (khop o tieu de), trong khi khong tour nao co diem den nhu vay.
+            //
+            // Dung LIKE chu khong phai bang tuyet doi vi o nhap diem den la
+            // combobox go tu do co goi y, khong ep chon: nguoi dung go "Da" roi
+            // gui luon van phai ra Da Nang va Da Lat.
+            //
+            // unaccent o CA HAI VE de go khong dau van tim duoc "Da Nang". Khu
+            // dau ben Java khong dung duoc o day: Normalizer khong tach duoc
+            // chu D gach ngang, con unaccent cua Postgres thi doi D -> D, hai
+            // ben se khong bao gio khop nhau.
             if (destination != null && !destination.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.isTrue(
-                    criteriaBuilder.function("fts_match", Boolean.class, 
-                        root.get("searchVector"), 
-                        criteriaBuilder.literal(destination.trim())
-                    )
-                ));
+                Expression<String> normalizedColumn = criteriaBuilder.lower(
+                        criteriaBuilder.function("unaccent", String.class, root.get("destination")));
+                Expression<String> normalizedPattern = criteriaBuilder.lower(
+                        criteriaBuilder.function("unaccent", String.class,
+                                criteriaBuilder.literal("%" + destination.trim() + "%")));
+                predicates.add(criteriaBuilder.like(normalizedColumn, normalizedPattern));
             }
 
 

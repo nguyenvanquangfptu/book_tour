@@ -1,0 +1,35 @@
+-- =============================================================================
+-- V14: Extension unaccent, phuc vu loc theo diem den
+-- =============================================================================
+-- VAN DE: tham so "destination" cua /api/tours/search khong he loc theo cot
+-- destination. No goi fts_match tren cot search_vector - cot generated gop
+-- title + destination + description - nen no la MOT BAN SAO cua tham so
+-- "keyword" ngay ben canh, giong nhau tung ky tu trong TourSpecification.
+--
+-- Do duoc tren du lieu that truoc khi sua:
+--   destination=hang dong  -> Ninh Binh, Quang Binh  (khop o MO TA)
+--   destination=bien       -> 7 tour                 (khop o TIEU DE)
+-- Khong tour nao co diem den ten "hang dong" hay "bien".
+--
+-- VI SAO CAN unaccent: sau khi doi sang so khop dung cot destination, chuoi
+-- nguoi dung go phai doi chieu voi gia tri co dau trong cot do ("Da Nang",
+-- "Chau Doc"). Cau hinh text search 'simple' khong khu dau:
+--
+--   to_tsvector('simple','Tour Hue Co Do') @@ plainto_tsquery('simple','Hue') -> false
+--
+-- Hien tai go khong dau van ra ket qua, nhung chi vi TIEU DE trong database
+-- dang khong dau ("Tour Da Nang - Ba Na Hills") - mot su tinh co cua du lieu
+-- mau, khong phai thiet ke. Bo full-text di ma khong co unaccent thi nguoi
+-- Viet go khong dau se khong tim duoc gi - tuc la sua mot loi va tao ra mot
+-- loi de thay hon.
+--
+-- PHAM VI: chi them extension. Cot search_vector va tham so "keyword" giu
+-- nguyen - khu dau cho toan bo tim kiem toan van la viec rieng, phai dung va
+-- tao lai cot GENERATED ALWAYS nen khong gop vao day.
+--
+-- LUU Y KHI TRIEN KHAI: tu PostgreSQL 13, unaccent la extension "trusted" nen
+-- chu so huu database tao duoc ma khong can quyen superuser. Neu moi truong
+-- that chan tao extension, DBA phai chay dong nay mot lan truoc khi deploy.
+-- =============================================================================
+
+CREATE EXTENSION IF NOT EXISTS unaccent;
