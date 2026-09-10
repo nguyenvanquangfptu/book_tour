@@ -60,17 +60,21 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage()).contains("Vui lòng thử lại");
     }
 
+    private static org.springframework.dao.DataIntegrityViolationException violationWithSqlState(
+            String sqlState, String message) {
+        return new org.springframework.dao.DataIntegrityViolationException(
+                message, new java.sql.SQLException(message, sqlState));
+    }
+
     @Test
-    void handleDataIntegrityViolation_ShouldReturn409_NotServerError() {
+    void handleDataIntegrityViolation_ShouldReturn409_WhenUniqueConstraintRaced() {
         // Hai request cùng tạo một dòng lịch khởi hành: ràng buộc UNIQUE chặn
         // request thứ hai. Đây là tranh chấp (thử lại được), không phải sự cố
         // máy chủ - trước khi có handler này nó rơi vào handleGeneralException
         // và trả 500.
-        org.springframework.dao.DataIntegrityViolationException ex =
-                new org.springframework.dao.DataIntegrityViolationException(
-                        "duplicate key value violates unique constraint \"uq_tour_schedules_tour_date\"");
-
-        ResponseEntity<ApiResponse<?>> response = exceptionHandler.handleDataIntegrityViolation(ex);
+        ResponseEntity<ApiResponse<?>> response = exceptionHandler.handleDataIntegrityViolation(
+                violationWithSqlState("23505",
+                        "duplicate key value violates unique constraint \"uq_tour_schedules_tour_date\""));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
@@ -78,6 +82,33 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage()).contains("Vui lòng thử lại");
         // Chi tiết ràng buộc của database không được lộ ra client
         assertThat(response.getBody().getMessage()).doesNotContain("uq_tour_schedules_tour_date");
+    }
+
+    @Test
+    void handleDataIntegrityViolation_ShouldReturn500_WhenForeignKeyViolated() {
+        // Khoá ngoại hỏng là LỖI LẬP TRÌNH, không phải tranh chấp - thử lại
+        // không bao giờ thành công. Đúng chuyện đã xảy ra: VoucherServiceImpl
+        // ghi audit log với user_id = 0 (id không tồn tại), tạo voucher luôn
+        // thất bại, mà admin thì nhận thông báo "vui lòng thử lại" và bấm lại
+        // mãi không được.
+        ResponseEntity<ApiResponse<?>> response = exceptionHandler.handleDataIntegrityViolation(
+                violationWithSqlState("23503",
+                        "insert or update on table \"audit_logs\" violates foreign key constraint \"fk_audit_logs_user\""));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).doesNotContain("Vui lòng thử lại!");
+        assertThat(response.getBody().getMessage()).doesNotContain("fk_audit_logs_user");
+    }
+
+    @Test
+    void handleDataIntegrityViolation_ShouldReturn500_WhenSqlStateUnknown() {
+        // Không đọc được SQLSTATE thì mặc định coi là lỗi máy chủ: thà báo động
+        // thừa còn hơn bảo người dùng thử lại một việc không bao giờ chạy được.
+        ResponseEntity<ApiResponse<?>> response = exceptionHandler.handleDataIntegrityViolation(
+                new org.springframework.dao.DataIntegrityViolationException("khong ro nguyen nhan"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
