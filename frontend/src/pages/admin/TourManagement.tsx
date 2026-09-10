@@ -5,6 +5,16 @@ import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
 import { formatPrice } from '../../utils/formatPrice';
 
+/**
+ * Bộ lọc trên trang tour được dựng từ SELECT DISTINCT hai cột này, nên nhập tự
+ * do sẽ làm vỡ nó: "Ô tô", "Oto" và "Xe khách" thành ba mục lọc riêng cho cùng
+ * một thứ. Dùng danh sách cố định để mọi tour nói cùng một ngôn ngữ.
+ *
+ * Thêm loại mới thì thêm vào đây — tour cũ không bị ảnh hưởng.
+ */
+const TOUR_TYPES = ['Nghỉ dưỡng', 'Khám phá', 'Sinh thái', 'Văn hóa', 'Mạo hiểm'];
+const TRANSPORTS = ['Máy bay', 'Ô tô', 'Tàu hỏa', 'Tàu thủy'];
+
 const TourManagement: React.FC = () => {
   const [tours, setTours] = useState<any[]>([]);
   const [deletedTours, setDeletedTours] = useState<any[]>([]);
@@ -58,7 +68,9 @@ const TourManagement: React.FC = () => {
     utilityIds: [] as number[],
     highlights: [''] as string[],
     itinerary: [] as {day: string, title: string, description: string}[],
-    status: 'INACTIVE'
+    status: 'INACTIVE',
+    tourType: '',
+    transport: ''
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -170,7 +182,7 @@ const TourManagement: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingTour(null);
-    setFormData({ title: '', description: '', price: 0, duration: '', destination: '', imageUrl: '', images: [], accommodationIds: [], maxPeople: 1, utilityIds: [], highlights: [''], itinerary: [{day: '', title: '', description: ''}], status: 'INACTIVE' });
+    setFormData({ title: '', description: '', price: 0, duration: '', destination: '', imageUrl: '', images: [], accommodationIds: [], maxPeople: 1, utilityIds: [], highlights: [''], itinerary: [{day: '', title: '', description: ''}], status: 'INACTIVE', tourType: '', transport: '' });
     setShowModal(true);
   };
 
@@ -189,7 +201,9 @@ const TourManagement: React.FC = () => {
       utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
       highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],
       itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}],
-      status: tour.status || 'INACTIVE'
+      status: tour.status || 'INACTIVE',
+      tourType: tour.tourType || '',
+      transport: tour.transport || ''
     });
     setActiveTab('general');
     setShowModal(true);
@@ -836,9 +850,29 @@ const TourManagement: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>
-                  <input type="text" name="destination" className="modern-input" placeholder="VD: Đà Nẵng" value={formData.destination} onChange={handleInputChange} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Điểm đến</label>
+                    <input type="text" name="destination" className="modern-input" placeholder="VD: Đà Nẵng" value={formData.destination} onChange={handleInputChange} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Loại tour</label>
+                    <select name="tourType" className="modern-input" value={formData.tourType} onChange={handleInputChange}>
+                      <option value="">-- Chưa phân loại --</option>
+                      {TOUR_TYPES.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '0.9rem' }}>Phương tiện</label>
+                    <select name="transport" className="modern-input" value={formData.transport} onChange={handleInputChange}>
+                      <option value="">-- Chưa chọn --</option>
+                      {TRANSPORTS.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
