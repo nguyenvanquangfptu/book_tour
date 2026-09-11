@@ -351,26 +351,17 @@ const TourManagement: React.FC = () => {
 
   const handleStatusChange = async (tour: any, newStatus: string) => {
     try {
-      const submitData = {
-        title: tour.title,
-        description: tour.description || '',
-        price: tour.price,
-        duration: tour.duration || '',
-        destination: tour.destination || '',
-        imageUrl: tour.imageUrl || '',
-        images: tour.images || [],
-        accommodationIds: tour.accommodations && tour.accommodations.length > 0 ? [tour.accommodations[0].id] : [],
-        maxPeople: tour.maxPeople || 1,
-        utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
-        highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],
-        itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}],
-        status: newStatus
-      };
-      await TourService.updateTour(tour.id, submitData);
-      
+      // Gọi đúng endpoint đổi trạng thái. Trước đây chỗ này dựng lại cả tour rồi
+      // gửi PUT /tours/{id}, mà PUT ghi đè từng trường bằng payload gửi lên:
+      // payload thiếu tourType và transport nên mỗi lần admin đổi trạng thái
+      // ngay trên bảng là hai trường đó bị xóa trắng, kéo theo bộ lọc loại tour
+      // và phương tiện ở trang tour không còn khớp gì. Nó cũng chỉ giữ lại nơi
+      // lưu trú đầu tiên, và không sinh audit log CHANGE_STATUS.
+      await TourService.changeTourStatus(tour.id, newStatus);
+
       // Cập nhật state local
       setTours(prev => prev.map(t => t.id === tour.id ? { ...t, status: newStatus } : t));
-      
+
       const Toast = Swal.mixin({
         toast: true,
         position: "top-end",
