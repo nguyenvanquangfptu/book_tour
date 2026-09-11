@@ -13,6 +13,43 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Doc thang tu spring.servlet.multipart.max-file-size, de con so trong thong
+     * bao loi khong bao gio lech voi con so thuc su chan request. Gia tri du
+     * phong 1MB la mac dinh cua chinh Spring Boot khi thieu cau hinh, nen hai
+     * ben van noi cung mot con so.
+     */
+    private final org.springframework.util.unit.DataSize maxUploadSize;
+
+    public GlobalExceptionHandler(
+            @org.springframework.beans.factory.annotation.Value("${spring.servlet.multipart.max-file-size:1MB}")
+            org.springframework.util.unit.DataSize maxUploadSize) {
+        this.maxUploadSize = maxUploadSize;
+    }
+
+    /**
+     * File tai len lon hon muc cho phep.
+     *
+     * Spring chan request nay ngay tu buoc doc multipart, TRUOC khi vao
+     * UploadController, nen khoi try/catch trong controller lan chot kiem tra
+     * kich thuoc trong FileUploadService deu khong bao gio chay. Khong co
+     * handler rieng thi no roi xuong handleGeneralException: admin tai mot tam
+     * anh hoi lon lien nhan 500 "Da co loi xay ra, vui long thu lai sau!" kem
+     * mot stack trace muc ERROR, trong khi day chi la mot buc anh qua kho va
+     * nguoi dung chi can biet dung mot cau do.
+     *
+     * Frontend cung khong kiem dung luong truoc khi gui, nen day la cho duy
+     * nhat noi duoc dieu do cho nguoi dung.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.warn("File tải lên vượt quá giới hạn {}MB", maxUploadSize.toMegabytes());
+        ApiResponse<?> response = new ApiResponse<>(false,
+                "File vượt quá kích thước tối đa cho phép (" + maxUploadSize.toMegabytes() + "MB)!", null);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         log.warn("Tài nguyên không tồn tại: {}", ex.getMessage());
