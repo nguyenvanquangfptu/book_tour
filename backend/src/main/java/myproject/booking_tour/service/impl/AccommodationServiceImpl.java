@@ -83,8 +83,14 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation accommodation = accommodationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation not found with id: " + id));
         
+        // BadRequestException chứ không phải RuntimeException trần: đây là một
+        // quy tắc nghiệp vụ, không phải sự cố hệ thống. RuntimeException rơi
+        // vào handler cuối của GlobalExceptionHandler, nên admin chỉ nhận được
+        // "Đã có lỗi xảy ra, vui lòng thử lại sau!" thay vì lý do thật, và mỗi
+        // lần bấm xóa lại ghi thêm một stack trace mức ERROR vào log.
         if (tourRepository.existsByAccommodations_Id(id)) {
-            throw new RuntimeException("Nơi lưu trú này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+            throw new myproject.booking_tour.exception.BadRequestException(
+                    "Nơi lưu trú này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
         }
         
         accommodationRepository.delete(accommodation);

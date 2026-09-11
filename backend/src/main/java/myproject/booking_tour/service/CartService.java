@@ -44,13 +44,21 @@ public class CartService {
 
     @Transactional
     public CartResponse addToCart(Long userId, CartItemRequest request) {
+        // Ba ngoai le duoi day deu la loi cua BEN GOI, khong phai su co he
+        // thong. IllegalArgumentException va RuntimeException tran roi vao
+        // handler cuoi cua GlobalExceptionHandler: khach nhan 500 kem "Da co
+        // loi xay ra, vui long thu lai sau!" nen khong biet minh sai o dau, con
+        // log thi day stack trace muc ERROR cua nhung tinh huong hoan toan binh
+        // thuong. Thong bao cung chuyen sang tieng Viet cho khop voi phan con
+        // lai cua luong dat tour.
         if (request.getGuests() == null || request.getGuests() <= 0) {
-            throw new IllegalArgumentException("Number of guests must be greater than 0");
+            throw new myproject.booking_tour.exception.BadRequestException("Số lượng khách phải lớn hơn 0.");
         }
 
         Cart cart = getOrCreateCart(userId);
         Tour tour = tourRepository.findById(request.getTourId())
-                .orElseThrow(() -> new RuntimeException("Tour not found"));
+                .orElseThrow(() -> new myproject.booking_tour.exception.ResourceNotFoundException(
+                        "Tour not found with id: " + request.getTourId()));
 
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getTour().getId().equals(tour.getId()) && item.getStartDate().equals(request.getStartDate()))
@@ -68,7 +76,9 @@ public class CartService {
         }
 
         if (totalGuests > availableSlots) {
-            throw new RuntimeException("Not enough available slots. Only " + availableSlots + " slots remaining.");
+            throw new myproject.booking_tour.exception.BadRequestException(
+                    "Ngày khởi hành này không đủ chỗ cho " + totalGuests + " khách, chỉ còn "
+                            + availableSlots + " chỗ trống.");
         }
 
         if (existingItem.isPresent()) {
@@ -105,7 +115,8 @@ public class CartService {
     private Cart getOrCreateCart(Long userId) {
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new myproject.booking_tour.exception.ResourceNotFoundException(
+                            "User not found with id: " + userId));
             Cart newCart = new Cart();
             newCart.setUser(user);
             return cartRepository.save(newCart);

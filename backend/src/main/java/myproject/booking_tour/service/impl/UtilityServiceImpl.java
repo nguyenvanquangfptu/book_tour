@@ -73,8 +73,11 @@ public class UtilityServiceImpl implements UtilityService {
         Utility utility = utilityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utility not found with id: " + id));
         
+        // Quy tắc nghiệp vụ -> 400 kèm lý do thật, không phải 500 kèm thông báo
+        // chung chung. Xem chú thích cùng loại ở AccommodationServiceImpl.
         if (tourRepository.existsByUtilityId(id)) {
-            throw new RuntimeException("Tiện ích này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+            throw new myproject.booking_tour.exception.BadRequestException(
+                    "Tiện ích này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
         }
         
         utilityRepository.delete(utility);
