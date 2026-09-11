@@ -9,7 +9,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler exceptionHandler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler exceptionHandler =
+            new GlobalExceptionHandler(org.springframework.util.unit.DataSize.ofMegabytes(5));
+
+    @Test
+    void handleMaxUploadSizeExceeded_ShouldReturn400_WithTheConfiguredLimit() {
+        // Spring chặn file quá khổ trước khi vào controller, nên nếu không có
+        // handler riêng thì một tấm ảnh hơi lớn sẽ thành 500 kèm stack trace.
+        org.springframework.web.multipart.MaxUploadSizeExceededException ex =
+                new org.springframework.web.multipart.MaxUploadSizeExceededException(5L * 1024 * 1024);
+
+        ResponseEntity<ApiResponse<?>> response = exceptionHandler.handleMaxUploadSizeExceeded(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isFalse();
+        // Con số trong thông báo lấy từ cấu hình, không viết cứng.
+        assertThat(response.getBody().getMessage()).contains("5MB");
+    }
 
     @Test
     void handleResourceNotFoundException_ShouldReturn404() {

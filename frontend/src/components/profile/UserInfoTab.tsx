@@ -5,6 +5,7 @@ import { UserService } from '../../services/UserService';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { findOversizedFiles, oversizedFilesMessage } from '../../utils/uploadLimits';
 
 interface UserInfoTabProps {
   initialProfile: any;
@@ -42,6 +43,16 @@ const UserInfoTab: React.FC<UserInfoTabProps> = ({ initialProfile, setMessage })
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
+
+    // Server chặn file quá khổ ngay từ bước đọc multipart; báo trước ở đây để
+    // khách không phải chờ tải xong mới nhận lỗi.
+    const oversized = findOversizedFiles([file]);
+    if (oversized.length > 0) {
+      setMessage({ text: oversizedFilesMessage(oversized), type: 'error' });
+      e.target.value = '';
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     setUploadingAvatar(true);
