@@ -235,7 +235,7 @@ const ToursPage: React.FC = () => {
             {loading ? (
               <div className="tours-grid">
                 {[1, 2, 3, 4, 5, 6].map(n => (
-                  <div key={n} style={{ height: '350px', background: 'white', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
+                  <div key={n} style={{ height: '350px', background: 'var(--border-color)', borderRadius: '16px', animation: 'pulse 1.5s infinite' }}></div>
                 ))}
               </div>
             ) : tours.length > 0 ? (

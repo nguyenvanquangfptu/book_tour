@@ -24,23 +24,23 @@ const PrivacyPolicyPage: React.FC = () => {
           <p style={{ fontSize: '1.1rem', marginBottom: '30px' }}>{t('profile.privacy.intro')}</p>
           
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.privacy.h1')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.privacy.p1')}</p>
 
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.privacy.h2')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.privacy.p2')}</p>
           
           <div style={{ background: 'var(--bg-alt)', padding: '24px', borderRadius: '16px', marginTop: '20px' }}>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success-color)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li1')}</li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success-color)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li2')}</li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success-color)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li3')}</li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success-color)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li4')}</li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li1')}</li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li2')}</li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li3')}</li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.privacy.li4')}</li>
             </ul>
           </div>
         </div>

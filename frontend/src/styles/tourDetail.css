@@ -1,6 +1,6 @@
 /* Tour Detail Layout */
 .tour-detail-page {
-  background-color: var(--background);
+  background-color: var(--bg-color);
   padding-bottom: 80px;
 }
 
@@ -239,7 +239,7 @@
 }
 
 .timeline-content {
-  background: var(--surface-color);
+  background: var(--surface);
   padding: 20px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
@@ -265,7 +265,7 @@
 }
 
 .booking-card {
-  background: var(--surface-color);
+  background: var(--surface);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 12px 30px rgba(0,0,0,0.08);
