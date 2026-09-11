@@ -56,6 +56,26 @@ public class TourServiceImpl implements TourService {
             "id", "title", "price", "destination", "duration", "rating", "bookedCount");
     private static final String DEFAULT_SORT_FIELD = "id";
 
+    /**
+     * Ba trang thai ma database chap nhan. Rang buoc ck_tours_status chi cho
+     * phep dung ba gia tri nay hoac NULL.
+     *
+     * Truoc day khong cho nao doi chieu gi ca: PUT /api/tours/{id}/status nhan
+     * status thang tu query string va gan vao entity, nen mot gia tri go sai -
+     * "Active" thay vi "ACTIVE" chang han - di het duong xuong database roi bi
+     * rang buoc CHECK chan lai, thanh 500 kem stack trace. Loi cua ben goi ma
+     * tra ve nhu may chu hong.
+     */
+    private static final java.util.Set<String> ALLOWED_TOUR_STATUSES =
+            java.util.Set.of("ACTIVE", "INACTIVE", "SOLD_OUT");
+
+    private void assertStatusAllowed(String status) {
+        if (!ALLOWED_TOUR_STATUSES.contains(status)) {
+            throw new myproject.booking_tour.exception.BadRequestException(
+                    "Trạng thái tour không hợp lệ. Chỉ chấp nhận: ACTIVE, INACTIVE, SOLD_OUT.");
+        }
+    }
+
     @Override
     @org.springframework.cache.annotation.Cacheable("popularDestinations")
     public List<PopularDestinationResponse> getPopularDestinations(int limit) {
@@ -178,6 +198,8 @@ public class TourServiceImpl implements TourService {
 
         if (tour.getStatus() == null || tour.getStatus().trim().isEmpty()) {
             tour.setStatus("INACTIVE");
+        } else {
+            assertStatusAllowed(tour.getStatus());
         }
 
         if ("ACTIVE".equals(tour.getStatus())) {
@@ -263,8 +285,14 @@ public class TourServiceImpl implements TourService {
             }
             tour.setAvailableSlots(request.getAvailableSlots());
         }
-        
-        tour.setStatus(request.getStatus());
+
+        // Thieu status trong payload thi GIU NGUYEN trang thai dang co, khong
+        // ghi de bang null. Mot tour mat trang thai la mot tour bien khoi moi
+        // danh sach cua khach: assertVisible chi cho qua dung "ACTIVE".
+        if (request.getStatus() != null) {
+            assertStatusAllowed(request.getStatus());
+            tour.setStatus(request.getStatus());
+        }
 
         // Map Accommodations
         if (request.getAccommodationIds() != null && !request.getAccommodationIds().isEmpty()) {
@@ -384,6 +412,8 @@ public class TourServiceImpl implements TourService {
     @Transactional
     @org.springframework.cache.annotation.CacheEvict(value = {"tourOptions", "popularDestinations"}, allEntries = true)
     public TourResponse changeStatus(Long id, String status) {
+        assertStatusAllowed(status);
+
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + id));
 
