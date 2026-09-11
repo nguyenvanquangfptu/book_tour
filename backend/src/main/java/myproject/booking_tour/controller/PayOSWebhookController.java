@@ -76,35 +76,63 @@ public class PayOSWebhookController {
         throw new myproject.booking_tour.exception.BadRequestException("User is not authenticated");
     }
 
+    /**
+     * Trang PaymentSuccess goi vao day de doi chieu lai trang thai don hang voi
+     * PayOS.
+     *
+     * Truoc day ca than ham nam trong mot khoi try bat Exception roi nem lai
+     * BadRequestException kem nguyen e.getMessage(). Hai cai gia phai tra:
+     *
+     *  - Moi su co noi bo - PayOS timeout, database mat ket noi - deu tra 400
+     *    kem nguyen van thong bao loi cua tang duoi. Do la 500 doi lot 400, va
+     *    la mot duong ro ri chi tiet he thong ra ngoai.
+     *
+     *  - Chinh BadRequestException cua chot kiem tra quyen ngay ben tren cung
+     *    bi khoi catch do nuot roi boc lai, nen cau "Ban khong co quyen xac
+     *    minh don hang nay!" bi doi thanh "Loi xac minh thanh toan: Ban khong
+     *    co quyen...".
+     *
+     * Gio moi loai loi di duong cua no: sai quyen va orderCode khong phai so
+     * deu la 400 kem ly do that, con su co goi PayOS thi ghi log ERROR kem
+     * orderCode va tra 500 voi thong bao chung - dung nhu cach PaymentServiceImpl
+     * doi xu voi mot cuoc goi PayOS that bai.
+     */
     @GetMapping("/verify")
     public ResponseEntity<Map<String, String>> verifyPayment(@RequestParam String orderCode) {
+        myproject.booking_tour.security.CustomUserDetails userDetails = getCurrentUserDetails();
+        boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
+        Long ownerId = paymentService.getPaymentOwnerUserIdByOrderCode(orderCode);
+        // ownerId == null nghia la orderCode nay khong co trong database.
+        // Truoc day dieu kien la "ownerId != null && ..." nen truong hop do
+        // di THANG qua chot kiem tra quyen, va code van hoi PayOS - bien
+        // endpoint thanh cong cu do trang thai don hang PayOS bat ky.
+        if (!isAdmin && !userDetails.getUser().getId().equals(ownerId)) {
+            throw new myproject.booking_tour.exception.BadRequestException("Bạn không có quyền xác minh đơn hàng này!");
+        }
+
+        long orderCodeLong;
         try {
-            myproject.booking_tour.security.CustomUserDetails userDetails = getCurrentUserDetails();
-            boolean isAdmin = "ADMIN".equals(userDetails.getUser().getRole().getName());
-            Long ownerId = paymentService.getPaymentOwnerUserIdByOrderCode(orderCode);
-            // ownerId == null nghia la orderCode nay khong co trong database.
-            // Truoc day dieu kien la "ownerId != null && ..." nen truong hop do
-            // di THANG qua chot kiem tra quyen, va code van hoi PayOS - bien
-            // endpoint thanh cong cu do trang thai don hang PayOS bat ky.
-            if (!isAdmin && !userDetails.getUser().getId().equals(ownerId)) {
-                throw new myproject.booking_tour.exception.BadRequestException("Bạn không có quyền xác minh đơn hàng này!");
-            }
+            orderCodeLong = Long.parseLong(orderCode);
+        } catch (NumberFormatException e) {
+            throw new myproject.booking_tour.exception.BadRequestException("Mã đơn hàng không hợp lệ.");
+        }
 
-            long orderCodeLong = Long.parseLong(orderCode);
+        try {
             vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCodeLong);
+            String payosStatus = paymentLink.getStatus() != null ? paymentLink.getStatus().name() : "UNKNOWN";
 
-            if ("PAID".equals(paymentLink.getStatus().name())) {
+            if ("PAID".equals(payosStatus)) {
                 // Call processPayOSCallback manually to share logic
                 java.util.Map<String, String> params = new java.util.HashMap<>();
                 params.put("orderCode", orderCode);
                 params.put("status", "PAID");
                 paymentService.processPayOSCallback(params);
                 return ResponseEntity.ok(Map.of("success", "true", "status", "PAID"));
-            } else {
-                return ResponseEntity.ok(Map.of("success", "false", "status", paymentLink.getStatus().name()));
             }
+            return ResponseEntity.ok(Map.of("success", "false", "status", payosStatus));
         } catch (Exception e) {
-            throw new myproject.booking_tour.exception.BadRequestException("Lỗi xác minh thanh toán: " + e.getMessage());
+            log.error("Không xác minh được thanh toán cho orderCode={}", orderCode, e);
+            throw new IllegalStateException("Không xác minh được trạng thái thanh toán.", e);
         }
     }
 }

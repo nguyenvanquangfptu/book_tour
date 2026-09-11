@@ -137,9 +137,43 @@ class PayOSWebhookControllerTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/payment/payos_transfer_handler/verify")
                         .param("orderCode", "777"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                // Thông báo của chốt kiểm tra quyền phải đến nơi nguyên vẹn.
+                // Khối catch(Exception) cũ nuốt chính ngoại lệ này rồi bọc lại
+                // thành "Lỗi xác minh thanh toán: Bạn không có quyền...".
+                .andExpect(jsonPath("$.message").value("Bạn không có quyền xác minh đơn hàng này!"));
 
         Mockito.verifyNoInteractions(payOS);
+    }
+
+    @Test
+    void verify_ShouldReturn400_WhenOrderCodeIsNotANumber() throws Exception {
+        authenticateCustomer(1L);
+        Mockito.when(paymentService.getPaymentOwnerUserIdByOrderCode("abc")).thenReturn(1L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/payment/payos_transfer_handler/verify")
+                        .param("orderCode", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Mã đơn hàng không hợp lệ."));
+
+        Mockito.verifyNoInteractions(payOS);
+    }
+
+    @Test
+    void verify_ShouldReturn500AndLeakNothing_WhenPayOSCallFails() throws Exception {
+        // Sự cố phía PayOS là lỗi máy chủ, không phải lỗi của người gọi. Khối
+        // catch cũ biến nó thành 400 kèm nguyên văn thông báo của tầng dưới.
+        authenticateCustomer(1L);
+        Mockito.when(paymentService.getPaymentOwnerUserIdByOrderCode("555")).thenReturn(1L);
+        Mockito.when(payOS.paymentRequests())
+                .thenThrow(new RuntimeException("connection refused to api-merchant.payos.vn"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/payment/payos_transfer_handler/verify")
+                        .param("orderCode", "555"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Đã có lỗi xảy ra, vui lòng thử lại sau!"));
     }
 }
 
