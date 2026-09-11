@@ -8,11 +8,23 @@
   
   --secondary: #10b981; /* Emerald */
   --accent: #f59e0b; /* Amber */
-  
+
+  /* Màu ngữ nghĩa.
+     Ba biến này được dùng rải rác trong home.css, navbar, toursPage và trang
+     thanh toán nhưng chưa bao giờ được định nghĩa ở stylesheet nào đang chạy:
+     chúng nằm trong src/index.css, file không ai import. Một var() không có
+     giá trị làm cả khai báo đó mất hiệu lực, nên chữ "Đăng xuất" lẽ ra màu đỏ
+     thì vẫn đen, và ngôi sao đánh giá lẽ ra màu hổ phách thì mất màu. */
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+
   /* Neutral / Background */
   --bg-color: #f8fafc;
   --surface: #ffffff;
   --surface-dim: #f1f5f9;
+  /* Nền cho những dải section xen kẽ và trạng thái hover của dropdown. */
+  --bg-alt: #f1f5f9;
   
   /* Text */
   --text-primary: #0f172a;
@@ -81,4 +93,37 @@ button, input, select, textarea {
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease forwards;
+}
+
+/* fadeUp và pulse trước đây chỉ tồn tại trong src/index.css, file không ai
+   import. Class .animate-fade-up được gắn ở hơn mười chỗ - hero, tiêu đề
+   section, thẻ điểm đến, thẻ tour, lời chứng thực - và chưa lần nào chạy;
+   animationDelay so le của thẻ điểm đến cũng vô nghĩa theo. Tương tự, khung
+   xương lúc chờ tải ở Home và ToursPage khai báo `animation: pulse` mà không
+   trang nào nạp được keyframes đó, nên nó chỉ là ô xám đứng im. */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Hai animation trên bắt đầu từ opacity 0 và dựa vào `forwards` để hiện ra.
+   Với người đã tắt hiệu ứng chuyển động trong hệ điều hành, tắt animation mà
+   không hoàn nguyên opacity sẽ khiến nội dung biến mất hẳn, nên phải đặt lại
+   trạng thái cuối ở đây. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

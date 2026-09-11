@@ -9,7 +9,9 @@
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  border: none;
+  /* Viền trong suốt chứ không phải `none`: nhờ vậy nút viền và nút đặc có cùng
+     chiều cao khi đứng cạnh nhau, thay vì lệch nhau đúng bằng độ dày viền. */
+  border: 1px solid transparent;
   transition: all var(--transition-normal);
   text-align: center;
 }
@@ -35,6 +37,21 @@
 .btn-secondary:hover {
   background: var(--surface-dim);
   border-color: var(--text-muted);
+}
+
+/* .btn-outline được dùng ở sáu chỗ - nút phụ ngoài trang chủ, nút quay lại ở
+   hai trang kết quả thanh toán, nút Hủy trong modal voucher - nhưng định nghĩa
+   của nó nằm trong src/index.css, file không ai import. Chúng đang hiện ra
+   dưới dạng .btn trần: không nền, không viền, chỉ còn chữ. */
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: white;
 }
 
 /* Glass Card */

@@ -13,6 +13,43 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Doc thang tu spring.servlet.multipart.max-file-size, de con so trong thong
+     * bao loi khong bao gio lech voi con so thuc su chan request. Gia tri du
+     * phong 1MB la mac dinh cua chinh Spring Boot khi thieu cau hinh, nen hai
+     * ben van noi cung mot con so.
+     */
+    private final org.springframework.util.unit.DataSize maxUploadSize;
+
+    public GlobalExceptionHandler(
+            @org.springframework.beans.factory.annotation.Value("${spring.servlet.multipart.max-file-size:1MB}")
+            org.springframework.util.unit.DataSize maxUploadSize) {
+        this.maxUploadSize = maxUploadSize;
+    }
+
+    /**
+     * File tai len lon hon muc cho phep.
+     *
+     * Spring chan request nay ngay tu buoc doc multipart, TRUOC khi vao
+     * UploadController, nen khoi try/catch trong controller lan chot kiem tra
+     * kich thuoc trong FileUploadService deu khong bao gio chay. Khong co
+     * handler rieng thi no roi xuong handleGeneralException: admin tai mot tam
+     * anh hoi lon lien nhan 500 "Da co loi xay ra, vui long thu lai sau!" kem
+     * mot stack trace muc ERROR, trong khi day chi la mot buc anh qua kho va
+     * nguoi dung chi can biet dung mot cau do.
+     *
+     * Frontend cung khong kiem dung luong truoc khi gui, nen day la cho duy
+     * nhat noi duoc dieu do cho nguoi dung.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        log.warn("File tải lên vượt quá giới hạn {}MB", maxUploadSize.toMegabytes());
+        ApiResponse<?> response = new ApiResponse<>(false,
+                "File vượt quá kích thước tối đa cho phép (" + maxUploadSize.toMegabytes() + "MB)!", null);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         log.warn("Tài nguyên không tồn tại: {}", ex.getMessage());
@@ -41,23 +78,46 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    /** SQLSTATE 23505 - unique_violation. */
+    private static final String UNIQUE_VIOLATION = "23505";
+
     /**
-     * Vi pham rang buoc toan ven cua database - gan nhu luon la hai request
-     * dong thoi cung tao mot ban ghi ma rang buoc UNIQUE chi cho phep mot
-     * (vi du hai nguoi cung dat mot ngay khoi hanh chua co dong lich).
+     * Vi pham rang buoc toan ven cua database. KHONG phai loai nao cung giong
+     * nhau, va phan biet chung moi la diem chinh cua handler nay.
      *
-     * Day la TRANH CHAP, khong phai su co may chu: nguoi dung thu lai la thanh
-     * cong. Truoc khi co handler nay no roi vao handleGeneralException va thanh
-     * 500 - cung mot tinh huong tranh chap ma luc thi 409 "thu lai di", luc thi
-     * 500 "may chu hong", tuy vao viec dong du lieu da ton tai hay chua.
+     * UNIQUE (23505) gan nhu luon la hai request dong thoi cung tao mot ban ghi
+     * ma rang buoc chi cho phep mot - vi du hai nguoi cung dat mot ngay khoi
+     * hanh chua co dong lich. Day la TRANH CHAP: thu lai la thanh cong, nen 409.
+     *
+     * Moi vi pham con lai - khoa ngoai (23503), NOT NULL (23502), CHECK (23514)
+     * - la LOI LAP TRINH: code gui xuong database du lieu ma no khong chap nhan.
+     * Thu lai khong bao gio thanh cong.
+     *
+     * Ban dau tuc handler nay tra 409 cho MOI vi pham, va cai gia phai tra da
+     * hien ra ngay: VoucherServiceImpl ghi audit log voi user_id = 0 - mot id
+     * khong ton tai trong bang users - nen tao voucher luon that bai voi loi
+     * khoa ngoai, con admin thi nhan duoc "Du lieu vua duoc thay doi boi mot
+     * giao dich khac. Vui long thu lai!" va bam lai mai khong duoc. Mot loi that
+     * bi mac ao tranh chap tam thoi, va khong loi ERROR nao trong log de lan ra.
      */
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolation(
             org.springframework.dao.DataIntegrityViolationException ex) {
-        log.warn("Vi phạm ràng buộc dữ liệu: {}", ex.getMostSpecificCause().getMessage());
-        ApiResponse<?> response = new ApiResponse<>(false,
-                "Dữ liệu vừa được thay đổi bởi một giao dịch khác. Vui lòng thử lại!", null);
-        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        Throwable cause = ex.getMostSpecificCause();
+        String sqlState = cause instanceof java.sql.SQLException sqlException
+                ? sqlException.getSQLState()
+                : null;
+
+        if (UNIQUE_VIOLATION.equals(sqlState)) {
+            log.warn("Tranh chấp ràng buộc UNIQUE: {}", cause.getMessage());
+            ApiResponse<?> response = new ApiResponse<>(false,
+                    "Dữ liệu vừa được thay đổi bởi một giao dịch khác. Vui lòng thử lại!", null);
+            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        }
+
+        log.error("Vi phạm ràng buộc dữ liệu (SQLSTATE {}): ", sqlState, ex);
+        ApiResponse<?> response = new ApiResponse<>(false, "Đã có lỗi xảy ra, vui lòng thử lại sau!", null);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -55,8 +55,10 @@ public class ContactMessageServiceImpl implements ContactMessageService {
 
     @Override
     public ContactMessageResponse updateMessageStatus(Long id, String status) {
+        // Id không tồn tại là 404, không phải 500.
         ContactMessage message = contactMessageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contact message not found"));
+                .orElseThrow(() -> new myproject.booking_tour.exception.ResourceNotFoundException(
+                        "Contact message not found with id: " + id));
         message.setStatus(status);
         return mapToResponse(contactMessageRepository.save(message));
     }

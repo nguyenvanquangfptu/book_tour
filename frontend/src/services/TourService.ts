@@ -52,6 +52,15 @@ export const TourService = {
     return response.data;
   },
 
+  // Đổi riêng trạng thái. Không dùng updateTour cho việc này: PUT /tours/{id}
+  // ghi đè toàn bộ tour bằng payload gửi lên, nên mọi trường vắng mặt trong
+  // payload sẽ bị xóa. Endpoint này chỉ chạm vào cột status và ghi audit log
+  // CHANGE_STATUS.
+  changeTourStatus: async (id: string | number, status: string) => {
+    const response = await api.put(`/tours/${id}/status?status=${encodeURIComponent(status)}`);
+    return response.data?.data || response.data;
+  },
+
   deleteTour: async (id: string | number) => {
     const response = await api.delete(`/tours/${id}`);
     return response.data;

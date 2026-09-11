@@ -169,7 +169,7 @@ const VoucherManagement: React.FC = () => {
               <tr key={v.id}>
                 <td>{v.id}</td>
                 <td><strong>{v.code}</strong></td>
-                <td>{v.discountAmount ? formatPrice(v.discountAmount) : `${v.discountPercentage}% (Tối đa ${formatPrice(v.maxDiscount)})`}</td>
+                <td>{v.discountAmount ? formatPrice(v.discountAmount) : `${v.discountPercentage}% ${v.maxDiscount > 0 ? `(Tối đa ${formatPrice(v.maxDiscount)})` : '(Không giới hạn mức giảm)'}`}</td>
                 <td>{v.minOrderValue ? formatPrice(v.minOrderValue) : '0 VNĐ'}</td>
                 <td>{v.usedCount} / {v.usageLimit}</td>
                 <td>
@@ -238,8 +238,8 @@ const VoucherManagement: React.FC = () => {
                     <input type="number" name="discountPercentage" className="input-field" value={formData.discountPercentage} onChange={handleInputChange} min="1" max="100" required />
                   </div>
                   <div className="input-group" style={{ marginBottom: '16px', flex: 1 }}>
-                    <label>Giảm tối đa (VNĐ)</label>
-                    <input type="number" name="maxDiscount" className="input-field" value={formData.maxDiscount} onChange={handleInputChange} required />
+                    <label>Giảm tối đa (VNĐ) <span style={{ fontWeight: 400, color: '#64748b' }}>— để 0 nếu không giới hạn</span></label>
+                    <input type="number" name="maxDiscount" className="input-field" min="0" value={formData.maxDiscount} onChange={handleInputChange} required />
                   </div>
                 </div>
               )}
