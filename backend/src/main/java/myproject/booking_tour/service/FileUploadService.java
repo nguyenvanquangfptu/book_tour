@@ -43,11 +43,16 @@ public class FileUploadService {
             throw new BadRequestException("Chỉ chấp nhận file ảnh (JPEG, PNG, WEBP, GIF)!");
         }
 
+        // secure_url chu khong phai url: Cloudinary tra ve ca hai, va "url" la
+        // ban http. Mot trang chay https ma nhung anh http vao thi trinh duyet
+        // chan het vi noi dung hon hop - anh bia tour, anh dai dien, thu vien
+        // anh deu khong hien. Nhung URL da luu trong database van la http, chi
+        // nhung lan tai len tu day tro di moi doi.
         return cloudinary.uploader()
                 .upload(multipartFile.getBytes(),
                         ObjectUtils.asMap("public_id", UUID.randomUUID().toString(),
                                 "folder", "booking_tour"))
-                .get("url")
+                .get("secure_url")
                 .toString();
     }
 }
