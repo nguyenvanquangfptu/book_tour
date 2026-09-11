@@ -230,7 +230,17 @@ public class BookingServiceImpl implements BookingService {
             discountAmount = voucher.getDiscountAmount();
         } else if (voucher.getDiscountPercentage() != null && voucher.getDiscountPercentage() > 0) {
             discountAmount = totalPrice.multiply(BigDecimal.valueOf(voucher.getDiscountPercentage() / 100.0));
-            if (voucher.getMaxDiscount() != null && discountAmount.compareTo(voucher.getMaxDiscount()) > 0) {
+            // maxDiscount = 0 nghia la KHONG chan tran, khong phai "giam toi da
+            // 0 dong". O nhap nay trong form admin mac dinh la 0 va so 0 van
+            // thoa required cua HTML, nen phan lon voucher phan tram duoc tao ra
+            // deu mang gia tri nay - dieu kien cu kep muc giam ve 0 va khach
+            // khong duoc giam dong nao, trong khi trang thanh toan van hien so
+            // tien giam day du (JavaScript coi 0 la falsy nen bo qua tran).
+            // Khach nhin thay mot gia, bi tinh mot gia khac, va luot voucher van
+            // bi tru.
+            if (voucher.getMaxDiscount() != null
+                    && voucher.getMaxDiscount().compareTo(BigDecimal.ZERO) > 0
+                    && discountAmount.compareTo(voucher.getMaxDiscount()) > 0) {
                 discountAmount = voucher.getMaxDiscount();
             }
         }

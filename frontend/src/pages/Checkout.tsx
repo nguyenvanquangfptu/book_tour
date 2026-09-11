@@ -95,7 +95,10 @@ const Checkout: React.FC = () => {
         discount = voucher.discountAmount;
       } else if (voucher.discountPercentage) {
         discount = state.totalPrice * (voucher.discountPercentage / 100);
-        if (voucher.maxDiscount && discount > voucher.maxDiscount) {
+        // maxDiscount > 0 mới là một mức trần; 0 hoặc bỏ trống nghĩa là không
+        // chặn trần. Viết thẳng điều kiện thay vì dựa vào falsy của JavaScript,
+        // để chỗ này khớp có chủ đích với backend chứ không phải tình cờ.
+        if (voucher.maxDiscount > 0 && discount > voucher.maxDiscount) {
           discount = voucher.maxDiscount;
         }
       }
