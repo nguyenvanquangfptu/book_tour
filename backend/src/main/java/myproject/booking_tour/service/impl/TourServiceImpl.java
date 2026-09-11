@@ -184,7 +184,8 @@ public class TourServiceImpl implements TourService {
             boolean hasInactiveAcc = tour.getAccommodations().stream()
                     .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
             if (hasInactiveAcc) {
-                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động.");
+                throw new myproject.booking_tour.exception.BadRequestException(
+                        "Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động.");
             }
         }
 
@@ -288,7 +289,8 @@ public class TourServiceImpl implements TourService {
             boolean hasInactiveAcc = updatedTour.getAccommodations().stream()
                     .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
             if (hasInactiveAcc) {
-                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
+                throw new myproject.booking_tour.exception.BadRequestException(
+                        "Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
             }
         }
 
@@ -389,7 +391,8 @@ public class TourServiceImpl implements TourService {
             boolean hasInactiveAcc = tour.getAccommodations().stream()
                     .anyMatch(acc -> Boolean.FALSE.equals(acc.getIsActive()));
             if (hasInactiveAcc) {
-                throw new RuntimeException("Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
+                throw new myproject.booking_tour.exception.BadRequestException(
+                        "Không thể mở bán Tour: Tồn tại Nơi lưu trú đang ngưng hoạt động. Vui lòng thay Nơi lưu trú khác trước khi Active!");
             }
         }
 

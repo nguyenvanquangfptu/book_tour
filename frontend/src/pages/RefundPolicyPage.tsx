@@ -24,28 +24,28 @@ const RefundPolicyPage: React.FC = () => {
           <p style={{ fontSize: '1.1rem', marginBottom: '30px' }}>{t('profile.refund.intro')}</p>
           
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.refund.h1')}
           </h3>
           <div style={{ background: 'var(--bg-alt)', padding: '24px', borderRadius: '16px', marginBottom: '20px' }}>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success-color)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.refund.li1')}</li>
+              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--success)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.refund.li1')}</li>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--warning-color, #f59e0b)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.refund.li2')}</li>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}><FaCheckCircle style={{ color: 'var(--danger-color, #ef4444)', marginTop: '4px', flexShrink: 0 }} /> {t('profile.refund.li3')}</li>
             </ul>
           </div>
 
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.refund.h2')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.refund.p2')}</p>
 
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.refund.h3')}
           </h3>
-          <p style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderLeft: '4px solid var(--primary-color)', borderRadius: '0 8px 8px 0' }}>{t('profile.refund.p3')}</p>
+          <p style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderLeft: '4px solid var(--primary)', borderRadius: '0 8px 8px 0' }}>{t('profile.refund.p3')}</p>
         </div>
       </div>
     </div>

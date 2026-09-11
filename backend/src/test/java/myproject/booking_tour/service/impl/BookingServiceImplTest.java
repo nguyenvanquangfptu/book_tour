@@ -187,6 +187,63 @@ class BookingServiceImplTest {
         verify(tourScheduleRepository, never()).deductSlots(10L, travelDate.plusDays(2), 4);
     }
 
+    /**
+     * Dung mot voucher phan tram, tra ve gia cuoi cung ma khach phai tra.
+     */
+    private BigDecimal priceWithPercentageVoucher(double percentage, BigDecimal maxDiscount) {
+        LocalDate travelDate = LocalDate.now().plusDays(7);
+        mockTour.setDuration("1 ngày");
+        mockTour.setPrice(BigDecimal.valueOf(1_000_000));
+
+        myproject.booking_tour.entity.Voucher voucher = new myproject.booking_tour.entity.Voucher();
+        voucher.setId(5L);
+        voucher.setCode("SALE");
+        voucher.setIsActive(true);
+        voucher.setUsedCount(0);
+        voucher.setDiscountPercentage(percentage);
+        voucher.setMaxDiscount(maxDiscount);
+
+        BookingRequest request = new BookingRequest();
+        request.setTourId(10L);
+        request.setTravelDate(travelDate);
+        request.setNumberOfPeople(2);
+        request.setVoucherId(5L);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(tourRepository.findById(10L)).thenReturn(Optional.of(mockTour));
+        when(voucherRepository.findById(5L)).thenReturn(Optional.of(voucher));
+        when(tourScheduleRepository.insertIfAbsent(anyLong(), any(LocalDate.class), anyInt())).thenReturn(1);
+        when(tourScheduleRepository.deductSlots(anyLong(), any(LocalDate.class), anyInt())).thenReturn(1);
+        when(tourScheduleRepository.findFirstByTourIdAndDepartureDate(10L, travelDate))
+                .thenReturn(Optional.of(new TourSchedule()));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(bookingMapper.toResponse(any(Booking.class))).thenReturn(new BookingResponse());
+
+        bookingService.createBooking(request, 1L);
+
+        org.mockito.ArgumentCaptor<Booking> saved = org.mockito.ArgumentCaptor.forClass(Booking.class);
+        verify(bookingRepository).save(saved.capture());
+        return saved.getValue().getTotalPrice();
+    }
+
+    @Test
+    void createBooking_ShouldTreatZeroMaxDiscountAsNoCap() {
+        // Ô "giảm tối đa" trong form admin mặc định là 0 và số 0 vẫn thỏa
+        // required của HTML, nên hầu hết voucher phần trăm đều mang giá trị này.
+        // Coi nó là trần thật sẽ kẹp mức giảm về 0: khách thấy trang thanh toán
+        // trừ 200.000đ rồi bị tính đủ 2.000.000đ, và lượt voucher vẫn bị trừ.
+        assertEquals(0, priceWithPercentageVoucher(10.0, BigDecimal.ZERO)
+                .compareTo(BigDecimal.valueOf(1_800_000)));
+    }
+
+    @Test
+    void createBooking_ShouldStillCapDiscount_WhenMaxDiscountIsSet() {
+        // Trần thật vẫn phải chặn: 10% của 2.000.000đ là 200.000đ, quá mức
+        // 50.000đ mà admin đặt ra.
+        assertEquals(0, priceWithPercentageVoucher(10.0, BigDecimal.valueOf(50_000))
+                .compareTo(BigDecimal.valueOf(1_950_000)));
+    }
+
     @Test
     void cancelBooking_ShouldRestoreSlotsForWholeDuration_ThroughAtomicUpdate() {
         LocalDate travelDate = LocalDate.now().plusDays(7);

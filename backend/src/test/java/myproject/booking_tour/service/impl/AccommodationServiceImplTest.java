@@ -117,7 +117,14 @@ class AccommodationServiceImplTest {
         when(accommodationRepository.findById(1L)).thenReturn(Optional.of(mockAccommodation));
         when(tourRepository.existsByAccommodations_Id(1L)).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> accommodationService.deleteAccommodation(1L));
+        // Phải là BadRequestException, không phải RuntimeException bất kỳ:
+        // RuntimeException trần rơi vào handler cuối và biến thành 500 kèm
+        // "Đã có lỗi xảy ra, vui lòng thử lại sau!", nên admin không bao giờ
+        // đọc được lý do thật ở dưới đây.
+        myproject.booking_tour.exception.BadRequestException ex = assertThrows(
+                myproject.booking_tour.exception.BadRequestException.class,
+                () -> accommodationService.deleteAccommodation(1L));
+        assertTrue(ex.getMessage().contains("đang được sử dụng trong Tour"), ex.getMessage());
         verify(accommodationRepository, never()).delete(any());
     }
 }

@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import { TourService } from '../../services/TourService';
 import api from '../../api/axiosConfig';
 import { formatPrice } from '../../utils/formatPrice';
+import { findOversizedFiles, oversizedFilesMessage } from '../../utils/uploadLimits';
 
 /**
  * Bộ lọc trên trang tour được dựng từ SELECT DISTINCT hai cột này, nên nhập tự
@@ -211,7 +212,16 @@ const TourManagement: React.FC = () => {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
+    // Chặn trước ở trình duyệt: server từ chối file quá khổ ngay từ bước đọc
+    // multipart, nên không cần tải hết vài chục MB lên rồi mới biết là hỏng.
+    const oversized = findOversizedFiles(e.target.files);
+    if (oversized.length > 0) {
+      Swal.fire({ icon: 'error', title: 'Ảnh quá lớn', text: oversizedFilesMessage(oversized), confirmButtonColor: '#3b82f6' });
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     const uploadData = new FormData();
     Array.from(e.target.files).forEach(file => {
@@ -247,7 +257,14 @@ const TourManagement: React.FC = () => {
 
   const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
+    const oversized = findOversizedFiles(e.target.files);
+    if (oversized.length > 0) {
+      Swal.fire({ icon: 'error', title: 'Ảnh quá lớn', text: oversizedFilesMessage(oversized), confirmButtonColor: '#3b82f6' });
+      e.target.value = '';
+      return;
+    }
+
     setUploadingCover(true);
     const uploadData = new FormData();
     uploadData.append('file', e.target.files[0]);
@@ -351,26 +368,17 @@ const TourManagement: React.FC = () => {
 
   const handleStatusChange = async (tour: any, newStatus: string) => {
     try {
-      const submitData = {
-        title: tour.title,
-        description: tour.description || '',
-        price: tour.price,
-        duration: tour.duration || '',
-        destination: tour.destination || '',
-        imageUrl: tour.imageUrl || '',
-        images: tour.images || [],
-        accommodationIds: tour.accommodations && tour.accommodations.length > 0 ? [tour.accommodations[0].id] : [],
-        maxPeople: tour.maxPeople || 1,
-        utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
-        highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],
-        itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [{day: '', title: '', description: ''}],
-        status: newStatus
-      };
-      await TourService.updateTour(tour.id, submitData);
-      
+      // Gọi đúng endpoint đổi trạng thái. Trước đây chỗ này dựng lại cả tour rồi
+      // gửi PUT /tours/{id}, mà PUT ghi đè từng trường bằng payload gửi lên:
+      // payload thiếu tourType và transport nên mỗi lần admin đổi trạng thái
+      // ngay trên bảng là hai trường đó bị xóa trắng, kéo theo bộ lọc loại tour
+      // và phương tiện ở trang tour không còn khớp gì. Nó cũng chỉ giữ lại nơi
+      // lưu trú đầu tiên, và không sinh audit log CHANGE_STATUS.
+      await TourService.changeTourStatus(tour.id, newStatus);
+
       // Cập nhật state local
       setTours(prev => prev.map(t => t.id === tour.id ? { ...t, status: newStatus } : t));
-      
+
       const Toast = Swal.mixin({
         toast: true,
         position: "top-end",

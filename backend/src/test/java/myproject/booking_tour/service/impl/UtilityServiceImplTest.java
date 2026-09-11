@@ -142,7 +142,11 @@ class UtilityServiceImplTest {
         when(utilityRepository.findById(1L)).thenReturn(Optional.of(mockUtility));
         when(tourRepository.existsByUtilityId(1L)).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> utilityService.deleteUtility(1L));
+        // 400 kèm lý do thật, không phải 500 kèm thông báo chung chung.
+        myproject.booking_tour.exception.BadRequestException ex = assertThrows(
+                myproject.booking_tour.exception.BadRequestException.class,
+                () -> utilityService.deleteUtility(1L));
+        assertTrue(ex.getMessage().contains("đang được sử dụng trong Tour"), ex.getMessage());
         verify(utilityRepository, never()).delete(any());
     }
 }

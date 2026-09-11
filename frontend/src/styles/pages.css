@@ -61,7 +61,7 @@
 .about-image img {
   width: 100%;
   border-radius: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md);
 }
 
 .team-grid {
@@ -82,7 +82,7 @@
   object-fit: cover;
   margin-bottom: 16px;
   border: 4px solid white;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md);
 }
 
 .team-member h4 {

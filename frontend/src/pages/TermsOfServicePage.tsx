@@ -24,19 +24,19 @@ const TermsOfServicePage: React.FC = () => {
           <p style={{ fontSize: '1.1rem', marginBottom: '30px' }}>{t('profile.terms.intro')}</p>
           
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.terms.h1')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.terms.p1')}</p>
 
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.terms.h2')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.terms.p2')}</p>
 
           <h3 style={{ marginTop: '40px', marginBottom: '20px', color: 'var(--text-primary)', fontSize: '1.5rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '8px', height: '24px', background: 'var(--primary-color)', borderRadius: '4px', display: 'inline-block' }}></span>
+            <span style={{ width: '8px', height: '24px', background: 'var(--primary)', borderRadius: '4px', display: 'inline-block' }}></span>
             {t('profile.terms.h3')}
           </h3>
           <p style={{ marginBottom: '20px' }}>{t('profile.terms.p3')}</p>
