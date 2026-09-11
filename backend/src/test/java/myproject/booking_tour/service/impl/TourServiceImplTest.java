@@ -61,6 +61,36 @@ class TourServiceImplTest {
     }
 
     @Test
+    void changeStatus_ShouldRejectAValueTheDatabaseWouldRefuse() {
+        // ck_tours_status chỉ cho phép ACTIVE, INACTIVE, SOLD_OUT. Không chặn ở
+        // đây thì "Active" đi hết đường xuống database rồi bật ngược lên thành
+        // 500, trong khi đó là lỗi của bên gọi.
+        myproject.booking_tour.exception.BadRequestException ex = assertThrows(
+                myproject.booking_tour.exception.BadRequestException.class,
+                () -> tourService.changeStatus(1L, "Active"));
+
+        assertTrue(ex.getMessage().contains("ACTIVE, INACTIVE, SOLD_OUT"), ex.getMessage());
+        // Chặn trước cả khi đọc tour, nên không có truy vấn nào bị lãng phí.
+        verifyNoInteractions(tourRepository);
+    }
+
+    @Test
+    void updateTour_ShouldKeepCurrentStatus_WhenTheRequestOmitsIt() {
+        // Ghi đè bằng null sẽ làm tour biến khỏi mọi danh sách của khách, vì
+        // assertVisible chỉ cho qua đúng "ACTIVE".
+        TourRequest request = new TourRequest();
+        request.setTitle("Test Tour");
+
+        when(tourRepository.findById(1L)).thenReturn(Optional.of(mockTour));
+        when(tourRepository.save(any(Tour.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tourMapper.toResponse(any(Tour.class))).thenReturn(new TourResponse());
+
+        tourService.updateTour(1L, request);
+
+        assertEquals("ACTIVE", mockTour.getStatus());
+    }
+
+    @Test
     void createTour_ShouldSaveTour() {
         TourRequest request = new TourRequest();
         request.setTitle("New Tour");
