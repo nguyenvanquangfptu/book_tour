@@ -112,38 +112,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     /**
-     * Doc so ngay tour keo dai tu chuoi mo ta tu do ("3 ngay 2 dem", "1 tuan").
-     *
-     * Con so nay quyet dinh tru cho cua bao nhieu ngay, nen doc thieu la ban
-     * vuot cho o nhung ngay khong duoc tinh den. "1 tuan" tung roi vao nhanh
-     * "lay con so dau tien" va tra ve 1 thay vi 7 - tour ca tuan ma chi giu cho
-     * dung ngay khoi hanh.
-     */
-    private int parseDurationDays(String duration) {
-        if (duration == null || duration.trim().isEmpty()) return 1;
-
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("(\\d+)\\s*(ngày|ngay|day)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-
-        m = java.util.regex.Pattern
-                .compile("(\\d+)\\s*(tuần|tuan|week)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1)) * 7;
-        }
-
-        m = java.util.regex.Pattern.compile("(\\d+)").matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-        return 1;
-    }
-
-    /**
      * Kiem tra du cho va tru cho cho TAT CA cac ngay ma tour dien ra.
      *
      * Moi ngay di qua dung hai cau lenh, ca hai deu nguyen tu:
@@ -171,7 +139,7 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("Ngày khởi hành không được nằm trong quá khứ");
         }
 
-        int days = parseDurationDays(tour.getDuration());
+        int days = myproject.booking_tour.utils.TourDurationUtils.parseDays(tour.getDuration());
         int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
         int people = request.getNumberOfPeople();
 
@@ -448,7 +416,7 @@ public class BookingServiceImpl implements BookingService {
     private void releaseBookingResources(Booking booking) {
         Tour tour = booking.getTour();
         if (tour != null && booking.getTravelDate() != null) {
-            int days = parseDurationDays(tour.getDuration());
+            int days = myproject.booking_tour.utils.TourDurationUtils.parseDays(tour.getDuration());
             java.time.LocalDate startDate = booking.getTravelDate();
             java.time.LocalDate endDate = startDate.plusDays(days - 1);
 
