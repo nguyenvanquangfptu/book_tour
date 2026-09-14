@@ -153,6 +153,50 @@ class PaymentServiceImplTest {
         assertFalse(ex.getMessage().contains("không có quyền"), ex.getMessage());
     }
 
+    @Test
+    void createPaymentUrl_ShouldRefuse_WhenPaymentWindowHasPassed() {
+        // Scheduler chay moi gio: don qua han co the con CONFIRMED them toi mot
+        // gio nua. Link tao ra trong khoang do se nhan tien cho mot don sap huy.
+        Booking booking = bookingOwnedBy(7L, "CONFIRMED");
+        booking.setApprovedAt(java.time.LocalDateTime.now().minusHours(25));
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        myproject.booking_tour.exception.BadRequestException ex = assertThrows(
+                myproject.booking_tour.exception.BadRequestException.class,
+                () -> paymentService.createPaymentUrl(1L, 7L, false));
+
+        assertTrue(ex.getMessage().contains("quá hạn"), ex.getMessage());
+        verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
+    @Test
+    void createPaymentUrl_ShouldMakeTheLinkExpireWhenThePaymentWindowCloses() {
+        org.springframework.test.util.ReflectionTestUtils.setField(paymentService, "returnUrl", "http://localhost/payment/success");
+        org.springframework.test.util.ReflectionTestUtils.setField(paymentService, "cancelUrl", "http://localhost/payment/cancel");
+        java.time.LocalDateTime approvedAt = java.time.LocalDateTime.now().minusHours(3).withNano(0);
+        Booking booking = bookingOwnedBy(7L, "CONFIRMED");
+        booking.setApprovedAt(approvedAt);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(i -> {
+            Payment p = i.getArgument(0);
+            p.setId(10L);
+            return p;
+        });
+        vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse created =
+                mock(vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.class);
+        when(created.getCheckoutUrl()).thenReturn("https://pay.payos.vn/web/abc");
+        when(payOS.paymentRequests().create(any(vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest.class)))
+                .thenReturn(created);
+
+        assertEquals("https://pay.payos.vn/web/abc", paymentService.createPaymentUrl(1L, 7L, false));
+
+        org.mockito.ArgumentCaptor<vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest> sent =
+                org.mockito.ArgumentCaptor.forClass(vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest.class);
+        verify(payOS.paymentRequests()).create(sent.capture());
+        long expected = approvedAt.plusHours(24).atZone(java.time.ZoneId.systemDefault()).toEpochSecond();
+        assertEquals(expected, sent.getValue().getExpiredAt());
+    }
+
     private Payment pendingPayment(String orderCode) {
         Payment payment = new Payment();
         payment.setId(10L);
