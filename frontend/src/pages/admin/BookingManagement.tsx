@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheckCircle, FaEye, FaMapMarkerAlt, FaCalendarAlt, FaUsers, FaUser, FaPhone, FaEnvelope, FaStickyNote, FaMoneyBillWave, FaMap, FaFileInvoiceDollar, FaIdCard } from 'react-icons/fa';
+import axios from 'axios';
 import api from '../../api/axiosConfig';
 import Swal from 'sweetalert2';
 import { formatPrice } from '../../utils/formatPrice';
@@ -8,7 +9,7 @@ interface Booking {
   id: number;
   userId: number;
   tourId: number;
-  tourName: string;
+  tourTitle: string;
   customerName: string;
   numberOfPeople: number;
   totalPrice: number;
@@ -29,7 +30,11 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response: any = await api.get(`/bookings?page=${currentPage}&size=${pageSize}`);
+      // Lọc trạng thái ở server, trước khi cắt trang. Lọc trên 15 dòng đã tải
+      // về thì chọn "Đã thanh toán" chỉ còn những đơn PAID lọt vào trang hiện
+      // tại, các trang khác báo "Chưa có đơn hàng nào" dù có đơn thật.
+      const statusParam = filterStatus === 'ALL' ? '' : `&status=${filterStatus}`;
+      const response: any = await api.get(`/bookings?page=${currentPage}&size=${pageSize}${statusParam}`);
       if (response.data && response.data.content) {
         setBookings(response.data.content);
         setTotalPages(response.data.totalPages);
@@ -47,7 +52,7 @@ const BookingManagement: React.FC = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage]);
+  }, [currentPage, filterStatus]);
 
   const handleConfirm = async (id: number) => {
     const result = await Swal.fire({
@@ -64,14 +69,16 @@ const BookingManagement: React.FC = () => {
     if (result.isConfirmed) {
       try {
         await api.put(`/bookings/${id}/confirm`);
-        setBookings(bookings.map(b => b.id === id ? { ...b, status: 'CONFIRMED' } : b));
+        fetchBookings();
         Swal.fire('Thành công', 'Đơn hàng đã được duyệt', 'success');
       } catch (error) {
         console.error('Failed to confirm booking', error);
+        // Server nói rõ vì sao không duyệt được (ví dụ đơn đã thanh toán).
+        const serverMessage = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
         Swal.fire({
           icon: 'error',
           title: 'Lỗi',
-          text: 'Có lỗi xảy ra khi xác nhận đơn hàng.',
+          text: serverMessage || 'Có lỗi xảy ra khi xác nhận đơn hàng.',
           confirmButtonColor: '#3b82f6'
         });
       }
@@ -93,12 +100,6 @@ const BookingManagement: React.FC = () => {
     }
   };
 
-  const filteredBookings = bookings
-    .filter(b => {
-      if (filterStatus === 'ALL') return true;
-      return b.status === filterStatus;
-    });
-
   return (
     <div className="admin-panel">
       <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -107,7 +108,7 @@ const BookingManagement: React.FC = () => {
           <label style={{ fontWeight: 'bold' }}>Lọc theo trạng thái:</label>
           <select 
             value={filterStatus} 
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(0); }}
             style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
           >
             <option value="ALL">Tất cả</option>
@@ -137,13 +138,13 @@ const BookingManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredBookings.length > 0 ? filteredBookings.map(b => (
+            {bookings.length > 0 ? bookings.map(b => (
               <tr key={b.id}>
                 <td>#{b.id}</td>
                 <td>{new Date(b.bookingDate).toLocaleDateString('vi-VN')}</td>
                 <td>{b.travelDate ? new Date(b.travelDate).toLocaleDateString('vi-VN') : 'N/A'}</td>
                 <td>{b.customerName || `User #${b.userId}`}</td>
-                <td>{b.tourName || `Tour #${b.tourId}`}</td>
+                <td>{b.tourTitle || `Tour #${b.tourId}`}</td>
                 <td>{b.numberOfPeople}</td>
                 <td>{formatPrice(b.totalPrice)}</td>
                 <td>{getStatusBadge(b.status)}</td>
@@ -245,7 +246,7 @@ const BookingManagement: React.FC = () => {
                     <div style={{ color: '#64748b', marginTop: '3px' }}><FaMapMarkerAlt /></div>
                     <div>
                       <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '2px' }}>Tên Tour</div>
-                      <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedBooking.tourName || selectedBooking.tourTitle || 'Đang cập nhật'}</div>
+                      <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedBooking.tourTitle || 'Đang cập nhật'}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -318,17 +319,10 @@ const BookingManagement: React.FC = () => {
                   <span style={{ color: '#1e3a8a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaCheckCircle /> Trạng thái đơn hàng:
                   </span>
-                  <span style={{ 
-                    fontWeight: 'bold', 
-                    padding: '6px 12px', 
-                    borderRadius: '20px', 
-                    fontSize: '0.9rem',
-                    background: selectedBooking.status === 'PENDING' ? '#fef3c7' : selectedBooking.status === 'CONFIRMED' ? '#dcfce7' : '#fee2e2',
-                    color: selectedBooking.status === 'PENDING' ? '#92400e' : selectedBooking.status === 'CONFIRMED' ? '#166534' : '#991b1b',
-                    border: `1px solid ${selectedBooking.status === 'PENDING' ? '#fde68a' : selectedBooking.status === 'CONFIRMED' ? '#bbf7d0' : '#fecaca'}`
-                  }}>
-                    {selectedBooking.status}
-                  </span>
+                  {/* Dùng chung huy hiệu với bảng: trước đây chỗ này chỉ phân biệt
+                      PENDING và CONFIRMED, mọi trạng thái khác - kể cả PAID - đều
+                      tô đỏ như đơn đã hủy. */}
+                  {getStatusBadge(selectedBooking.status)}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #93c5fd', paddingTop: '15px' }}>
                   <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>

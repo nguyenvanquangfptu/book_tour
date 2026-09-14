@@ -255,15 +255,22 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size) {
+    public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size, String status) {
         // page/size den thang tu query string: khong kep thi ?size=1000000 co nap
         // ca bang bookings, con so am lam PageRequest.of nem IllegalArgumentException
         // roi thanh 500.
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findAll(
-                org.springframework.data.domain.PageRequest.of(
-                        myproject.booking_tour.utils.PageableUtils.safePage(page),
-                        myproject.booking_tour.utils.PageableUtils.safeSize(size),
-                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate")));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                myproject.booking_tour.utils.PageableUtils.safePage(page),
+                myproject.booking_tour.utils.PageableUtils.safeSize(size),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate"));
+
+        // Loc trang thai phai nam o day, TRUOC khi cat trang. Trang quan tri
+        // truoc day loc tren 15 dong da tai ve: chon "Da thanh toan" chi con
+        // nhung don PAID lot vao trang hien tai, cac trang khac bao "Chua co
+        // don hang nao" du co ca tram don PAID, va so trang van dem theo tong.
+        org.springframework.data.domain.Page<Booking> bookingPage = status == null || status.isBlank()
+                ? bookingRepository.findAll(pageable)
+                : bookingRepository.findByStatus(status.trim(), pageable);
         List<BookingResponse> responses = bookingPage.getContent().stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());

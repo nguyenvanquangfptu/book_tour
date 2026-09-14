@@ -33,6 +33,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatus(String status);
 
     @EntityGraph(attributePaths = {"user", "tour"})
+    Page<Booking> findByStatus(String status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "tour"})
     List<Booking> findByUserId(Long userId);
 
     @EntityGraph(attributePaths = {"user", "tour"})
