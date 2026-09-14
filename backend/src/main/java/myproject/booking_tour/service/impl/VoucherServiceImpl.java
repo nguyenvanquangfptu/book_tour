@@ -62,6 +62,7 @@ public class VoucherServiceImpl implements VoucherService {
             throw new BadRequestException("Voucher code already exists");
         }
         Voucher voucher = voucherMapper.toEntity(request);
+        assertVoucherValid(voucher);
         Voucher savedVoucher = voucherRepository.save(voucher);
 
         myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
@@ -87,6 +88,7 @@ public class VoucherServiceImpl implements VoucherService {
         }
 
         voucherMapper.updateEntityFromRequest(voucher, request);
+        assertVoucherValid(voucher);
         Voucher updatedVoucher = voucherRepository.save(voucher);
 
         myproject.booking_tour.entity.AuditLog log = new myproject.booking_tour.entity.AuditLog();
@@ -98,6 +100,47 @@ public class VoucherServiceImpl implements VoucherService {
         auditLogRepository.save(log);
 
         return voucherMapper.toResponse(updatedVoucher);
+    }
+
+    /**
+     * Doi chieu voucher voi cac rang buoc CHECK cua bang vouchers TRUOC khi ghi.
+     *
+     * Truoc day khong co gi kiem tra ca, nen moi voucher nhap sai deu di het
+     * duong xuong database roi bi chan o do: ck_vouchers_period (ngay ket thuc
+     * khong sau ngay bat dau), ck_vouchers_percentage (phan tram ngoai 0-100),
+     * ck_vouchers_discount_type (khong chon muc giam nao, hoac chon ca hai). Admin
+     * nhan 500 "Da co loi xay ra, vui long thu lai sau!" - thu lai bao nhieu lan
+     * cung vay, va khong biet phai sua o nhap nao. O "So tien giam" trong form
+     * khong co min, nen go 0 la du de gap loi nay.
+     *
+     * Kiem tra tren entity SAU khi gop request vao, vi luc cap nhat nhung truong
+     * bo trong se giu gia tri cu.
+     */
+    private void assertVoucherValid(Voucher voucher) {
+        if (voucher.getValidFrom() != null && voucher.getValidUntil() != null
+                && !voucher.getValidUntil().isAfter(voucher.getValidFrom())) {
+            throw new BadRequestException("Ngày hết hạn voucher phải sau ngày bắt đầu.");
+        }
+
+        java.math.BigDecimal amount = voucher.getDiscountAmount() != null
+                ? voucher.getDiscountAmount() : java.math.BigDecimal.ZERO;
+        double percentage = voucher.getDiscountPercentage() != null ? voucher.getDiscountPercentage() : 0;
+
+        if (amount.signum() < 0 || percentage < 0) {
+            throw new BadRequestException("Mức giảm của voucher không được âm.");
+        }
+        if (percentage > 100) {
+            throw new BadRequestException("Voucher giảm theo phần trăm chỉ được giảm tối đa 100%.");
+        }
+        if ((amount.signum() > 0) == (percentage > 0)) {
+            throw new BadRequestException(
+                    "Voucher phải giảm theo số tiền hoặc theo phần trăm - chọn đúng một loại, với mức giảm lớn hơn 0.");
+        }
+        if ((voucher.getMaxDiscount() != null && voucher.getMaxDiscount().signum() < 0)
+                || (voucher.getMinOrderValue() != null && voucher.getMinOrderValue().signum() < 0)
+                || (voucher.getUsageLimit() != null && voucher.getUsageLimit() < 0)) {
+            throw new BadRequestException("Mức giảm tối đa, giá trị đơn tối thiểu và số lượt dùng không được âm.");
+        }
     }
 
     @Transactional
