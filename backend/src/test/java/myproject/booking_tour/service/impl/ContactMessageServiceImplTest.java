@@ -74,6 +74,32 @@ class ContactMessageServiceImplTest {
         );
     }
 
+    /**
+     * Form cong khai, dia chi nhan do nguoi gui tu dien. Chu nao nguoi gui go ma
+     * lot vao thu tu dong thi form thanh cong cu gui thu lua dao duoi ten Booking
+     * Tour toi dia chi bat ky.
+     */
+    @Test
+    void createMessage_ShouldNotEchoAnythingTheSenderTypedIntoTheAutoReply() throws Exception {
+        ContactMessageRequest request = new ContactMessageRequest();
+        request.setFullName("Nhan qua tai http://lua-dao.example");
+        request.setEmail("nan-nhan@example.com");
+        request.setSubject("Tai khoan cua ban bi khoa, bam http://lua-dao.example");
+        request.setMessage("...");
+        when(contactMessageRepository.save(any(ContactMessage.class))).thenReturn(mockMessage);
+
+        contactMessageService.createMessage(request);
+
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<java.util.Map<String, Object>> model =
+                org.mockito.ArgumentCaptor.forClass(java.util.Map.class);
+        verify(emailService).sendMessageUsingThymeleafTemplate(
+                eq("nan-nhan@example.com"), anyString(), eq("contact-reply"), model.capture());
+        assertTrue(model.getValue().values().stream()
+                        .noneMatch(v -> String.valueOf(v).contains("lua-dao")),
+                model.getValue().toString());
+    }
+
     @Test
     void createMessage_ShouldSaveEvenIfEmailFails() throws Exception {
         ContactMessageRequest request = new ContactMessageRequest();
