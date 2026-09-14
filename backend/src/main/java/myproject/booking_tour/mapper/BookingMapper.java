@@ -28,7 +28,15 @@ public class BookingMapper {
         try {
             if (booking.getUser() != null) {
                 response.setUserId(booking.getUser().getId());
-                response.setCustomerName(booking.getUser().getFullName());
+                // Ten nguoi lien he la ten khach GO O TRANG THANH TOAN, luu tren
+                // chinh booking - cung cho voi email va so dien thoai ben duoi.
+                // Truoc day dong nay luon lay ten TAI KHOAN, nen ai dat ho nguoi
+                // khac (bo me, cong ty) thi admin thay ten nguoi dat ghep voi so
+                // dien thoai cua nguoi di, va goi nham nguoi. Ten tai khoan chi
+                // con la gia tri du phong cho booking cu khong luu ten.
+                response.setCustomerName(booking.getCustomerName() != null && !booking.getCustomerName().isBlank()
+                        ? booking.getCustomerName()
+                        : booking.getUser().getFullName());
             }
         } catch (jakarta.persistence.EntityNotFoundException e) {
             response.setCustomerName("Người dùng đã bị xóa");

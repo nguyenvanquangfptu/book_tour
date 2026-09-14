@@ -47,8 +47,10 @@ const TicketTemplate = forwardRef<HTMLDivElement, TicketProps>(({ booking, profi
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
           <div>
             <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>{t('ticketTemplate.passenger')}</p>
-            <p style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', color: '#0f172a' }}>{profile.fullName}</p>
-            <p style={{ margin: '5px 0 0', fontSize: '1rem', color: '#475569' }}>{profile.phone}</p>
+            {/* Hành khách là người khách nhập ở trang thanh toán, không phải chủ
+                tài khoản - đặt hộ người thân thì vé phải mang tên người đi. */}
+            <p style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', color: '#0f172a' }}>{booking.customerName || profile.fullName}</p>
+            <p style={{ margin: '5px 0 0', fontSize: '1rem', color: '#475569' }}>{booking.customerPhone || profile.phone}</p>
           </div>
           <div>
             <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>{t('ticketTemplate.journey')}</p>
