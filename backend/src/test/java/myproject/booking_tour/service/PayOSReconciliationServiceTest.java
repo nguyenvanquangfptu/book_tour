@@ -118,6 +118,35 @@ class PayOSReconciliationServiceTest {
         assertEquals("FAILED", payment.getPaymentStatus());
     }
 
+    /**
+     * Don bi huy (qua han, khach huy, admin huy) roi tien moi ve qua link cu.
+     * Luc huy, so cho va luot voucher da duoc tra lai - co the da ban cho nguoi
+     * khac. Lat don sang PAID la ban vuot suc chua ma khong ai hay.
+     */
+    @Test
+    void shouldRecordTheMoney_ButNotReviveACancelledBooking_WhenPaymentArrivesLate() {
+        booking.setStatus("CANCELLED");
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+
+        assertTrue(reconciliationService.applyStatus(1L, "PAID"));
+
+        assertEquals("SUCCESS", payment.getPaymentStatus(), "Tien da vao that - phai co ban ghi");
+        assertEquals("CANCELLED", booking.getStatus());
+        verify(paymentRepository).save(payment);
+        verify(bookingRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldLeaveAlone_WhenPayOSSaysUnderpaid() {
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+
+        assertFalse(reconciliationService.applyStatus(1L, "UNDERPAID"));
+
+        assertEquals("PENDING", payment.getPaymentStatus());
+        assertEquals("CONFIRMED", booking.getStatus());
+        verifyNoInteractions(bookingRepository, bookingService);
+    }
+
     @Test
     void shouldLeaveAlone_WhenPayOSStillPending() {
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
