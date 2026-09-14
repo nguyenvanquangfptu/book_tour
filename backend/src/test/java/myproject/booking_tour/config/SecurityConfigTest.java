@@ -89,6 +89,28 @@ class SecurityConfigTest {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * Tai khoan bi xoa trong luc access token con han: trang cong khai van phai
+     * mo duoc, endpoint can dang nhap tra 401 de frontend dang xuat.
+     */
+    @Test
+    void tokenOfADeletedAccount_ShouldActLikeNoToken() throws Exception {
+        User doomed = new User();
+        doomed.setUsername("security-test-deleted");
+        doomed.setPassword("not-used");
+        doomed.setEmail("security-test-deleted@test.com");
+        doomed.setFullName("Deleted");
+        doomed.setRole(roleRepository.findByName("CUSTOMER").orElseThrow());
+        userRepository.save(doomed);
+        String token = bearer("security-test-deleted");
+        userRepository.delete(doomed);
+
+        mockMvc.perform(get("/api/reviews/recent").header("Authorization", token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/bookings/my-bookings").header("Authorization", token))
+                .andExpect(status().isUnauthorized());
+    }
+
     @Test
     void admin_ShouldStillListVouchers() throws Exception {
         Mockito.when(voucherService.getAllVouchers()).thenReturn(List.of());
