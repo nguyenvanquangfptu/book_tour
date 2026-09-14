@@ -109,6 +109,26 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void getAllBookings_ShouldFilterBeforePaging_WhenStatusGiven() {
+        when(bookingRepository.findByStatus(eq("PAID"), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+
+        bookingService.getAllBookings(0, 15, "PAID");
+
+        verify(bookingRepository, never()).findAll(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    void getAllBookings_ShouldListEverything_WhenStatusBlank() {
+        when(bookingRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+
+        bookingService.getAllBookings(0, 15, "");
+
+        verify(bookingRepository, never()).findByStatus(any(), any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
     void createBooking_ShouldThrowException_WhenTourIsSoldOut() {
         BookingRequest request = new BookingRequest();
         request.setTourId(10L);

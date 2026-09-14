@@ -54,8 +54,9 @@ public class BookingController {
     @GetMapping
     public ResponseEntity<ApiResponse<myproject.booking_tour.dto.response.PageResponse<BookingResponse>>> getAllBookings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        myproject.booking_tour.dto.response.PageResponse<BookingResponse> list = bookingService.getAllBookings(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status) {
+        myproject.booking_tour.dto.response.PageResponse<BookingResponse> list = bookingService.getAllBookings(page, size, status);
         return ResponseEntity.ok(new ApiResponse<>(true, "All bookings retrieved successfully!", list));
     }
 
