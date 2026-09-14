@@ -27,7 +27,24 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
 
     java.util.Optional<Tour> findBySlug(String slug);
 
-    boolean existsBySlug(String slug);
+    /**
+     * Slug da bi chiem chua - TINH CA TOUR TRONG THUNG RAC.
+     *
+     * Rang buoc uk_slug UNIQUE (slug) tren bang tours ap dung cho moi dong,
+     * ke ca dong is_deleted = true. Cau derived query existsBySlug truoc day di
+     * qua @SQLRestriction("is_deleted = false") nen khong nhin thay tour da xoa:
+     * tao mot tour trung ten voi mot tour dang nam trong thung rac thi slug
+     * sinh ra "con trong", INSERT dung uk_slug, va admin nhan 409 "Du lieu vua
+     * duoc thay doi boi mot giao dich khac" - bam lai bao nhieu lan cung vay.
+     *
+     * Native query de lach @SQLRestriction, giong findDeletedTours ben duoi.
+     */
+    @Query(value = "SELECT COUNT(*) FROM tours WHERE slug = :slug", nativeQuery = true)
+    long countBySlugIncludingDeleted(@org.springframework.data.repository.query.Param("slug") String slug);
+
+    default boolean isSlugTaken(String slug) {
+        return countBySlugIncludingDeleted(slug) > 0;
+    }
 
     List<Tour> findByStatus(String status);
     List<Tour> findByTitleContainingIgnoreCaseAndStatusNot(String keyword, String status);

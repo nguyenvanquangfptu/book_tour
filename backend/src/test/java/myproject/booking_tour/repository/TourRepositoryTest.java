@@ -49,9 +49,22 @@ class TourRepositoryTest {
     }
 
     @Test
-    void existsBySlug_ShouldReturnTrue_WhenExists() {
-        boolean exists = tourRepository.existsBySlug("test-tour");
-        assertThat(exists).isTrue();
+    void isSlugTaken_ShouldReturnTrue_WhenExists() {
+        assertThat(tourRepository.isSlugTaken("test-tour")).isTrue();
+        assertThat(tourRepository.isSlugTaken("khong-ton-tai")).isFalse();
+    }
+
+    /**
+     * uk_slug ap dung cho moi dong, ke ca tour trong thung rac. Kiem tra ma bo
+     * qua tour da xoa thi slug sinh ra dung rang buoc luc INSERT.
+     */
+    @Test
+    void isSlugTaken_ShouldCountToursInTheTrash() {
+        tourRepository.delete(testTour);
+        tourRepository.flush();
+
+        assertThat(tourRepository.findBySlug("test-tour")).isEmpty();
+        assertThat(tourRepository.isSlugTaken("test-tour")).isTrue();
     }
 
     @Test
