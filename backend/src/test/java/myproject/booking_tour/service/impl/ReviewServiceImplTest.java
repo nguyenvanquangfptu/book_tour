@@ -75,6 +75,49 @@ class ReviewServiceImplTest {
         assertThrows(BadRequestException.class, () -> reviewService.addReview(request, "testuser"));
     }
 
+    /**
+     * CONFIRMED la don vua duoc duyet, chua tra tien va se bi huy neu khong tra.
+     * Danh gia tu do la danh gia cua nguoi chua mua ve.
+     */
+    @Test
+    void addReview_ShouldRefuse_WhenBookingIsApprovedButUnpaid() {
+        ReviewRequest request = new ReviewRequest();
+        request.setTourId(10L);
+        request.setRating(1);
+
+        Booking unpaid = new Booking();
+        unpaid.setTour(mockTour);
+        unpaid.setStatus("CONFIRMED");
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+        when(tourRepository.findById(10L)).thenReturn(Optional.of(mockTour));
+        when(bookingRepository.findByUserId(1L)).thenReturn(List.of(unpaid));
+
+        assertThrows(BadRequestException.class, () -> reviewService.addReview(request, "testuser"));
+        verify(reviewRepository, never()).save(any());
+    }
+
+    @Test
+    void addReview_ShouldSave_WhenBookingIsPaid() {
+        ReviewRequest request = new ReviewRequest();
+        request.setTourId(10L);
+        request.setRating(5);
+
+        Booking paid = new Booking();
+        paid.setTour(mockTour);
+        paid.setStatus("PAID");
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+        when(tourRepository.findById(10L)).thenReturn(Optional.of(mockTour));
+        when(bookingRepository.findByUserId(1L)).thenReturn(List.of(paid));
+        when(reviewRepository.findByTourId(10L)).thenReturn(List.of());
+        when(reviewMapper.toEntity(request)).thenReturn(mockReview);
+        when(reviewRepository.save(mockReview)).thenReturn(mockReview);
+        when(reviewMapper.toResponse(mockReview)).thenReturn(new ReviewResponse());
+
+        assertNotNull(reviewService.addReview(request, "testuser"));
+    }
+
     @Test
     void addReview_ShouldSave_WhenValid() {
         ReviewRequest request = new ReviewRequest();
