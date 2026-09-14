@@ -137,6 +137,72 @@ class AuthServiceImplTest {
         verifyNoInteractions(refreshTokenService);
     }
 
+    private static com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload googlePayload(
+            String email, Boolean emailVerified) {
+        com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload =
+                new com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload();
+        payload.setEmail(email);
+        payload.setEmailVerified(emailVerified);
+        return payload;
+    }
+
+    /**
+     * Tai khoan Google dang ky duoc bang mot dia chi bat ky ma khong can chung
+     * minh la chu hop thu. Token cua no van hop le, chi mang email_verified=false.
+     * Coi email do la danh tinh thi ai biet email cua admin cung vao duoc tai
+     * khoan admin.
+     */
+    @Test
+    void loginWithGoogle_ShouldRefuse_WhenGoogleHasNotVerifiedTheEmail() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", false)).when(service).verifyGoogleToken("id-token");
+
+        assertThrows(UnauthorizedException.class, () -> service.loginWithGoogle("id-token", CLIENT));
+
+        verify(userRepository, never()).findByEmailIgnoreCase(any());
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void loginWithGoogle_ShouldRefuse_WhenTokenCarriesNoVerificationClaim() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", null)).when(service).verifyGoogleToken("id-token");
+
+        assertThrows(UnauthorizedException.class, () -> service.loginWithGoogle("id-token", CLIENT));
+
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void loginWithGoogle_ShouldSignInExistingAccount_WhenEmailIsVerified() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", true)).when(service).verifyGoogleToken("id-token");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(jwtService.generateToken("testuser")).thenReturn("jwt.token.here");
+        when(refreshTokenService.startSession(eq(mockUser), any(ClientMetadata.class)))
+                .thenReturn(new RefreshTokenService.IssuedToken("refresh-raw-value", LocalDateTime.now().plusDays(30)));
+
+        AuthResult result = service.loginWithGoogle("id-token", CLIENT);
+
+        assertEquals(1L, result.body().getUserId());
+        verify(userRepository, never()).save(any());
+    }
+
+    /**
+     * Su co sau buoc xac minh la cua may chu, khong phai "token Google sai".
+     * Truoc day moi ngoai le deu bi boc thanh 401 kem nguyen van thong bao loi.
+     */
+    @Test
+    void loginWithGoogle_ShouldNotDisguiseServerFailuresAsUnauthorized() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", true)).when(service).verifyGoogleToken("id-token");
+        when(userRepository.findByEmailIgnoreCase("test@test.com"))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("connection refused"));
+
+        assertThrows(org.springframework.dao.DataAccessResourceFailureException.class,
+                () -> service.loginWithGoogle("id-token", CLIENT));
+    }
+
     @Test
     void logout_ShouldRevokeWholeFamily() {
         authService.logout("some-refresh-token");
