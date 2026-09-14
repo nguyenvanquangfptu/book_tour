@@ -9,7 +9,6 @@ import myproject.booking_tour.exception.ResourceNotFoundException;
 import myproject.booking_tour.mapper.PaymentMapper;
 import myproject.booking_tour.repository.BookingRepository;
 import myproject.booking_tour.repository.PaymentRepository;
-import myproject.booking_tour.service.BookingService;
 import myproject.booking_tour.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final PaymentMapper paymentMapper;
-    private final BookingService bookingService;
+    private final myproject.booking_tour.service.PayOSReconciliationService reconciliationService;
     private final vn.payos.PayOS payOS;
 
     /**
@@ -197,6 +196,16 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    /**
+     * Doi chieu mot payment voi PayOS theo orderCode.
+     *
+     * Viec dich trang thai PayOS thanh trang thai payment/booking nam het o
+     * PayOSReconciliationService.applyStatus - xem ly do o do. Ban sao truoc day
+     * o day co dieu kien "PAID".equals(realStatus) || "PAID".equals(booking.getStatus()):
+     * khach tao hai link cho cung mot don, tra qua link thu nhat, roi mo trang
+     * ket qua cua link thu hai - link thu hai, chua he nhan dong nao, bi ghi
+     * SUCCESS, trong khi no van con mo va van nhan tien duoc.
+     */
     @Override
     @Transactional
     public PaymentResponse processPayOSCallback(java.util.Map<String, String> params) {
@@ -210,28 +219,8 @@ public class PaymentServiceImpl implements PaymentService {
                     // Không tin tham số "status" do client gửi - luôn xác minh trạng thái thật với PayOS
                     long orderCode = Long.parseLong(orderCodeStr);
                     vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
-                    String realStatus = paymentLink.getStatus().name();
-
-                    Booking booking = payment.getBooking();
-                    if ("PAID".equals(realStatus) || "PAID".equals(booking.getStatus())) {
-                        booking.setStatus("PAID");
-                        bookingRepository.save(booking);
-
-                        payment.setPaymentStatus("SUCCESS");
-                        payment.setPaymentDate(LocalDateTime.now());
-                        Payment saved = paymentRepository.save(payment);
-                        return paymentMapper.toResponse(saved);
-                    } else if ("CANCELLED".equals(realStatus) || "EXPIRED".equals(realStatus)) {
-                        // cancelBookingBySystem tu bo qua don da huy va don da
-                        // thanh toan - mot link het han khong duoc phep huy don
-                        // ma khach da tra tien qua link khac.
-                        bookingService.cancelBookingBySystem(booking.getId(),
-                                "PayOS báo giao dịch " + realStatus);
-                        payment.setPaymentStatus("FAILED");
-                        payment.setPaymentDate(LocalDateTime.now());
-                        Payment saved = paymentRepository.save(payment);
-                        return paymentMapper.toResponse(saved);
-                    }
+                    reconciliationService.applyStatus(payment.getId(), paymentLink.getStatus().name());
+                    return paymentMapper.toResponse(payment);
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Error processing PayOS callback: " + e.getMessage(), e);
@@ -258,38 +247,19 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Tu day tro di moi loi (DB, mang, PayOS API) deu la loi TAM THOI:
         // de exception nem ra ngoai de controller tra 5xx va PayOS retry.
-        // Theo tài liệu PayOS, code "00" thường là thành công.
-        // data.getOrderCode() returns long
         long orderCode = data.getOrderCode();
-        String orderCodeStr = String.valueOf(orderCode);
-        String desc = data.getDesc(); // Để biết lý do
-
-        if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
-            Payment payment = paymentRepository.findByOrderCode(orderCodeStr).orElse(null);
-            
-            if (payment != null) {
-                Booking booking = payment.getBooking();
-                
-                // Lấy trạng thái của giao dịch từ PayOS
-                vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
-                String status = paymentLink.getStatus().name();
-                
-                if ("PAID".equals(status) || "00".equals(data.getCode())) {
-                    if (!"PAID".equals(booking.getStatus())) {
-                        booking.setStatus("PAID");
-                        bookingRepository.save(booking);
-                    }
-                    payment.setPaymentStatus("SUCCESS");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                } else if ("CANCELLED".equals(status) || "EXPIRED".equals(status)) {
-                    bookingService.cancelBookingBySystem(booking.getId(),
-                            "PayOS báo giao dịch " + status);
-                    payment.setPaymentStatus("FAILED");
-                    payment.setPaymentDate(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                }
-            }
+        Payment payment = paymentRepository.findByOrderCode(String.valueOf(orderCode)).orElse(null);
+        if (payment == null) {
+            return;
         }
+
+        // Chi trang thai cua LINK moi noi duoc don da tra du hay chua. Truoc day
+        // dieu kien la "PAID".equals(status) || "00".equals(data.getCode()), ma
+        // "00" chi noi rang MOT lan chuyen khoan da vao: khach chuyen thieu thi
+        // link o trang thai UNDERPAID, webhook van mang "00", va don duoc danh
+        // dau PAID voi so tien chua du. Neu link chua kip chuyen sang PAID thi
+        // /verify hoac luot doi soat 30 phut se ghi nhan sau.
+        vn.payos.model.v2.paymentRequests.PaymentLink paymentLink = payOS.paymentRequests().get(orderCode);
+        reconciliationService.applyStatus(payment.getId(), paymentLink.getStatus().name());
     }
 }
