@@ -117,7 +117,7 @@ class TourServiceImplTest {
         request.setStatus("INACTIVE");
 
         when(tourMapper.toEntity(request)).thenReturn(new Tour());
-        when(tourRepository.existsBySlug(any())).thenReturn(false);
+        when(tourRepository.isSlugTaken(any())).thenReturn(false);
         when(tourRepository.save(any(Tour.class))).thenReturn(mockTour);
         when(tourMapper.toResponse(any(Tour.class))).thenReturn(new TourResponse());
 

@@ -120,7 +120,7 @@ public class TourServiceImpl implements TourService {
         String baseSlug = myproject.booking_tour.utils.SlugUtils.toSlug(title);
         String slug = baseSlug;
         int counter = 1;
-        while (tourRepository.existsBySlug(slug)) {
+        while (tourRepository.isSlugTaken(slug)) {
             slug = baseSlug + "-" + counter;
             counter++;
         }
