@@ -50,6 +50,9 @@ class VoucherServiceImplTest {
         mockVoucher.setId(1L);
         mockVoucher.setCode("DISCOUNT20");
         mockVoucher.setIsActive(true);
+        mockVoucher.setDiscountPercentage(20.0);
+        mockVoucher.setValidFrom(java.time.LocalDateTime.of(2026, 1, 1, 0, 0));
+        mockVoucher.setValidUntil(java.time.LocalDateTime.of(2026, 12, 31, 23, 59));
         
         mockedSecurityUtil = mockStatic(SecurityUtil.class);
     }
@@ -120,6 +123,69 @@ class VoucherServiceImplTest {
         verify(voucherMapper, times(1)).updateEntityFromRequest(mockVoucher, request);
     }
     
+    private void assertRejectedOnCreate(java.util.function.Consumer<Voucher> breakIt, String expectedFragment) {
+        VoucherRequest request = new VoucherRequest();
+        request.setCode("DISCOUNT20");
+        breakIt.accept(mockVoucher);
+        when(voucherRepository.existsByCode("DISCOUNT20")).thenReturn(false);
+        when(voucherMapper.toEntity(request)).thenReturn(mockVoucher);
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> voucherService.createVoucher(request));
+
+        assertTrue(ex.getMessage().contains(expectedFragment), ex.getMessage());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    /*
+     * Bon truong hop duoi day truoc kia deu di xuong database, bi rang buoc CHECK
+     * chan lai va thanh 500 - admin khong biet minh sai o nhap nao.
+     */
+
+    @Test
+    void createVoucher_ShouldRefuse_WhenItEndsBeforeItStarts() {
+        assertRejectedOnCreate(v -> v.setValidUntil(v.getValidFrom().minusDays(1)), "phải sau ngày bắt đầu");
+    }
+
+    @Test
+    void createVoucher_ShouldRefuse_WhenPercentageAboveHundred() {
+        assertRejectedOnCreate(v -> v.setDiscountPercentage(150.0), "tối đa 100%");
+    }
+
+    @Test
+    void createVoucher_ShouldRefuse_WhenItDiscountsNothing() {
+        // O "So tien giam" khong co min: chon loai "so tien" va de 0.
+        assertRejectedOnCreate(v -> {
+            v.setDiscountPercentage(0.0);
+            v.setDiscountAmount(java.math.BigDecimal.ZERO);
+        }, "đúng một loại");
+    }
+
+    @Test
+    void createVoucher_ShouldRefuse_WhenItDiscountsBothWays() {
+        assertRejectedOnCreate(v -> v.setDiscountAmount(java.math.BigDecimal.valueOf(1000)), "đúng một loại");
+    }
+
+    @Test
+    void createVoucher_ShouldRefuse_WhenAmountIsNegative() {
+        assertRejectedOnCreate(v -> {
+            v.setDiscountPercentage(0.0);
+            v.setDiscountAmount(java.math.BigDecimal.valueOf(-1000));
+        }, "không được âm");
+    }
+
+    @Test
+    void updateVoucher_ShouldValidateTheMergedVoucher() {
+        // Luc cap nhat, o bo trong giu gia tri cu - nen phai kiem tra ket qua sau
+        // khi gop, khong phai request tran.
+        VoucherRequest request = new VoucherRequest();
+        request.setCode("DISCOUNT20");
+        mockVoucher.setDiscountPercentage(0.0);
+        when(voucherRepository.findById(1L)).thenReturn(Optional.of(mockVoucher));
+
+        assertThrows(BadRequestException.class, () -> voucherService.updateVoucher(1L, request));
+        verify(voucherRepository, never()).save(any());
+    }
+
     @Test
     void deleteVoucher_ShouldDelete_WhenExists() {
         when(voucherRepository.existsById(1L)).thenReturn(true);
