@@ -34,9 +34,15 @@ public class ContactMessageServiceImpl implements ContactMessageService {
         ContactMessage savedMessage = contactMessageRepository.save(message);
         
         try {
+            // Thu tu dong KHONG mang lai bat cu chu nao nguoi gui tu go.
+            //
+            // POST /api/contacts la endpoint cong khai, khong dang nhap, va dia
+            // chi nhan la do chinh nguoi gui dien - khong ai xac minh do la hop thu
+            // cua ho. Truoc day ho ten va chu de duoc chen nguyen van vao thu: dien
+            // email cua nguoi khac, dat "chu de" la mot loi moi kem duong link lua
+            // dao, va he thong gui no di duoi ten mien va thuong hieu Booking Tour
+            // - vuot qua bo loc thu rac ma ke gian khong the tu vuot.
             Map<String, Object> templateModel = new HashMap<>();
-            templateModel.put("customerName", request.getFullName());
-            templateModel.put("subject", request.getSubject());
             emailService.sendMessageUsingThymeleafTemplate(request.getEmail(), "Cảm ơn bạn đã liên hệ Booking Tour", "contact-reply", templateModel);
         } catch (Exception e) {
             System.err.println("Failed to send contact reply email: " + e.getMessage());
