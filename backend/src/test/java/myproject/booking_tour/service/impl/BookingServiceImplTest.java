@@ -73,6 +73,41 @@ class BookingServiceImplTest {
         mockTour.setAvailableSlots(10);
     }
 
+    /**
+     * Duyet lai mot don da tra tien tung ha no ve CONFIRMED: khach nhan email
+     * "vui long thanh toan" lan nua, thay lai nut thanh toan, va BookingScheduler
+     * huy don sau 24 gio.
+     */
+    @Test
+    void confirmBooking_ShouldRefuse_WhenBookingIsAlreadyPaid() {
+        Booking booking = new Booking();
+        booking.setId(5L);
+        booking.setStatus("PAID");
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
+
+        assertThrows(BadRequestException.class, () -> bookingService.confirmBooking(5L));
+
+        assertEquals("PAID", booking.getStatus());
+        verify(bookingRepository, never()).save(any());
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    void confirmBooking_ShouldApprovePendingBooking() {
+        Booking booking = new Booking();
+        booking.setId(5L);
+        booking.setStatus("PENDING");
+        booking.setUser(mockUser);
+        booking.setTotalPrice(BigDecimal.valueOf(100));
+        when(bookingRepository.findById(5L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.save(booking)).thenReturn(booking);
+
+        bookingService.confirmBooking(5L);
+
+        assertEquals("CONFIRMED", booking.getStatus());
+        assertNotNull(booking.getApprovedAt());
+    }
+
     @Test
     void createBooking_ShouldThrowException_WhenTourIsSoldOut() {
         BookingRequest request = new BookingRequest();

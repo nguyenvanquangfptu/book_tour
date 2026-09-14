@@ -333,6 +333,17 @@ public class BookingServiceImpl implements BookingService {
             return bookingMapper.toResponse(booking); // already confirmed
         }
 
+        // Chi don CHO DUYET moi duoc duyet. Truoc day moi trang thai khac
+        // CANCELLED/CONFIRMED deu roi xuong duoi va bi ghi de thanh CONFIRMED -
+        // ke ca PAID. Goi confirm tren mot don da tra tien (bam lai, goi API
+        // truc tiep) ha no ve "cho thanh toan", gui cho khach email "vui long
+        // thanh toan" lan nua, hien lai nut "Thanh toan ngay" de ho tra lan hai,
+        // va 24 gio sau BookingScheduler huy luon don da tra tien do.
+        if (!"PENDING".equals(booking.getStatus())) {
+            throw new BadRequestException("Chỉ duyệt được đơn đang chờ duyệt, đơn này đang ở trạng thái "
+                    + booking.getStatus() + ".");
+        }
+
         // 2. status = CONFIRMED
         booking.setStatus("CONFIRMED");
         booking.setApprovedAt(LocalDateTime.now());
