@@ -13,6 +13,8 @@ const CartPage: React.FC = () => {
   const handleCheckout = (item: any) => {
     navigate(`/checkout/${item.tourId}`, {
       state: {
+        // Để trang thanh toán bỏ đúng món này khỏi giỏ sau khi đặt thành công.
+        cartItemId: item.id,
         tourId: item.tourId,
         tourTitle: item.tourTitle,
         guests: item.guests,
