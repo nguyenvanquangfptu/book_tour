@@ -48,6 +48,35 @@ class VoucherRepositoryTest {
         assertThat(exists).isTrue();
     }
 
+    /**
+     * Ma cua voucher da xoa phai dung lai duoc. Tren PostgreSQL dieu nay dua vao
+     * index mot phan uq_vouchers_code_active (V16); H2 khong co index mot phan
+     * nen o day chi kiem phan ung dung: dong da xoa khong chan va khong lan vao.
+     */
+    @Test
+    void code_ShouldBeReusable_AfterTheVoucherIsDeleted() {
+        Voucher old = new Voucher();
+        old.setCode("TET");
+        old.setDiscountPercentage(10.0);
+        old.setValidFrom(java.time.LocalDateTime.now().minusYears(1));
+        old.setValidUntil(java.time.LocalDateTime.now().minusMonths(11));
+        voucherRepository.saveAndFlush(old);
+        voucherRepository.delete(old);
+        voucherRepository.flush();
+
+        assertThat(voucherRepository.existsByCode("TET")).isFalse();
+
+        Voucher again = new Voucher();
+        again.setCode("TET");
+        again.setDiscountPercentage(15.0);
+        again.setValidFrom(java.time.LocalDateTime.now());
+        again.setValidUntil(java.time.LocalDateTime.now().plusMonths(1));
+        voucherRepository.saveAndFlush(again);
+
+        assertThat(voucherRepository.findByCode("TET")).get()
+                .extracting(Voucher::getId).isEqualTo(again.getId());
+    }
+
     @Test
     void existsByCode_ShouldReturnFalse_WhenCodeDoesNotExist() {
         // Act
