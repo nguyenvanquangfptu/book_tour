@@ -34,10 +34,15 @@ public class DashboardService {
         long totalBookings = bookingRepository.count();
 
         List<Booking> allBookings = bookingRepository.findAll();
-        
-        // Calculate Total Revenue (PAID or CONFIRMED bookings)
+
+        // Doanh thu chi tinh don DA THANH TOAN. Truoc day ca ba cho duoi day
+        // cong them don CONFIRMED - don admin vua duyet, khach chua tra dong
+        // nao, va phan lon se bi BookingScheduler huy sau 24 gio. Moi lan duyet
+        // mot don, "Tong doanh thu" tang len; mot ngay sau don bi huy thi so do
+        // lang le tut xuong, va con so tren bang dieu khien khong khop voi tien
+        // thuc nhan o PayOS.
         BigDecimal totalRevenue = allBookings.stream()
-                .filter(b -> "PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus()))
+                .filter(DashboardService::isRevenue)
                 .map(Booking::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -45,7 +50,7 @@ public class DashboardService {
         Map<String, BigDecimal> revenueMap = new TreeMap<>();
         
         for (Booking b : allBookings) {
-            if (("PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus())) && b.getBookingDate() != null) {
+            if (isRevenue(b) && b.getBookingDate() != null) {
                 String month = b.getBookingDate().format(DateTimeFormatter.ofPattern("yyyy-MM"));
                 revenueMap.put(month, revenueMap.getOrDefault(month, BigDecimal.ZERO).add(b.getTotalPrice()));
             }
@@ -56,20 +61,15 @@ public class DashboardService {
             monthlyRevenues.add(new MonthlyRevenue(entry.getKey(), entry.getValue()));
         }
 
-        // If no data, return some dummy data for the chart to look nice
-        if (monthlyRevenues.isEmpty()) {
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-01", new BigDecimal("15000000")));
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-02", new BigDecimal("22000000")));
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-03", new BigDecimal("18000000")));
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-04", new BigDecimal("35000000")));
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-05", new BigDecimal("40000000")));
-            monthlyRevenues.add(new DashboardStatsResponse.MonthlyRevenue("2026-06", new BigDecimal("28000000")));
-        }
+        // Khong co doanh thu thi bieu do trong. Truoc day cho nay nhet vao sau
+        // thang doanh thu bia (15-40 trieu/thang) "cho bieu do dep": mot he
+        // thong chua ban duoc ve nao hien ra bang dieu khien co doanh thu that
+        // su, trong khi o "Tong doanh thu" ngay ben tren van la 0.
 
         // Compute Top Tours
         Map<Long, TopTour> tourStatsMap = new HashMap<>();
         for (Booking b : allBookings) {
-            if (("PAID".equals(b.getStatus()) || "CONFIRMED".equals(b.getStatus())) && b.getTour() != null) {
+            if (isRevenue(b) && b.getTour() != null) {
                 Long tId = b.getTour().getId();
                 TopTour topTour = tourStatsMap.getOrDefault(tId, new TopTour(tId, b.getTour().getTitle(), 0, BigDecimal.ZERO));
                 topTour.setTotalBookings(topTour.getTotalBookings() + 1);
@@ -90,5 +90,9 @@ public class DashboardService {
                 monthlyRevenues,
                 topTours
         );
+    }
+
+    private static boolean isRevenue(Booking booking) {
+        return "PAID".equals(booking.getStatus());
     }
 }
