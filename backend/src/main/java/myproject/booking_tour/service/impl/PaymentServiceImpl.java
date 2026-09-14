@@ -156,6 +156,19 @@ public class PaymentServiceImpl implements PaymentService {
                     + describeStatus(booking.getStatus()) + ".");
         }
 
+        // Link PayOS khong duoc song lau hon han thanh toan cua don. Truoc day
+        // link tao ra khong co expiredAt nen mo vo thoi han, trong khi
+        // BookingScheduler huy don sau 24 gio va tra lai so cho. Khach mo lai
+        // link cu va chuyen khoan van thanh cong - tien vao mot don da huy, cho
+        // co the da ban cho nguoi khac.
+        //
+        // Scheduler chay moi gio, nen mot don co the con CONFIRMED them toi mot
+        // gio sau khi qua han; khong tao link cho don o khoang do.
+        LocalDateTime deadline = myproject.booking_tour.service.BookingAutoCancelService.paymentDeadlineOf(booking);
+        if (deadline != null && !deadline.isAfter(LocalDateTime.now())) {
+            throw new BadRequestException("Đơn đặt tour đã quá hạn thanh toán và sẽ bị hủy tự động.");
+        }
+
         try {
             // Create a pending Payment record to track the transaction and use its ID as orderCode
             Payment payment = new Payment();
@@ -187,6 +200,9 @@ public class PaymentServiceImpl implements PaymentService {
                     .returnUrl(returnUrl)
                     .cancelUrl(cancelUrl)
                     .items(java.util.List.of(item))
+                    .expiredAt(deadline != null
+                            ? deadline.atZone(java.time.ZoneId.systemDefault()).toEpochSecond()
+                            : null)
                     .build();
 
             vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse data = payOS.paymentRequests().create(paymentData);
