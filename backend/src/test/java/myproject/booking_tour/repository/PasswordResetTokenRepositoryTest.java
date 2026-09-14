@@ -66,17 +66,17 @@ class PasswordResetTokenRepositoryTest {
 
         assertThat(deleted).isEqualTo(1);
         // Ma con han khong duoc dung toi
-        assertThat(passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256Hex("123456")))
-                .isPresent();
-        assertThat(passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256Hex("999999")))
-                .isEmpty();
+        assertThat(passwordResetTokenRepository.findAll())
+                .extracting(PasswordResetToken::getTokenHash)
+                .containsExactly(TokenHasher.sha256Hex("123456"));
     }
 
     @Test
-    void findByTokenHash_ShouldReturnToken_WhenExists() {
+    void findFirstByUser_ShouldReturnTheAccountsCode() {
         Optional<PasswordResetToken> result =
-                passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256Hex("123456"));
+                passwordResetTokenRepository.findFirstByUserOrderByIdDesc(testUser);
         assertThat(result).isPresent();
+        assertThat(result.get().getFailedAttempts()).isZero();
         assertThat(result.get().getTokenHash()).isEqualTo(TokenHasher.sha256Hex("123456"));
         // Ban goc KHONG duoc nam trong database
         assertThat(result.get().getTokenHash()).isNotEqualTo("123456");
@@ -86,9 +86,25 @@ class PasswordResetTokenRepositoryTest {
     @Test
     void deleteByUser_ShouldRemoveToken_WhenInvoked() {
         passwordResetTokenRepository.deleteByUser(testUser);
-        
-        Optional<PasswordResetToken> result =
-                passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256Hex("123456"));
-        assertThat(result).isEmpty();
+
+        assertThat(passwordResetTokenRepository.findFirstByUserOrderByIdDesc(testUser)).isEmpty();
+    }
+
+    /** Hai nguoi tinh co boc trung mot ma 6 so khong duoc lam hong viec xin ma. */
+    @Test
+    void save_ShouldAllowTheSameCodeForTwoAccounts() {
+        User other = new User();
+        other.setUsername("other");
+        other.setFullName("Other User");
+        other.setEmail("other@example.com");
+        other.setPassword("password123");
+        other.setRole(testUser.getRole());
+        userRepository.save(other);
+
+        PasswordResetToken sameCode = new PasswordResetToken(TokenHasher.sha256Hex("123456"), other,
+                LocalDateTime.now().plusMinutes(5));
+        passwordResetTokenRepository.saveAndFlush(sameCode);
+
+        assertThat(passwordResetTokenRepository.findFirstByUserOrderByIdDesc(other)).isPresent();
     }
 }
