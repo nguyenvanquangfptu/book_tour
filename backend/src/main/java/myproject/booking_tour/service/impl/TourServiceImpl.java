@@ -341,7 +341,10 @@ public class TourServiceImpl implements TourService {
         log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
-        tourRepository.delete(tour);
+        // Khong dung tourRepository.delete(tour): Hibernate xoa cac dong noi
+        // truoc khi chay @SQLDelete, tour khoi phuc ve se mat noi luu tru va
+        // tien ich. Xem TourRepository.softDelete.
+        tourRepository.softDelete(tour.getId());
     }
 
     @Override

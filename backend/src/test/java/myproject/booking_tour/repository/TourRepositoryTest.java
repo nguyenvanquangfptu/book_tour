@@ -92,6 +92,56 @@ class TourRepositoryTest {
         assertThat(result).contains("Hanoi");
     }
 
+    @Autowired
+    private UtilityRepository utilityRepository;
+
+    /**
+     * tour_utilities khong co ON DELETE CASCADE: tien ich con gan voi tour
+     * trong thung rac ma bi coi la "khong ai dung" thi lenh DELETE dung khoa
+     * ngoai va thanh 500.
+     */
+    @Test
+    void existsByUtilityId_ShouldCountToursInTheTrash() {
+        myproject.booking_tour.entity.Utility wifi = new myproject.booking_tour.entity.Utility();
+        wifi.setName("Wifi");
+        utilityRepository.save(wifi);
+        testTour.getUtilities().add(wifi);
+        tourRepository.saveAndFlush(testTour);
+
+        tourRepository.softDelete(testTour.getId());
+
+        assertThat(tourRepository.existsByUtilityId(wifi.getId())).isTrue();
+    }
+
+    /**
+     * repository.delete(tour) xoa cac dong noi truoc khi chay @SQLDelete: tour
+     * khoi phuc tu thung rac mat het noi luu tru va tien ich.
+     */
+    @Test
+    void softDeleteThenRestore_ShouldBringTheTourBackWithItsAccommodationsAndUtilities() {
+        Accommodation hotel = new Accommodation();
+        hotel.setName("Khach san A");
+        hotel.setType("HOTEL");
+        hotel.setAddress("Ha Noi");
+        accommodationRepository.save(hotel);
+        myproject.booking_tour.entity.Utility wifi = new myproject.booking_tour.entity.Utility();
+        wifi.setName("Wifi");
+        utilityRepository.save(wifi);
+        testTour.getAccommodations().add(hotel);
+        testTour.getUtilities().add(wifi);
+        tourRepository.saveAndFlush(testTour);
+
+        tourRepository.softDelete(testTour.getId());
+        assertThat(tourRepository.findById(testTour.getId())).isEmpty();
+        assertThat(tourRepository.existsByAccommodations_Id(hotel.getId())).isTrue();
+
+        tourRepository.restoreTour(testTour.getId());
+
+        Tour restored = tourRepository.findById(testTour.getId()).orElseThrow();
+        assertThat(restored.getAccommodations()).extracting(Accommodation::getId).containsExactly(hotel.getId());
+        assertThat(restored.getUtilities()).extracting(myproject.booking_tour.entity.Utility::getId).containsExactly(wifi.getId());
+    }
+
     @Test
     void restoreTour_ShouldUpdateIsDeletedToFalse() {
         testTour.setIsDeleted(true);
