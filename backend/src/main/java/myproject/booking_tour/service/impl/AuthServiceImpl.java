@@ -291,16 +291,61 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /** Mot ma OTP chiu toi da bay nhieu lan nhap sai truoc khi bi huy. */
+    static final int MAX_RESET_CODE_ATTEMPTS = 5;
+
+    /**
+     * Mot cau cho moi truong hop that bai: email khong ton tai, chua xin ma, ma
+     * sai, ma het han, ma vua bi huy vi sai qua nhieu. Noi khac nhau la bao cho
+     * nguoi ngoai biet email nao co tai khoan.
+     */
+    private static final String INVALID_RESET_CODE =
+            "Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng kiểm tra lại hoặc yêu cầu mã mới.";
+
+    /**
+     * Doi mat khau bang ma OTP gui qua email.
+     *
+     * Ma chi duoc doi chieu voi ma cua DUNG tai khoan mang email do, va moi ma
+     * chiu toi da MAX_RESET_CODE_ATTEMPTS lan sai. Truoc day ham nay chi nhan ma,
+     * tra no tren toan bang va khong dem gi ca: ma 6 so co mot trieu gia tri,
+     * moi lan doan thu cung luc voi ma cua moi nguoi dang xin khoi phuc, va tran
+     * duy nhat la gioi han 10 request/phut moi IP.
+     *
+     * noRollbackFor: so lan sai phai duoc GHI LAI ngay ca khi ham nem loi. Neu
+     * de BadRequestException quay lui giao dich thi bo dem khong bao gio tang.
+     */
     @Override
-    @Transactional
-    public void resetPassword(String token, String newPassword) {
-        // Bam truoc khi tra cuu: database chi luu SHA-256 cua ma.
-        myproject.booking_tour.entity.PasswordResetToken resetToken = tokenRepository
-                .findByTokenHash(myproject.booking_tour.security.TokenHasher.sha256Hex(token))
-                .orElseThrow(() -> new BadRequestException("Invalid token!"));
+    @Transactional(noRollbackFor = BadRequestException.class)
+    public void resetPassword(String email, String token, String newPassword) {
+        User owner = email == null ? null : userRepository.findByEmailIgnoreCase(email.trim()).orElse(null);
+        myproject.booking_tour.entity.PasswordResetToken resetToken = owner == null
+                ? null
+                : tokenRepository.findFirstByUserOrderByIdDesc(owner).orElse(null);
+        if (resetToken == null) {
+            throw new BadRequestException(INVALID_RESET_CODE);
+        }
 
         if (resetToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-            throw new BadRequestException("Token has expired!");
+            tokenRepository.delete(resetToken);
+            throw new BadRequestException(INVALID_RESET_CODE);
+        }
+
+        // Database chi luu SHA-256 cua ma. So sanh thoi gian hang so de do thoi
+        // gian phan hoi khong noi duoc ma dung bao nhieu ky tu dau.
+        boolean matches = java.security.MessageDigest.isEqual(
+                myproject.booking_tour.security.TokenHasher.sha256Hex(token == null ? "" : token.trim())
+                        .getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                resetToken.getTokenHash().getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        if (!matches) {
+            resetToken.setFailedAttempts(resetToken.getFailedAttempts() + 1);
+            if (resetToken.getFailedAttempts() >= MAX_RESET_CODE_ATTEMPTS) {
+                log.warn("Huy ma khoi phuc mat khau cua user {} sau {} lan nhap sai",
+                        owner.getId(), resetToken.getFailedAttempts());
+                tokenRepository.delete(resetToken);
+            } else {
+                tokenRepository.save(resetToken);
+            }
+            throw new BadRequestException(INVALID_RESET_CODE);
         }
 
         User user = resetToken.getUser();

@@ -10,6 +10,10 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResetPasswordRequest {
+    /** Ma chi co nghia voi dung tai khoan nay - xem AuthServiceImpl.resetPassword. */
+    @NotBlank(message = "Email is required")
+    private String email;
+
     @NotBlank(message = "Token is required")
     private String token;
 

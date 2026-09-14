@@ -28,8 +28,12 @@ public class PasswordResetToken {
     private Long id;
 
     /** SHA-256 hex cua ma OTP - luon dung 64 ky tu. */
-    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    @Column(name = "token_hash", nullable = false, length = 64)
     private String tokenHash;
+
+    /** So lan nhap sai ma nay. Qua gioi han thi ma bi xoa - xem AuthServiceImpl.resetPassword. */
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts = 0;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)

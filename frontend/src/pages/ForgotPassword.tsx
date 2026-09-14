@@ -70,7 +70,7 @@ const ForgotPassword: React.FC = () => {
     setSuccess('');
     
     try {
-      await AuthService.resetPassword(token, newPassword);
+      await AuthService.resetPassword(email, token, newPassword);
       setSuccess(t('auth.resetSuccess'));
       // Auto redirect after 3s
       setTimeout(() => navigate('/login'), 3000);

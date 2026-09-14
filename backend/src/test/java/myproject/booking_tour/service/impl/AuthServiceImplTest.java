@@ -256,6 +256,90 @@ class AuthServiceImplTest {
         assertEquals(myproject.booking_tour.security.TokenHasher.sha256Hex(rawOtp), storedHash);
     }
 
+    private myproject.booking_tour.entity.PasswordResetToken liveCodeFor(User user, String rawCode) {
+        return new myproject.booking_tour.entity.PasswordResetToken(
+                myproject.booking_tour.security.TokenHasher.sha256Hex(rawCode), user, LocalDateTime.now().plusMinutes(5));
+    }
+
+    @Test
+    void resetPassword_ShouldChangePasswordAndEndSessions_WhenCodeMatchesTheAccount() {
+        myproject.booking_tour.entity.PasswordResetToken code = liveCodeFor(mockUser, "123456");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(code));
+        when(passwordEncoder.encode("Matkhau123")).thenReturn("new-hash");
+
+        authService.resetPassword("test@test.com", "123456", "Matkhau123");
+
+        assertEquals("new-hash", mockUser.getPassword());
+        verify(tokenRepository).delete(code);
+        verify(refreshTokenService).revokeAllSessions(eq(1L), any());
+    }
+
+    /**
+     * Truoc day ma duoc tra tren TOAN BANG: doan trung ma 6 so cua bat ky ai la
+     * doi duoc mat khau cua nguoi do. Gio ma phai thuoc dung tai khoan mang
+     * email duoc gui len.
+     */
+    @Test
+    void resetPassword_ShouldRefuse_WhenTheCodeBelongsToAnotherAccount() {
+        // "222222" la ma cua mot tai khoan khac; gui kem email nay thi vo nghia.
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(liveCodeFor(mockUser, "111111")));
+
+        assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "222222", "Matkhau123"));
+
+        verify(passwordEncoder, never()).encode(any());
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void resetPassword_ShouldCountWrongGuesses_AndDestroyTheCodeAtTheLimit() {
+        myproject.booking_tour.entity.PasswordResetToken code = liveCodeFor(mockUser, "123456");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(code));
+
+        for (int i = 1; i < AuthServiceImpl.MAX_RESET_CODE_ATTEMPTS; i++) {
+            assertThrows(BadRequestException.class,
+                    () -> authService.resetPassword("test@test.com", "000000", "Matkhau123"));
+            assertEquals(i, code.getFailedAttempts());
+        }
+        verify(tokenRepository, never()).delete(any());
+
+        assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "000000", "Matkhau123"));
+        verify(tokenRepository).delete(code);
+
+        verify(passwordEncoder, never()).encode(any());
+    }
+
+    /** Email khong ton tai va ma sai phai tra ve cung mot cau. */
+    @Test
+    void resetPassword_ShouldNotRevealWhetherTheEmailExists() {
+        when(userRepository.findByEmailIgnoreCase("khongtontai@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(liveCodeFor(mockUser, "123456")));
+
+        BadRequestException unknown = assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("khongtontai@example.com", "123456", "Matkhau123"));
+        BadRequestException wrong = assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "654321", "Matkhau123"));
+
+        assertEquals(unknown.getMessage(), wrong.getMessage());
+    }
+
+    @Test
+    void resetPassword_ShouldNotCountAgainstTheLimit_WhenTheTransactionRollsBack() throws Exception {
+        // So lan sai chi co gia tri neu no duoc ghi xuong. BadRequestException la
+        // RuntimeException - mac dinh Spring quay lui giao dich va bo dem mat.
+        org.springframework.transaction.annotation.Transactional tx = AuthServiceImpl.class
+                .getMethod("resetPassword", String.class, String.class, String.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+
+        assertNotNull(tx);
+        assertTrue(java.util.Arrays.asList(tx.noRollbackFor()).contains(BadRequestException.class));
+    }
+
     /** Dang bi khoa cung phai im lang - khong duoc de lo rang email nay co that. */
     @Test
     void forgotPassword_ShouldStaySilent_WhenUserIsBanned() {
