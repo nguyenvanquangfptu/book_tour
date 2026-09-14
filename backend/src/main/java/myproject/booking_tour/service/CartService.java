@@ -34,7 +34,7 @@ public class CartService {
     private UserRepository userRepository;
 
     @Autowired
-    private myproject.booking_tour.repository.TourScheduleRepository tourScheduleRepository;
+    private TourService tourService;
 
     @Transactional
     public CartResponse getCartForUser(Long userId) {
@@ -69,11 +69,10 @@ public class CartService {
             totalGuests += existingItem.get().getGuests();
         }
 
-        int availableSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : 0;
-        Optional<myproject.booking_tour.entity.TourSchedule> schedule = tourScheduleRepository.findFirstByTourIdAndDepartureDate(tour.getId(), request.getStartDate());
-        if (schedule.isPresent()) {
-            availableSlots = schedule.get().getAvailableSlots() != null ? schedule.get().getAvailableSlots() : 0;
-        }
+        // Cung mot phep tinh voi trang chi tiet tour va voi luc dat that. Truoc
+        // day gio hang chi xem dong lich cua NGAY KHOI HANH: tour 3 ngay ma ngay
+        // thu hai da kin van vao gio duoc, roi den luc thanh toan moi bi tu choi.
+        int availableSlots = tourService.getAvailableSlots(tour.getId(), request.getStartDate());
 
         if (totalGuests > availableSlots) {
             throw new myproject.booking_tour.exception.BadRequestException(
