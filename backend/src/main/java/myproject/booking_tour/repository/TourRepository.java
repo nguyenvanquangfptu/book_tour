@@ -81,7 +81,7 @@ public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificat
     // hoa thuong - dung duoc nhung mong manh, khong nen dua vao.
     @Query(value = """
             SELECT t.*,
-              (SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = t.id) AS "bookedCount",
+              (SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = t.id AND COALESCE(b.status, '') <> 'CANCELLED') AS "bookedCount",
               (SELECT COUNT(r.id) FROM reviews r WHERE r.tour_id = t.id) AS "reviewCount",
               (SELECT COALESCE(AVG(CAST(r.rating AS DOUBLE PRECISION)), 0) FROM reviews r WHERE r.tour_id = t.id) AS "rating"
             FROM tours t
