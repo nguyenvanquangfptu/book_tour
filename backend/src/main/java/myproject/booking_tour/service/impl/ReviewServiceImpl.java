@@ -41,10 +41,15 @@ public class ReviewServiceImpl implements ReviewService {
         Tour tour = tourRepository.findById(request.getTourId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tour not found with id: " + request.getTourId()));
 
-        // Check if user has actually booked and completed/confirmed the tour
+        // Chi don DA THANH TOAN (hoac da hoan thanh) moi cho quyen danh gia.
+        // Truoc day CONFIRMED cung duoc tinh - don admin vua duyet, khach chua
+        // tra dong nao. Dat tour, cho duyet, viet danh gia, roi bo mac cho
+        // BookingScheduler huy don sau 24 gio: danh gia van nam lai tren trang
+        // tour va van keo diem trung binh, tu mot nguoi chua bao gio mua ve.
+        // Trang lich su dat tour cung chi hien nut danh gia cho don PAID.
         boolean hasBooked = bookingRepository.findByUserId(user.getId()).stream()
-                .anyMatch(b -> b.getTour() != null && b.getTour().getId().equals(tour.getId()) && 
-                        ("CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()) || "PAID".equals(b.getStatus())));
+                .anyMatch(b -> b.getTour() != null && b.getTour().getId().equals(tour.getId()) &&
+                        ("COMPLETED".equals(b.getStatus()) || "PAID".equals(b.getStatus())));
 
         if (!hasBooked) {
             throw new BadRequestException("Bạn phải đặt và hoàn thành tour này mới có thể đánh giá!");

@@ -75,4 +75,32 @@ class BookingRepositoryTest {
         List<Booking> result = bookingRepository.findByStatus("PENDING");
         assertThat(result).hasSize(1);
     }
+
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
+    /** Don da huy khong giu cho nao nen khong phai luot dat. */
+    @Test
+    void tourBookedCount_ShouldIgnoreCancelledBookings() {
+        Booking cancelled = new Booking();
+        cancelled.setUser(testUser);
+        cancelled.setTour(testTour);
+        cancelled.setStatus("CANCELLED");
+        cancelled.setNumberOfPeople(5);
+        cancelled.setTotalPrice(BigDecimal.valueOf(500));
+        bookingRepository.save(cancelled);
+        entityManager.flush();
+        entityManager.clear();
+
+        Tour reloaded = tourRepository.findById(testTour.getId()).orElseThrow();
+        assertThat(reloaded.getBookedCount()).isEqualTo(2);
+    }
+
+    @Test
+    void findByStatus_ShouldPageWithinTheStatus() {
+        assertThat(bookingRepository.findByStatus("PENDING", org.springframework.data.domain.PageRequest.of(0, 10))
+                .getTotalElements()).isEqualTo(1);
+        assertThat(bookingRepository.findByStatus("PAID", org.springframework.data.domain.PageRequest.of(0, 10))
+                .getTotalElements()).isZero();
+    }
 }

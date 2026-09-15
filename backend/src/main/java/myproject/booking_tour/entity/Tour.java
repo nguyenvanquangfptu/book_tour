@@ -65,7 +65,11 @@ public class Tour {
     @Column(length = 100)
     private String transport;
 
-    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = id)")
+    // Don da huy khong con giu cho nao, nen khong phai "luot dat". Truoc day
+    // cong thuc cong ca don CANCELLED: sap xep tour theo luot dat (sortBy=
+    // bookedCount) day len dau nhung tour bi huy nhieu nhat. Cau native trong
+    // TourRepository.findDeletedTours phai giu cung dieu kien.
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = id AND COALESCE(b.status, '') <> 'CANCELLED')")
     private Integer bookedCount;
 
     /*

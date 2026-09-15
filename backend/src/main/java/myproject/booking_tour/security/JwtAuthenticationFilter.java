@@ -54,7 +54,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails;
+            try {
+                userDetails = this.userDetailsService.loadUserByUsername(username);
+            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                // Token hop le nhung tai khoan khong con - admin vua xoa no trong
+                // luc access token 15 phut van con han. Truoc day ngoai le nay
+                // bay thang ra khoi filter, truoc ca lop xu ly loi cua Spring
+                // Security: MOI request cua trinh duyet do, ke ca xem trang tour
+                // cong khai, deu hong cho toi khi token het han. Coi nhu khong
+                // dang nhap: trang cong khai van chay, endpoint can quyen tra
+                // 401, frontend thu refresh, that bai va dang xuat.
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

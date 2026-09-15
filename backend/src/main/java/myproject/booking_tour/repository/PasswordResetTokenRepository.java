@@ -14,11 +14,16 @@ import java.util.Optional;
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
     /**
-     * Tra theo SHA-256 cua ma OTP, khong phai ma goc. Ben goi phai bam truoc -
-     * xem AuthServiceImpl.resetPassword(). Neu mot ben quen bam, viec doi mat
-     * khau se im lang khong bao gio tim thay ma nao.
+     * Ma dang song cua MOT tai khoan. forgotPassword() xoa ma cu truoc khi tao
+     * ma moi nen binh thuong chi co mot dong; lay dong moi nhat phong khi hai
+     * yeu cau den cung luc.
+     *
+     * Truoc day o day la findByTokenHash - tra ma tren toan bang, khong can biet
+     * tai khoan. Mot ma 6 so doan trung la doi duoc mat khau cua bat ky ai dang
+     * giu ma do. Xem V15__bind_password_reset_code_to_account.sql.
      */
-    Optional<PasswordResetToken> findByTokenHash(String tokenHash);
+    Optional<PasswordResetToken> findFirstByUserOrderByIdDesc(myproject.booking_tour.entity.User user);
+
     void deleteByUser(myproject.booking_tour.entity.User user);
 
     /**

@@ -137,6 +137,72 @@ class AuthServiceImplTest {
         verifyNoInteractions(refreshTokenService);
     }
 
+    private static com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload googlePayload(
+            String email, Boolean emailVerified) {
+        com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload =
+                new com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload();
+        payload.setEmail(email);
+        payload.setEmailVerified(emailVerified);
+        return payload;
+    }
+
+    /**
+     * Tai khoan Google dang ky duoc bang mot dia chi bat ky ma khong can chung
+     * minh la chu hop thu. Token cua no van hop le, chi mang email_verified=false.
+     * Coi email do la danh tinh thi ai biet email cua admin cung vao duoc tai
+     * khoan admin.
+     */
+    @Test
+    void loginWithGoogle_ShouldRefuse_WhenGoogleHasNotVerifiedTheEmail() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", false)).when(service).verifyGoogleToken("id-token");
+
+        assertThrows(UnauthorizedException.class, () -> service.loginWithGoogle("id-token", CLIENT));
+
+        verify(userRepository, never()).findByEmailIgnoreCase(any());
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void loginWithGoogle_ShouldRefuse_WhenTokenCarriesNoVerificationClaim() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", null)).when(service).verifyGoogleToken("id-token");
+
+        assertThrows(UnauthorizedException.class, () -> service.loginWithGoogle("id-token", CLIENT));
+
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void loginWithGoogle_ShouldSignInExistingAccount_WhenEmailIsVerified() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", true)).when(service).verifyGoogleToken("id-token");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(jwtService.generateToken("testuser")).thenReturn("jwt.token.here");
+        when(refreshTokenService.startSession(eq(mockUser), any(ClientMetadata.class)))
+                .thenReturn(new RefreshTokenService.IssuedToken("refresh-raw-value", LocalDateTime.now().plusDays(30)));
+
+        AuthResult result = service.loginWithGoogle("id-token", CLIENT);
+
+        assertEquals(1L, result.body().getUserId());
+        verify(userRepository, never()).save(any());
+    }
+
+    /**
+     * Su co sau buoc xac minh la cua may chu, khong phai "token Google sai".
+     * Truoc day moi ngoai le deu bi boc thanh 401 kem nguyen van thong bao loi.
+     */
+    @Test
+    void loginWithGoogle_ShouldNotDisguiseServerFailuresAsUnauthorized() {
+        AuthServiceImpl service = spy(authService);
+        doReturn(googlePayload("test@test.com", true)).when(service).verifyGoogleToken("id-token");
+        when(userRepository.findByEmailIgnoreCase("test@test.com"))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("connection refused"));
+
+        assertThrows(org.springframework.dao.DataAccessResourceFailureException.class,
+                () -> service.loginWithGoogle("id-token", CLIENT));
+    }
+
     @Test
     void logout_ShouldRevokeWholeFamily() {
         authService.logout("some-refresh-token");
@@ -188,6 +254,90 @@ class AuthServiceImplTest {
         assertEquals(64, storedHash.length(), "SHA-256 hex luon 64 ky tu");
         assertNotEquals(rawOtp, storedHash, "Ma goc KHONG duoc nam trong database");
         assertEquals(myproject.booking_tour.security.TokenHasher.sha256Hex(rawOtp), storedHash);
+    }
+
+    private myproject.booking_tour.entity.PasswordResetToken liveCodeFor(User user, String rawCode) {
+        return new myproject.booking_tour.entity.PasswordResetToken(
+                myproject.booking_tour.security.TokenHasher.sha256Hex(rawCode), user, LocalDateTime.now().plusMinutes(5));
+    }
+
+    @Test
+    void resetPassword_ShouldChangePasswordAndEndSessions_WhenCodeMatchesTheAccount() {
+        myproject.booking_tour.entity.PasswordResetToken code = liveCodeFor(mockUser, "123456");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(code));
+        when(passwordEncoder.encode("Matkhau123")).thenReturn("new-hash");
+
+        authService.resetPassword("test@test.com", "123456", "Matkhau123");
+
+        assertEquals("new-hash", mockUser.getPassword());
+        verify(tokenRepository).delete(code);
+        verify(refreshTokenService).revokeAllSessions(eq(1L), any());
+    }
+
+    /**
+     * Truoc day ma duoc tra tren TOAN BANG: doan trung ma 6 so cua bat ky ai la
+     * doi duoc mat khau cua nguoi do. Gio ma phai thuoc dung tai khoan mang
+     * email duoc gui len.
+     */
+    @Test
+    void resetPassword_ShouldRefuse_WhenTheCodeBelongsToAnotherAccount() {
+        // "222222" la ma cua mot tai khoan khac; gui kem email nay thi vo nghia.
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(liveCodeFor(mockUser, "111111")));
+
+        assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "222222", "Matkhau123"));
+
+        verify(passwordEncoder, never()).encode(any());
+        verifyNoInteractions(refreshTokenService);
+    }
+
+    @Test
+    void resetPassword_ShouldCountWrongGuesses_AndDestroyTheCodeAtTheLimit() {
+        myproject.booking_tour.entity.PasswordResetToken code = liveCodeFor(mockUser, "123456");
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(code));
+
+        for (int i = 1; i < AuthServiceImpl.MAX_RESET_CODE_ATTEMPTS; i++) {
+            assertThrows(BadRequestException.class,
+                    () -> authService.resetPassword("test@test.com", "000000", "Matkhau123"));
+            assertEquals(i, code.getFailedAttempts());
+        }
+        verify(tokenRepository, never()).delete(any());
+
+        assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "000000", "Matkhau123"));
+        verify(tokenRepository).delete(code);
+
+        verify(passwordEncoder, never()).encode(any());
+    }
+
+    /** Email khong ton tai va ma sai phai tra ve cung mot cau. */
+    @Test
+    void resetPassword_ShouldNotRevealWhetherTheEmailExists() {
+        when(userRepository.findByEmailIgnoreCase("khongtontai@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("test@test.com")).thenReturn(Optional.of(mockUser));
+        when(tokenRepository.findFirstByUserOrderByIdDesc(mockUser)).thenReturn(Optional.of(liveCodeFor(mockUser, "123456")));
+
+        BadRequestException unknown = assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("khongtontai@example.com", "123456", "Matkhau123"));
+        BadRequestException wrong = assertThrows(BadRequestException.class,
+                () -> authService.resetPassword("test@test.com", "654321", "Matkhau123"));
+
+        assertEquals(unknown.getMessage(), wrong.getMessage());
+    }
+
+    @Test
+    void resetPassword_ShouldNotCountAgainstTheLimit_WhenTheTransactionRollsBack() throws Exception {
+        // So lan sai chi co gia tri neu no duoc ghi xuong. BadRequestException la
+        // RuntimeException - mac dinh Spring quay lui giao dich va bo dem mat.
+        org.springframework.transaction.annotation.Transactional tx = AuthServiceImpl.class
+                .getMethod("resetPassword", String.class, String.class, String.class)
+                .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+
+        assertNotNull(tx);
+        assertTrue(java.util.Arrays.asList(tx.noRollbackFor()).contains(BadRequestException.class));
     }
 
     /** Dang bi khoa cung phai im lang - khong duoc de lo rang email nay co that. */

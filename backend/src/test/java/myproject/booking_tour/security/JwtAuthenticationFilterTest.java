@@ -107,6 +107,25 @@ class JwtAuthenticationFilterTest {
     }
 
     /**
+     * Admin xoa tai khoan trong luc access token van con han. Ngoai le lot ra
+     * khoi filter thi moi request cua trinh duyet do hong, ke ca trang cong khai.
+     */
+    @Test
+    void doFilterInternal_ShouldContinueUnauthenticated_WhenTheAccountNoLongerExists() throws Exception {
+        String token = "valid-token-of-deleted-user";
+
+        when(request.getHeader(SecurityConstants.AUTH_HEADER)).thenReturn(SecurityConstants.TOKEN_PREFIX + token);
+        when(jwtService.extractUsername(token)).thenReturn("deleted-user");
+        when(userDetailsService.loadUserByUsername("deleted-user"))
+                .thenThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException("gone"));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain, times(1)).doFilter(request, response);
+    }
+
+    /**
      * Filter KHONG con tra bat ky danh sach den nao. Voi access token 15 phut,
      * viec thu hoi som duoc lo boi refresh token; doi lai moi request tren toan
      * he thong bot mot query xuong database.

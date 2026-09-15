@@ -197,7 +197,11 @@ const TourManagement: React.FC = () => {
       destination: tour.destination || '',
       imageUrl: tour.imageUrl || '',
       images: tour.images || [],
-      accommodationIds: tour.accommodations && tour.accommodations.length > 0 ? [tour.accommodations[0].id] : [],
+      // Nạp đủ mọi nơi lưu trú. Trước đây chỉ lấy phần tử đầu tiên, trong khi
+      // form là danh sách chọn nhiều và PUT /tours/{id} ghi đè cả danh sách:
+      // mở form sửa một tour có ba khách sạn, đổi mỗi giá rồi lưu là hai khách
+      // sạn kia biến mất khỏi tour mà không ai bấm bỏ chọn.
+      accommodationIds: tour.accommodations ? tour.accommodations.map((a: { id: number }) => a.id) : [],
       maxPeople: tour.maxPeople || 1,
       utilityIds: tour.utilities ? tour.utilities.map((u: any) => u.id) : [],
       highlights: tour.highlights && tour.highlights.length > 0 ? tour.highlights : [''],

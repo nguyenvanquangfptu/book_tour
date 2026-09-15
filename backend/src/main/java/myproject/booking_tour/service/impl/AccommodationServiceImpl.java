@@ -90,7 +90,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         // lần bấm xóa lại ghi thêm một stack trace mức ERROR vào log.
         if (tourRepository.existsByAccommodations_Id(id)) {
             throw new myproject.booking_tour.exception.BadRequestException(
-                    "Nơi lưu trú này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+                    "Nơi lưu trú này đang được sử dụng trong Tour (kể cả tour trong thùng rác). Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
         }
         
         accommodationRepository.delete(accommodation);

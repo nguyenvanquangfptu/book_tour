@@ -77,7 +77,7 @@ public class UtilityServiceImpl implements UtilityService {
         // chung chung. Xem chú thích cùng loại ở AccommodationServiceImpl.
         if (tourRepository.existsByUtilityId(id)) {
             throw new myproject.booking_tour.exception.BadRequestException(
-                    "Tiện ích này đang được sử dụng trong Tour. Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
+                    "Tiện ích này đang được sử dụng trong Tour (kể cả tour trong thùng rác). Không thể xóa, vui lòng chuyển trạng thái sang Không hoạt động (isActive = false).");
         }
         
         utilityRepository.delete(utility);
