@@ -32,8 +32,9 @@ export const AuthService = {
     return response.data;
   },
 
-  resetPassword: async (token: string, newPassword: string) => {
-    const response = await api.post('/auth/reset-password', { token, newPassword });
+  // Mã chỉ được đối chiếu với mã của đúng tài khoản mang email này.
+  resetPassword: async (email: string, token: string, newPassword: string) => {
+    const response = await api.post('/auth/reset-password', { email, token, newPassword });
     return response.data;
   }
 };

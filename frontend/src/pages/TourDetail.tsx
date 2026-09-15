@@ -409,11 +409,11 @@ const TourDetail: React.FC = () => {
                           <img src={review.avatar} alt="avatar" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} />
                         ) : (
                           <div style={{width: '40px', height: '40px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'white'}}>
-                            {(review.fullName || review.username || 'U').charAt(0).toUpperCase()}
+                            {(review.fullName || 'U').charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <h4 style={{margin: 0}}>{review.fullName || review.username || 'Khách hàng'}</h4>
+                          <h4 style={{margin: 0}}>{review.fullName || 'Khách hàng'}</h4>
                           <span style={{fontSize: '0.8rem', color: '#64748b'}}>
                             {new Date(review.createdAt || Date.now()).toLocaleDateString('vi-VN')}
                           </span>
@@ -427,7 +427,7 @@ const TourDetail: React.FC = () => {
                               />
                             ))}
                           </div>
-                          {currentUser && (currentUser.id === review.userId || currentUser.username === review.username) && (
+                          {currentUser && currentUser.id === review.userId && (
                             <button 
                               onClick={() => {
                                 setEditingReviewId(review.id);

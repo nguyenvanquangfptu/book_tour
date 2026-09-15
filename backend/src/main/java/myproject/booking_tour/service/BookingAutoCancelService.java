@@ -35,6 +35,23 @@ import java.util.Map;
 @Slf4j
 public class BookingAutoCancelService {
 
+    /**
+     * Khach co 24 gio ke tu luc don duoc duyet de hoan tat thanh toan.
+     *
+     * Hai noi dung con so nay va phai noi cung mot con so: BookingScheduler huy
+     * don qua moc nay, va PaymentServiceImpl dat han cho link PayOS dung vao moc
+     * nay - link song lau hon don thi khach van tra tien duoc vao mot don da huy.
+     */
+    public static final int PAYMENT_GRACE_HOURS = 24;
+
+    /** Moc het han thanh toan cua mot don da duyet. */
+    public static LocalDateTime paymentDeadlineOf(Booking booking) {
+        LocalDateTime approvedTime = booking.getApprovedAt() != null
+                ? booking.getApprovedAt()
+                : booking.getBookingDate();
+        return approvedTime == null ? null : approvedTime.plusHours(PAYMENT_GRACE_HOURS);
+    }
+
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
     private final EmailService emailService;

@@ -87,10 +87,15 @@ public class SecurityConfig {
                 .requestMatchers("/api/payments/**").hasAnyRole("CUSTOMER", "ADMIN")
 
                 // Voucher Endpoints
-                .requestMatchers(HttpMethod.GET, "/api/vouchers/**").hasAnyRole("CUSTOMER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/vouchers/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").hasRole("ADMIN")
+                //
+                // Khach chi can tra DUNG MOT ma ho da co trong tay (o nhap ma
+                // o trang thanh toan). Truoc day ca "GET /api/vouchers/**" mo
+                // cho moi tai khoan, nen GET /api/vouchers tra ve MOI ma dang
+                // hoat dong kem muc giam - dang ky mot tai khoan la lay duoc het
+                // ma khuyen mai, ke ca ma chi phat rieng cho mot nhom khach.
+                // Danh sach va tra theo id chi trang quan tri dung.
+                .requestMatchers(HttpMethod.GET, "/api/vouchers/code/**").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers("/api/vouchers/**").hasRole("ADMIN")
 
                 // Admin Dashboard Endpoints
                 .requestMatchers("/api/admin/dashboard/**").hasRole("ADMIN")

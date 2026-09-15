@@ -30,6 +30,7 @@ class StrongPasswordValidatorTest {
 
     private Set<ConstraintViolation<ResetPasswordRequest>> validateReset(String password) {
         ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setEmail("test@example.com");
         request.setToken("123456");
         request.setNewPassword(password);
         return validator.validate(request);

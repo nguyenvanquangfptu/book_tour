@@ -112,38 +112,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     /**
-     * Doc so ngay tour keo dai tu chuoi mo ta tu do ("3 ngay 2 dem", "1 tuan").
-     *
-     * Con so nay quyet dinh tru cho cua bao nhieu ngay, nen doc thieu la ban
-     * vuot cho o nhung ngay khong duoc tinh den. "1 tuan" tung roi vao nhanh
-     * "lay con so dau tien" va tra ve 1 thay vi 7 - tour ca tuan ma chi giu cho
-     * dung ngay khoi hanh.
-     */
-    private int parseDurationDays(String duration) {
-        if (duration == null || duration.trim().isEmpty()) return 1;
-
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("(\\d+)\\s*(ngày|ngay|day)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-
-        m = java.util.regex.Pattern
-                .compile("(\\d+)\\s*(tuần|tuan|week)", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1)) * 7;
-        }
-
-        m = java.util.regex.Pattern.compile("(\\d+)").matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-        return 1;
-    }
-
-    /**
      * Kiem tra du cho va tru cho cho TAT CA cac ngay ma tour dien ra.
      *
      * Moi ngay di qua dung hai cau lenh, ca hai deu nguyen tu:
@@ -171,7 +139,7 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("Ngày khởi hành không được nằm trong quá khứ");
         }
 
-        int days = parseDurationDays(tour.getDuration());
+        int days = myproject.booking_tour.utils.TourDurationUtils.parseDays(tour.getDuration());
         int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
         int people = request.getNumberOfPeople();
 
@@ -287,15 +255,22 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size) {
+    public myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size, String status) {
         // page/size den thang tu query string: khong kep thi ?size=1000000 co nap
         // ca bang bookings, con so am lam PageRequest.of nem IllegalArgumentException
         // roi thanh 500.
-        org.springframework.data.domain.Page<Booking> bookingPage = bookingRepository.findAll(
-                org.springframework.data.domain.PageRequest.of(
-                        myproject.booking_tour.utils.PageableUtils.safePage(page),
-                        myproject.booking_tour.utils.PageableUtils.safeSize(size),
-                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate")));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                myproject.booking_tour.utils.PageableUtils.safePage(page),
+                myproject.booking_tour.utils.PageableUtils.safeSize(size),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "bookingDate"));
+
+        // Loc trang thai phai nam o day, TRUOC khi cat trang. Trang quan tri
+        // truoc day loc tren 15 dong da tai ve: chon "Da thanh toan" chi con
+        // nhung don PAID lot vao trang hien tai, cac trang khac bao "Chua co
+        // don hang nao" du co ca tram don PAID, va so trang van dem theo tong.
+        org.springframework.data.domain.Page<Booking> bookingPage = status == null || status.isBlank()
+                ? bookingRepository.findAll(pageable)
+                : bookingRepository.findByStatus(status.trim(), pageable);
         List<BookingResponse> responses = bookingPage.getContent().stream()
                 .map(bookingMapper::toResponse)
                 .collect(Collectors.toList());
@@ -331,6 +306,17 @@ public class BookingServiceImpl implements BookingService {
 
         if ("CONFIRMED".equals(booking.getStatus())) {
             return bookingMapper.toResponse(booking); // already confirmed
+        }
+
+        // Chi don CHO DUYET moi duoc duyet. Truoc day moi trang thai khac
+        // CANCELLED/CONFIRMED deu roi xuong duoi va bi ghi de thanh CONFIRMED -
+        // ke ca PAID. Goi confirm tren mot don da tra tien (bam lai, goi API
+        // truc tiep) ha no ve "cho thanh toan", gui cho khach email "vui long
+        // thanh toan" lan nua, hien lai nut "Thanh toan ngay" de ho tra lan hai,
+        // va 24 gio sau BookingScheduler huy luon don da tra tien do.
+        if (!"PENDING".equals(booking.getStatus())) {
+            throw new BadRequestException("Chỉ duyệt được đơn đang chờ duyệt, đơn này đang ở trạng thái "
+                    + booking.getStatus() + ".");
         }
 
         // 2. status = CONFIRMED
@@ -437,7 +423,7 @@ public class BookingServiceImpl implements BookingService {
     private void releaseBookingResources(Booking booking) {
         Tour tour = booking.getTour();
         if (tour != null && booking.getTravelDate() != null) {
-            int days = parseDurationDays(tour.getDuration());
+            int days = myproject.booking_tour.utils.TourDurationUtils.parseDays(tour.getDuration());
             java.time.LocalDate startDate = booking.getTravelDate();
             java.time.LocalDate endDate = startDate.plusDays(days - 1);
 

@@ -61,7 +61,21 @@ const refreshAccessToken = (): Promise<string> => {
         localStorage.setItem('token', token);
         // Backend trả kèm hồ sơ người dùng mới nhất — đồng bộ luôn để tên/avatar
         // đổi ở nơi khác cũng được cập nhật.
-        localStorage.setItem('user', JSON.stringify(payload));
+        //
+        // Phải lưu ĐÚNG hình dạng mà Login/Register đưa vào useAuthStore.login.
+        // Trước đây chỗ này lưu nguyên AuthResponse: có userId chứ không có id,
+        // có avatar chứ không có avatarUrl, kèm luôn cả access token. Sau lần
+        // làm mới đầu tiên (15 phút) và một lần tải lại trang, user.id thành
+        // undefined — nút sửa đánh giá của chính mình biến mất, trừ khi so theo
+        // username.
+        localStorage.setItem('user', JSON.stringify({
+          id: payload.userId,
+          username: payload.username,
+          role: payload.role,
+          fullName: payload.fullName,
+          email: payload.email,
+          avatarUrl: payload.avatar,
+        }));
         return token;
       })
       .finally(() => {

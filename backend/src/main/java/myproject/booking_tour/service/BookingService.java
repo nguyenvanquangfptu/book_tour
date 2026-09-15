@@ -8,7 +8,8 @@ import java.util.List;
 public interface BookingService {
     BookingResponse createBooking(BookingRequest request, Long userId);
     List<BookingResponse> getMyBookings(Long userId);
-    myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size);
+    /** @param status loc theo trang thai; null hoac rong = moi trang thai */
+    myproject.booking_tour.dto.response.PageResponse<BookingResponse> getAllBookings(int page, int size, String status);
     BookingResponse getBookingById(Long id);
     BookingResponse confirmBooking(Long id);
     /**

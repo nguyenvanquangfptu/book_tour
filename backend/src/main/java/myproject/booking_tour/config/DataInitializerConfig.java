@@ -70,12 +70,12 @@ public class DataInitializerConfig {
                     String baseSlug = myproject.booking_tour.utils.SlugUtils.toSlug(t.getTitle());
                     String slug = baseSlug;
                     int counter = 1;
-                    while (tourRepository.existsBySlug(slug)) {
+                    while (tourRepository.isSlugTaken(slug)) {
                         slug = baseSlug + "-" + counter;
                         counter++;
                     }
                     t.setSlug(slug);
-                    tourRepository.save(t); // save immediately to update existsBySlug for next iterations
+                    tourRepository.save(t); // save immediately to update isSlugTaken for next iterations
                 }
             }
         };

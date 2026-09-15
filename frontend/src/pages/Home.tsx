@@ -249,7 +249,7 @@ const Home: React.FC = () => {
                     ))}
                   </div>
                   <p className="quote">"{review.comment}"</p>
-                  <h4 className="author">- {review.username || review.fullName || 'Người dùng'}</h4>
+                  <h4 className="author">- {review.fullName || 'Người dùng'}</h4>
                 </div>
               ))
             ) : (

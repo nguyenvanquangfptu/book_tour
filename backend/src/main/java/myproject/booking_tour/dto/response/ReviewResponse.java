@@ -9,7 +9,7 @@ public class ReviewResponse {
     private Long tourId;
     private String tourSlug;
     private Long userId;
-    private String username;
+    // Khong co username: xem ReviewMapper.toResponse.
     private String fullName;
     private String avatar;
     private Integer rating;

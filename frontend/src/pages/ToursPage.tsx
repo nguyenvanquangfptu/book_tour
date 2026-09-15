@@ -14,22 +14,25 @@ const ToursPage: React.FC = () => {
   const searchParams = new URLSearchParams(location.search);
   const initialDest = searchParams.get('dest') || '';
   const initialKeyword = searchParams.get('keyword') || '';
-  const initialDuration = searchParams.get('durationDays') ? Number(searchParams.get('durationDays')) : undefined;
   const initialGuests = searchParams.get('guests') ? Number(searchParams.get('guests')) : undefined;
 
   // Filter States
   const [keyword, setKeyword] = useState(initialKeyword);
   const [destination, setDestination] = useState(initialDest);
   const [destInputValue, setDestInputValue] = useState(initialDest);
-  const [durationDays, setDurationDays] = useState<number | undefined>(initialDuration);
+  const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
   const [guestsQuery, setGuestsQuery] = useState<number | undefined>(initialGuests);
-  const [priceRange, setPriceRange] = useState(10000000); // UI max
+  // Không còn trần giá: trước đây maxPrice=10.000.000 luôn được gửi đi mà trang
+  // không có ô nào để chỉnh, nên tour đắt hơn mức đó không bao giờ hiện ra.
   const [page, setPage] = useState(0);
   const [sortOption, setSortOption] = useState('id_ASC');
-  
+
   const [showDestDropdown, setShowDestDropdown] = useState(false);
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  // Thanh tìm kiếm ở trang chủ và navbar gửi ngày qua ?checkIn=&checkOut=.
+  // Trước đây trang này không đọc hai tham số đó (chỉ đọc durationDays, thứ
+  // không ai gửi), nên ngày khách vừa chọn biến mất khi sang trang.
+  const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '');
+  const [checkOut, setCheckOut] = useState(searchParams.get('checkOut') || '');
   const [guests, setGuests] = useState(searchParams.get('guests') || '2');
   
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -50,8 +53,6 @@ const ToursPage: React.FC = () => {
     guests: guestsQuery,
     tourType: selectedTypes.join(','),
     transport: selectedTransports.join(','),
-    minPrice: 0,
-    maxPrice: priceRange,
     sortBy,
     sortDir,
   });
@@ -64,7 +65,8 @@ const ToursPage: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const kw = params.get('keyword');
     const dest = params.get('dest');
-    const dur = params.get('durationDays');
+    const inDate = params.get('checkIn');
+    const outDate = params.get('checkOut');
     const gst = params.get('guests');
 
     let updated = false;
@@ -80,8 +82,15 @@ const ToursPage: React.FC = () => {
       updated = true;
     }
     
-    if (dur !== null && Number(dur) !== durationDays) {
-      setDurationDays(Number(dur));
+    // Tìm từ navbar khi đang đứng ở trang này: URL đổi nhưng component không
+    // mount lại, nên phải tự nhận ngày mới. durationDays tự tính lại ở effect dưới.
+    if (inDate !== null && inDate !== checkIn) {
+      setCheckIn(inDate);
+      updated = true;
+    }
+
+    if (outDate !== null && outDate !== checkOut) {
+      setCheckOut(outDate);
       updated = true;
     }
     
@@ -121,7 +130,6 @@ const ToursPage: React.FC = () => {
     setGuests('2');
     setDurationDays(undefined);
     setGuestsQuery(undefined);
-    setPriceRange(10000000);
     setSortOption('id_ASC');
     setSelectedTypes([]);
     setSelectedTransports([]);

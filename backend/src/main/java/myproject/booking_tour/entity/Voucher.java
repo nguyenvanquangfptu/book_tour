@@ -13,7 +13,12 @@ import org.hibernate.annotations.Where;
 
 @Entity
 @Table(name = "vouchers")
-@SQLDelete(sql = "UPDATE vouchers SET is_deleted = true WHERE id=?")
+// Voucher co @Version, nen Hibernate bind HAI tham so cho cau xoa: id roi den
+// version. Cau cu chi co mot dau "?" - lenh xoa nao cung no "column index out of
+// range" o tham so thu hai, va nut Xoa o trang quan tri chua bao gio xoa duoc
+// voucher nao. Dieu kien version con giu dung khoa lac quan: xoa mot voucher
+// vua bi dat tour dung toi thi that bai thay vi ghi de.
+@SQLDelete(sql = "UPDATE vouchers SET is_deleted = true WHERE id = ? AND version = ?")
 @Where(clause = "is_deleted = false")
 @Data
 @NoArgsConstructor
@@ -23,7 +28,10 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    // Duy nhat trong so voucher CHUA XOA - index mot phan uq_vouchers_code_active
+    // (V16). Khong khai bao unique o day: rang buoc toan bang tung chan viec tao
+    // lai ma cua mot voucher da xoa.
+    @Column(nullable = false, length = 50)
     private String code;
 
     @Column(precision = 12, scale = 2)

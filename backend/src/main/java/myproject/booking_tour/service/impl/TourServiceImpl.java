@@ -120,7 +120,7 @@ public class TourServiceImpl implements TourService {
         String baseSlug = myproject.booking_tour.utils.SlugUtils.toSlug(title);
         String slug = baseSlug;
         int counter = 1;
-        while (tourRepository.existsBySlug(slug)) {
+        while (tourRepository.isSlugTaken(slug)) {
             slug = baseSlug + "-" + counter;
             counter++;
         }
@@ -341,7 +341,10 @@ public class TourServiceImpl implements TourService {
         log.setUserId(myproject.booking_tour.security.SecurityUtil.getCurrentUserId());
         auditLogRepository.save(log);
 
-        tourRepository.delete(tour);
+        // Khong dung tourRepository.delete(tour): Hibernate xoa cac dong noi
+        // truoc khi chay @SQLDelete, tour khoi phuc ve se mat noi luu tru va
+        // tien ich. Xem TourRepository.softDelete.
+        tourRepository.softDelete(tour.getId());
     }
 
     @Override
@@ -359,21 +362,10 @@ public class TourServiceImpl implements TourService {
         tourRepository.restoreTour(id);
     }
 
-    private int parseDurationDays(String duration) {
-        if (duration == null || duration.trim().isEmpty()) return 1;
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(\\d+)\\s*(ngày|day)", java.util.regex.Pattern.CASE_INSENSITIVE);
-        java.util.regex.Matcher m = p.matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-        p = java.util.regex.Pattern.compile("(\\d+)");
-        m = p.matcher(duration);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-        return 1;
-    }
-
+    /**
+     * So cho con trong THAT SU cho mot ngay khoi hanh: so nho nhat tren moi ngay
+     * tour dien ra, dung nhu cach BookingServiceImpl tru cho luc dat.
+     */
     @Override
     @Transactional(readOnly = true)
     public Integer getAvailableSlots(Long id, java.time.LocalDate date) {
@@ -381,7 +373,7 @@ public class TourServiceImpl implements TourService {
         Tour tour = tourRepository.findById(id).orElse(null);
         if (tour == null) return 0;
         
-        int days = parseDurationDays(tour.getDuration());
+        int days = myproject.booking_tour.utils.TourDurationUtils.parseDays(tour.getDuration());
         int defaultSlots = tour.getAvailableSlots() != null ? tour.getAvailableSlots() : (tour.getMaxPeople() != null ? tour.getMaxPeople() : 0);
         int minAvailable = defaultSlots;
 

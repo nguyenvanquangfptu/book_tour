@@ -128,60 +128,86 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResult loginWithGoogle(String idTokenString, ClientMetadata client) {
+        com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload = verifyGoogleToken(idTokenString);
+
+        // Email trong token chi chung minh duoc danh tinh khi Google da xac minh
+        // no. Mot tai khoan Google co the dang ky bang MOT DIA CHI BAT KY ma
+        // khong can chung minh la chu hop thu - luc do token van hop le, van mang
+        // dung dia chi do, chi co email_verified = false.
+        //
+        // Truoc day dong nay khong ton tai, va ngay ben duoi la tim tai khoan
+        // theo email roi cap phien luon. Ai biet email cua nguoi khac - ke ca
+        // email cua ADMIN - chi can tao mot tai khoan Google voi dia chi do la
+        // dang nhap thang vao tai khoan cua ho, khong can mat khau.
+        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+            log.warn("Tu choi dang nhap Google: email trong token chua duoc Google xac minh");
+            throw new UnauthorizedException("Email của tài khoản Google này chưa được xác minh.");
+        }
+
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+
+        if (user == null) {
+            Role role = roleRepository.findByName("CUSTOMER")
+                    .orElseGet(() -> {
+                        Role newRole = new Role();
+                        newRole.setName("CUSTOMER");
+                        return roleRepository.save(newRole);
+                    });
+
+            if (name == null || name.trim().isEmpty()) {
+                name = email.substring(0, email.indexOf("@"));
+            }
+
+            String username = email;
+            int counter = 1;
+            while (userRepository.existsByUsername(username)) {
+                username = email.substring(0, email.indexOf("@")) + counter;
+                counter++;
+            }
+
+            user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setFullName(name);
+            user.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString())); // Random password
+            user.setRole(role);
+            user = userRepository.save(user);
+        }
+
+        return startSession(user, client);
+    }
+
+    /**
+     * Xac minh chu ky, audience va han cua ID token Google.
+     *
+     * Chi phan nay moi duoc tra 401. Truoc day mot khoi try bat Exception boc
+     * ca than ham dang nhap, nen moi su co phia sau - database mat ket noi luc
+     * tao tai khoan, loi luc cap refresh token - deu thanh 401 "Failed to verify
+     * Google Token: ..." kem nguyen van thong bao cua tang duoi, va duoc in ra
+     * bang printStackTrace thay vi di qua log.
+     *
+     * Khong private de test thay duoc cuoc goi mang toi Google.
+     */
+    com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload verifyGoogleToken(String idTokenString) {
+        com.google.api.client.googleapis.auth.oauth2.GoogleIdToken idToken;
         try {
             com.google.api.client.http.HttpTransport transport = new com.google.api.client.http.javanet.NetHttpTransport();
             com.google.api.client.json.JsonFactory jsonFactory = new com.google.api.client.json.gson.GsonFactory();
             com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier verifier = new com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier.Builder(transport, jsonFactory)
                     .setAudience(java.util.Collections.singletonList(googleClientId))
                     .build();
-
-            com.google.api.client.googleapis.auth.oauth2.GoogleIdToken idToken = verifier.verify(idTokenString);
-            if (idToken != null) {
-                com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload = idToken.getPayload();
-
-                String email = payload.getEmail();
-                String name = (String) payload.get("name");
-                // String pictureUrl = (String) payload.get("picture");
-
-                User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
-
-                if (user == null) {
-                    Role role = roleRepository.findByName("CUSTOMER")
-                            .orElseGet(() -> {
-                                Role newRole = new Role();
-                                newRole.setName("CUSTOMER");
-                                return roleRepository.save(newRole);
-                            });
-
-                    if (name == null || name.trim().isEmpty()) {
-                        name = email.substring(0, email.indexOf("@"));
-                    }
-
-                    String username = email;
-                    int counter = 1;
-                    while (userRepository.existsByUsername(username)) {
-                        username = email.substring(0, email.indexOf("@")) + counter;
-                        counter++;
-                    }
-
-                    user = new User();
-                    user.setUsername(username);
-                    user.setEmail(email);
-                    user.setFullName(name);
-                    user.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString())); // Random password
-                    user.setRole(role);
-                    user = userRepository.save(user);
-                }
-
-                return startSession(user, client);
-            } else {
-                throw new UnauthorizedException("Invalid ID token.");
-            }
+            idToken = verifier.verify(idTokenString);
         } catch (Exception e) {
-            System.err.println("Google Login Error:");
-            e.printStackTrace();
-            throw new UnauthorizedException("Failed to verify Google Token: " + e.getMessage());
+            log.warn("Khong xac minh duoc ID token Google: {}", e.getMessage());
+            throw new UnauthorizedException("Không xác minh được tài khoản Google.");
         }
+        if (idToken == null) {
+            throw new UnauthorizedException("Invalid ID token.");
+        }
+        return idToken.getPayload();
     }
 
 
@@ -265,16 +291,61 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /** Mot ma OTP chiu toi da bay nhieu lan nhap sai truoc khi bi huy. */
+    static final int MAX_RESET_CODE_ATTEMPTS = 5;
+
+    /**
+     * Mot cau cho moi truong hop that bai: email khong ton tai, chua xin ma, ma
+     * sai, ma het han, ma vua bi huy vi sai qua nhieu. Noi khac nhau la bao cho
+     * nguoi ngoai biet email nao co tai khoan.
+     */
+    private static final String INVALID_RESET_CODE =
+            "Mã xác nhận không đúng hoặc đã hết hạn. Vui lòng kiểm tra lại hoặc yêu cầu mã mới.";
+
+    /**
+     * Doi mat khau bang ma OTP gui qua email.
+     *
+     * Ma chi duoc doi chieu voi ma cua DUNG tai khoan mang email do, va moi ma
+     * chiu toi da MAX_RESET_CODE_ATTEMPTS lan sai. Truoc day ham nay chi nhan ma,
+     * tra no tren toan bang va khong dem gi ca: ma 6 so co mot trieu gia tri,
+     * moi lan doan thu cung luc voi ma cua moi nguoi dang xin khoi phuc, va tran
+     * duy nhat la gioi han 10 request/phut moi IP.
+     *
+     * noRollbackFor: so lan sai phai duoc GHI LAI ngay ca khi ham nem loi. Neu
+     * de BadRequestException quay lui giao dich thi bo dem khong bao gio tang.
+     */
     @Override
-    @Transactional
-    public void resetPassword(String token, String newPassword) {
-        // Bam truoc khi tra cuu: database chi luu SHA-256 cua ma.
-        myproject.booking_tour.entity.PasswordResetToken resetToken = tokenRepository
-                .findByTokenHash(myproject.booking_tour.security.TokenHasher.sha256Hex(token))
-                .orElseThrow(() -> new BadRequestException("Invalid token!"));
+    @Transactional(noRollbackFor = BadRequestException.class)
+    public void resetPassword(String email, String token, String newPassword) {
+        User owner = email == null ? null : userRepository.findByEmailIgnoreCase(email.trim()).orElse(null);
+        myproject.booking_tour.entity.PasswordResetToken resetToken = owner == null
+                ? null
+                : tokenRepository.findFirstByUserOrderByIdDesc(owner).orElse(null);
+        if (resetToken == null) {
+            throw new BadRequestException(INVALID_RESET_CODE);
+        }
 
         if (resetToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-            throw new BadRequestException("Token has expired!");
+            tokenRepository.delete(resetToken);
+            throw new BadRequestException(INVALID_RESET_CODE);
+        }
+
+        // Database chi luu SHA-256 cua ma. So sanh thoi gian hang so de do thoi
+        // gian phan hoi khong noi duoc ma dung bao nhieu ky tu dau.
+        boolean matches = java.security.MessageDigest.isEqual(
+                myproject.booking_tour.security.TokenHasher.sha256Hex(token == null ? "" : token.trim())
+                        .getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                resetToken.getTokenHash().getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        if (!matches) {
+            resetToken.setFailedAttempts(resetToken.getFailedAttempts() + 1);
+            if (resetToken.getFailedAttempts() >= MAX_RESET_CODE_ATTEMPTS) {
+                log.warn("Huy ma khoi phuc mat khau cua user {} sau {} lan nhap sai",
+                        owner.getId(), resetToken.getFailedAttempts());
+                tokenRepository.delete(resetToken);
+            } else {
+                tokenRepository.save(resetToken);
+            }
+            throw new BadRequestException(INVALID_RESET_CODE);
         }
 
         User user = resetToken.getUser();

@@ -21,7 +21,7 @@ public interface AuthService {
 
     void forgotPassword(String email);
 
-    void resetPassword(String token, String newPassword);
+    void resetPassword(String email, String token, String newPassword);
 
     /** Thu hoi ca family refresh token cua phien dang cam token nay. */
     void logout(String refreshToken);

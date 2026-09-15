@@ -60,6 +60,26 @@ class TourServiceImplTest {
         assertNotNull(response);
     }
 
+    /**
+     * Tour "1 tuần" chiem cho ca 7 ngay luc dat. Truoc day trang chi tiet chi
+     * xem ngay khoi hanh va bao con du cho, trong khi ngay thu ba da kin.
+     */
+    @Test
+    void getAvailableSlots_ShouldCheckEveryDayOfAWeekLongTour() {
+        java.time.LocalDate start = java.time.LocalDate.now().plusDays(10);
+        mockTour.setDuration("1 tuần");
+        mockTour.setAvailableSlots(20);
+        when(tourRepository.findById(1L)).thenReturn(Optional.of(mockTour));
+        when(tourScheduleRepository.findFirstByTourIdAndDepartureDate(eq(1L), any())).thenReturn(Optional.empty());
+        myproject.booking_tour.entity.TourSchedule fullDay = new myproject.booking_tour.entity.TourSchedule();
+        fullDay.setAvailableSlots(0);
+        when(tourScheduleRepository.findFirstByTourIdAndDepartureDate(1L, start.plusDays(2)))
+                .thenReturn(Optional.of(fullDay));
+
+        assertEquals(0, tourService.getAvailableSlots(1L, start));
+        verify(tourScheduleRepository, times(7)).findFirstByTourIdAndDepartureDate(eq(1L), any());
+    }
+
     @Test
     void changeStatus_ShouldRejectAValueTheDatabaseWouldRefuse() {
         // ck_tours_status chỉ cho phép ACTIVE, INACTIVE, SOLD_OUT. Không chặn ở
@@ -97,7 +117,7 @@ class TourServiceImplTest {
         request.setStatus("INACTIVE");
 
         when(tourMapper.toEntity(request)).thenReturn(new Tour());
-        when(tourRepository.existsBySlug(any())).thenReturn(false);
+        when(tourRepository.isSlugTaken(any())).thenReturn(false);
         when(tourRepository.save(any(Tour.class))).thenReturn(mockTour);
         when(tourMapper.toResponse(any(Tour.class))).thenReturn(new TourResponse());
 

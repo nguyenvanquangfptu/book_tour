@@ -3,7 +3,8 @@ import api from '../api/axiosConfig';
 export interface ReviewResponse {
   id: number;
   userId: number;
-  username: string;
+  // Không có username: API đánh giá công khai, và username của tài khoản Google
+  // chính là email.
   fullName?: string;
   tourId: number;
   tourSlug?: string;

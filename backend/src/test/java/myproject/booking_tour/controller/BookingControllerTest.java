@@ -105,11 +105,21 @@ class BookingControllerTest {
 
     @Test
     void getAllBookings_ShouldReturn200() throws Exception {
-        Mockito.when(bookingService.getAllBookings(0, 10)).thenReturn(new PageResponse<>());
+        Mockito.when(bookingService.getAllBookings(0, 10, null)).thenReturn(new PageResponse<>());
 
         mockMvc.perform(get("/api/bookings?page=0&size=10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void getAllBookings_ShouldPassTheStatusFilterToTheService() throws Exception {
+        Mockito.when(bookingService.getAllBookings(2, 15, "PAID")).thenReturn(new PageResponse<>());
+
+        mockMvc.perform(get("/api/bookings?page=2&size=15&status=PAID"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(bookingService).getAllBookings(2, 15, "PAID");
     }
 }
 

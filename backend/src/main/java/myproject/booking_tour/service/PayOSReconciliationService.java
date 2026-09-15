@@ -14,6 +14,12 @@ import java.time.LocalDateTime;
 /**
  * Ghi ket qua doi soat cua MOT giao dich PayOS, trong transaction cua rieng no.
  *
+ * Day la NOI DUY NHAT dich trang thai PayOS thanh trang thai payment/booking.
+ * Webhook va endpoint /verify (PaymentServiceImpl) cung goi vao day. Truoc day
+ * moi duong co mot ban sao rieng cua logic nay, va chung da lech nhau: ban o
+ * /verify ghi SUCCESS cho mot link chua tra tien chi vi don da PAID qua link
+ * khac, ban o webhook tin ma "00" hon trang thai that cua link.
+ *
  * VI SAO PHAI LA MOT BEAN RIENG, KHONG PHAI MOT PHUONG THUC TRONG SCHEDULER:
  *
  * Truoc day toan bo vong lap doi soat nam trong MOT @Transactional duy nhat.
@@ -67,13 +73,30 @@ public class PayOSReconciliationService {
         Booking booking = payment.getBooking();
 
         if ("PAID".equals(payOSStatus)) {
+            // Tien da vao that, nen payment luon ghi SUCCESS - day la ban ghi
+            // duy nhat cho biet khach da tra.
+            payment.setPaymentStatus("SUCCESS");
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Nhung KHONG duoc hoi sinh mot don da huy. Luc huy (qua han thanh
+            // toan, khach tu huy, admin huy) so cho cua moi ngay tour va luot
+            // voucher da duoc tra lai, va co the da co nguoi khac dat mat. Truoc
+            // day don bi lat thang tu CANCELLED sang PAID: khach cam ve cho mot
+            // cho khong con ton tai, tour bi ban vuot suc chua, luot voucher
+            // khong bi tru lai. Viec do - xep lai cho hay hoan tien - phai do
+            // nguoi that quyet dinh.
+            if ("CANCELLED".equals(booking.getStatus())) {
+                log.error("[DoiSoat] Payment {} (orderCode {}) DA NHAN TIEN nhung don #{} da bi huy truoc do. "
+                                + "Khong tu mo lai don - can xu ly hoan tien hoac xep lai cho thu cong.",
+                        paymentId, payment.getOrderCode(), booking.getId());
+                return true;
+            }
+
             if (!"PAID".equals(booking.getStatus())) {
                 booking.setStatus("PAID");
                 bookingRepository.save(booking);
             }
-            payment.setPaymentStatus("SUCCESS");
-            payment.setPaymentDate(LocalDateTime.now());
-            paymentRepository.save(payment);
             log.info("[DoiSoat] Payment {} (orderCode {}) da thanh toan -> SUCCESS",
                     paymentId, payment.getOrderCode());
             return true;

@@ -24,7 +24,10 @@ public class ReviewMapper {
         }
         if (review.getUser() != null) {
             response.setUserId(review.getUser().getId());
-            response.setUsername(review.getUser().getUsername());
+            // KHONG tra username. GET /api/reviews/** la endpoint cong khai, va
+            // username la mot nua thong tin dang nhap - voi tai khoan tao qua
+            // Google, username CHINH LA dia chi email. Trang chu tung in username
+            // lam ten tac gia danh gia, tuc la in email khach ra cho moi nguoi xem.
             response.setFullName(review.getUser().getFullName());
             response.setAvatar(review.getUser().getAvatar());
         }

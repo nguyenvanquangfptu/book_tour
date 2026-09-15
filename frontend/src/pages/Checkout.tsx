@@ -5,10 +5,13 @@ import Swal from 'sweetalert2';
 import { formatPrice } from '../utils/formatPrice';
 import { BookingService } from '../services/BookingService';
 import { VoucherService } from '../services/VoucherService';
+import { useCartStore } from '../store/useCartStore';
 import { useTranslation } from 'react-i18next';
 import '../styles/checkout.css';
 
 interface LocationState {
+  /** Có khi đi từ giỏ hàng, không có khi đặt thẳng từ trang chi tiết tour. */
+  cartItemId?: number;
   tourId: number;
   tourTitle: string;
   guests: number;
@@ -21,6 +24,7 @@ const Checkout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState;
+  const removeFromCart = useCartStore((s) => s.removeFromCart);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -141,6 +145,12 @@ const Checkout: React.FC = () => {
       const bookingData = bookingResponse?.data || bookingResponse;
       
       if (bookingData && bookingData.id) {
+        // Đặt từ giỏ hàng thì món đó đã thành đơn: để lại trong giỏ là mời khách
+        // bấm "Thanh toán" lần nữa và giữ chỗ gấp đôi. Bỏ khỏi giỏ hỏng cũng
+        // không được làm hỏng thông báo đặt tour thành công.
+        if (state.cartItemId) {
+          removeFromCart(state.cartItemId).catch(() => {});
+        }
         Swal.fire({
           icon: 'success',
           title: t('checkout.bookingSuccessTitle'),

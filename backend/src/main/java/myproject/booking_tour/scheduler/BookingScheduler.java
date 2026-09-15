@@ -42,9 +42,6 @@ import java.util.List;
 @Slf4j
 public class BookingScheduler {
 
-    /** Khach co 24 gio ke tu luc don duoc duyet de hoan tat thanh toan. */
-    private static final int PAYMENT_GRACE_HOURS = 24;
-
     private final BookingRepository bookingRepository;
     private final BookingAutoCancelService autoCancelService;
 
@@ -55,7 +52,7 @@ public class BookingScheduler {
             return;
         }
 
-        LocalDateTime deadline = LocalDateTime.now().minusHours(PAYMENT_GRACE_HOURS);
+        LocalDateTime deadline = LocalDateTime.now().minusHours(BookingAutoCancelService.PAYMENT_GRACE_HOURS);
         log.info("[HuyDonQuaHan] Bat dau kiem tra {} don da duyet...", confirmed.size());
 
         int cancelled = 0;
