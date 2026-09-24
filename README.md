@@ -1,3 +1,4 @@
+<<<<<<< README.md
 # Booking Tour Project
 
 Dự án Hệ thống Đặt Tour Du lịch (Booking Tour) là một ứng dụng Full-Stack hiện đại, được xây dựng với mục tiêu quản lý và cung cấp dịch vụ đặt tour trực tuyến.
