@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác nhận đặt tour</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #0056b3; text-align: center;">Xác nhận Đặt Tour Thành công!</h2>
+        <p>Xin chào <strong th:text="${customerName}">Khách hàng</strong>,</p>
+        <p>Cảm ơn bạn đã lựa chọn dịch vụ của chúng tôi. Dưới đây là thông tin chi tiết về đơn đặt tour của bạn:</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Mã Booking:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;" th:text="${bookingId}">#12345</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Tên Tour:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;" th:text="${tourName}">Tên Tour</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Số người:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;" th:text="${numberOfPeople}">2</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Tổng tiền:</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #d9534f; font-weight: bold;" th:text="${totalPrice} + ' VND'">0 VND</td>
+            </tr>
+        </table>
+        
+        <p style="margin-top: 20px;">Chúc bạn có một chuyến đi vui vẻ!</p>
+        <p>Trân trọng,<br>Đội ngũ Booking Tour</p>
+    </div>
+</body>
+</html>

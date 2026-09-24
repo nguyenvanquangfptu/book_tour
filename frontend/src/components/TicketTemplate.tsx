@@ -1,0 +1,136 @@
+import { forwardRef } from 'react';
+import { FaPlane, FaCalendarAlt, FaUserFriends, FaMapMarkerAlt, FaRegFileAlt } from 'react-icons/fa';
+import { QRCodeSVG } from 'qrcode.react';
+import { formatPrice } from '../utils/formatPrice';
+import { useTranslation } from 'react-i18next';
+
+interface TicketProps {
+  booking: any;
+  profile: any;
+}
+
+const TicketTemplate = forwardRef<HTMLDivElement, TicketProps>(({ booking, profile }, ref) => {
+  const { t } = useTranslation();
+  if (!booking) return null;
+
+  return (
+    <div 
+      ref={ref} 
+      style={{
+        padding: '40px',
+        background: '#fff',
+        width: '800px',
+        minHeight: '400px',
+        margin: '0 auto',
+        fontFamily: "'Inter', sans-serif",
+        color: '#1e293b'
+      }}
+    >
+      <div style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '30px', position: 'relative', overflow: 'hidden' }}>
+        {/* Ticket Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f1f5f9', paddingBottom: '20px', marginBottom: '30px' }}>
+          <div>
+            <h1 style={{ margin: 0, color: '#2563eb', fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <FaPlane /> E-TICKET
+            </h1>
+            <p style={{ margin: '5px 0 0', color: '#64748b', fontSize: '0.9rem' }}>{t('ticketTemplate.greatTrip')}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#0f172a' }}>{t('ticketTemplate.ticketCode')}</h2>
+            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#2563eb', letterSpacing: '2px' }}>
+              #{String(booking.id).padStart(6, '0')}
+            </p>
+          </div>
+        </div>
+
+        {/* Passenger Info */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>{t('ticketTemplate.passenger')}</p>
+            {/* Hành khách là người khách nhập ở trang thanh toán, không phải chủ
+                tài khoản - đặt hộ người thân thì vé phải mang tên người đi. */}
+            <p style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', color: '#0f172a' }}>{booking.customerName || profile.fullName}</p>
+            <p style={{ margin: '5px 0 0', fontSize: '1rem', color: '#475569' }}>{booking.customerPhone || profile.phone}</p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>{t('ticketTemplate.journey')}</p>
+            <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FaMapMarkerAlt style={{ color: '#ef4444' }} /> {booking.tourTitle || t('ticketTemplate.mysteryTour')}
+            </p>
+          </div>
+        </div>
+
+        {/* Journey Details */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <FaCalendarAlt /> {t('ticketTemplate.bookingDate')}
+            </p>
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>
+              {new Date(booking.bookingDate).toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <FaUserFriends /> {t('ticketTemplate.guests')}
+            </p>
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>
+              {booking.numberOfPeople} {t('ticketTemplate.people')}
+            </p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>
+              {t('ticketTemplate.totalAmount')}
+            </p>
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: '#16a34a' }}>
+              {formatPrice(booking.totalPrice)}
+            </p>
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '20px', borderRadius: '12px' }}>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <FaCalendarAlt /> Ngày khởi hành
+            </p>
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#2563eb' }}>
+              {booking.travelDate ? new Date(booking.travelDate).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+            </p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              Trạng thái
+            </p>
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: booking.status === 'PAID' ? '#16a34a' : '#f59e0b' }}>
+              {booking.status === 'PAID' ? 'Đã thanh toán' : booking.status === 'CONFIRMED' ? 'Đã xác nhận' : booking.status === 'COMPLETED' ? 'Đã hoàn thành' : booking.status}
+            </p>
+          </div>
+          {booking.note && (
+            <div style={{ flex: '1', marginLeft: '20px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <FaRegFileAlt /> Ghi chú
+              </p>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', fontStyle: 'italic' }}>
+                "{booking.note}"
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer / QR Code dummy */}
+        <div style={{ marginTop: '30px', borderTop: '2px dashed #f1f5f9', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+            {t('ticketTemplate.presentTicket')}
+          </p>
+          <div style={{ textAlign: 'center', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <QRCodeSVG value={`TICKET-${booking.id}-${profile.id}-${booking.travelDate}`} size={80} level="H" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+});
+
+export default TicketTemplate;

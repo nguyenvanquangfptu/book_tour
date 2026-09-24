@@ -1,0 +1,122 @@
+package myproject.booking_tour.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import myproject.booking_tour.entity.Booking;
+import myproject.booking_tour.entity.Payment;
+import myproject.booking_tour.repository.BookingRepository;
+import myproject.booking_tour.repository.PaymentRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+/**
+ * Ghi ket qua doi soat cua MOT giao dich PayOS, trong transaction cua rieng no.
+ *
+ * Day la NOI DUY NHAT dich trang thai PayOS thanh trang thai payment/booking.
+ * Webhook va endpoint /verify (PaymentServiceImpl) cung goi vao day. Truoc day
+ * moi duong co mot ban sao rieng cua logic nay, va chung da lech nhau: ban o
+ * /verify ghi SUCCESS cho mot link chua tra tien chi vi don da PAID qua link
+ * khac, ban o webhook tin ma "00" hon trang thai that cua link.
+ *
+ * VI SAO PHAI LA MOT BEAN RIENG, KHONG PHAI MOT PHUONG THUC TRONG SCHEDULER:
+ *
+ * Truoc day toan bo vong lap doi soat nam trong MOT @Transactional duy nhat.
+ * Khi mot payment gap su co - vi du chu tai khoan da xoa tai khoan nen
+ * cancelBooking nem ResourceNotFoundException, hoac khoa lac quan cua
+ * TourSchedule that bai - ngoai le do di qua ranh gioi transaction cua
+ * BookingService va Spring danh dau transaction dung chung la ROLLBACK-ONLY.
+ * Vong lap co bat ngoai le va chay tiep, nhung la co do khong go duoc: den luc
+ * commit, MOI payment da xac nhan thanh cong trong ca luot quet deu bi huy sach,
+ * kem UnexpectedRollbackException.
+ *
+ * Te hon nua, viec do tu lap lai: rollback huy luon ca viec danh dau payment
+ * gay loi, nen no van con PENDING va lai duoc quet o lan sau, mai mai.
+ *
+ * Tach thanh bean rieng khien moi lan goi di qua proxy cua Spring va mo mot
+ * transaction moi. Mot payment hong chi lam hong chinh no.
+ *
+ * LUU Y: bat buoc phai la BEAN KHAC. Goi this.applyStatus(...) tu trong cung
+ * mot lop se di thang, khong qua proxy, va @Transactional mat tac dung hoan toan.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PayOSReconciliationService {
+
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingService bookingService;
+
+    /**
+     * Dong bo trang thai cua mot payment theo dieu PayOS noi.
+     *
+     * @param paymentId   id trong bang payments
+     * @param payOSStatus trang thai doc duoc tu PayOS (xem PayOSStatusReader)
+     * @return true neu co thay doi duoc ghi xuong database
+     */
+    @Transactional
+    public boolean applyStatus(Long paymentId, String payOSStatus) {
+        Payment payment = paymentRepository.findById(paymentId).orElse(null);
+        if (payment == null) {
+            return false;
+        }
+
+        // Doc lai trang thai BEN TRONG transaction. Giua luc scheduler liet ke
+        // danh sach va luc chay toi day, webhook hoac endpoint /verify co the da
+        // xu ly xong payment nay - luc do khong con gi de lam.
+        if (!"PENDING".equals(payment.getPaymentStatus())) {
+            return false;
+        }
+
+        Booking booking = payment.getBooking();
+
+        if ("PAID".equals(payOSStatus)) {
+            // Tien da vao that, nen payment luon ghi SUCCESS - day la ban ghi
+            // duy nhat cho biet khach da tra.
+            payment.setPaymentStatus("SUCCESS");
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Nhung KHONG duoc hoi sinh mot don da huy. Luc huy (qua han thanh
+            // toan, khach tu huy, admin huy) so cho cua moi ngay tour va luot
+            // voucher da duoc tra lai, va co the da co nguoi khac dat mat. Truoc
+            // day don bi lat thang tu CANCELLED sang PAID: khach cam ve cho mot
+            // cho khong con ton tai, tour bi ban vuot suc chua, luot voucher
+            // khong bi tru lai. Viec do - xep lai cho hay hoan tien - phai do
+            // nguoi that quyet dinh.
+            if ("CANCELLED".equals(booking.getStatus())) {
+                log.error("[DoiSoat] Payment {} (orderCode {}) DA NHAN TIEN nhung don #{} da bi huy truoc do. "
+                                + "Khong tu mo lai don - can xu ly hoan tien hoac xep lai cho thu cong.",
+                        paymentId, payment.getOrderCode(), booking.getId());
+                return true;
+            }
+
+            if (!"PAID".equals(booking.getStatus())) {
+                booking.setStatus("PAID");
+                bookingRepository.save(booking);
+            }
+            log.info("[DoiSoat] Payment {} (orderCode {}) da thanh toan -> SUCCESS",
+                    paymentId, payment.getOrderCode());
+            return true;
+        }
+
+        if ("CANCELLED".equals(payOSStatus) || "EXPIRED".equals(payOSStatus)) {
+            // cancelBookingBySystem tu bo qua don da huy va don da thanh toan -
+            // mot link het han khong duoc phep huy don ma khach da tra tien qua
+            // link khac.
+            bookingService.cancelBookingBySystem(booking.getId(),
+                    "PayOS báo giao dịch " + payOSStatus);
+            payment.setPaymentStatus("FAILED");
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+            log.info("[DoiSoat] Payment {} (orderCode {}) da huy/het han -> FAILED",
+                    paymentId, payment.getOrderCode());
+            return true;
+        }
+
+        // Cac trang thai khac (PENDING, PROCESSING...): chua ket luan duoc, de yen.
+        return false;
+    }
+}

@@ -1,0 +1,55 @@
+# IDE / Editor
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Database
+database/
+*.sql
+*.db
+*.sqlite
+pgdata/
+data/
+
+# NGOAI TRU: migration cua Flyway BAT BUOC phai duoc git theo doi.
+# Quy tac "*.sql" o tren vo tinh loai bo ca thu muc nay - ma neu migration khong
+# nam trong ma nguon thi Flyway vo nghia: nguoi khac clone repo ve se khong co
+# schema, dung lai dung van de ban dau.
+!backend/src/main/resources/db/migration/
+!backend/src/main/resources/db/migration/*.sql

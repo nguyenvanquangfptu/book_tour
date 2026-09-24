@@ -1,0 +1,129 @@
+package myproject.booking_tour.repository;
+
+import myproject.booking_tour.entity.Tour;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import myproject.booking_tour.dto.response.PopularDestinationResponse;
+
+
+@Repository
+public interface TourRepository extends JpaRepository<Tour, Long>, JpaSpecificationExecutor<Tour> {
+
+    // KHONG dung @EntityGraph fetch dong thoi "accommodations" (Set) va "utilities" (List):
+    // SQL sinh ra tich Descartes |accommodations| x |utilities|. Hibernate khu trung lap cho Set,
+    // nhung List (bag) thi khong -> moi utility bi lap lai |accommodations| lan.
+    // Ngoai ra fetch collection kem Pageable con gay HHH000104 (phan trang trong bo nho).
+    //
+    // Thay bang hibernate.default_batch_fetch_size trong application.properties: Hibernate gom
+    // viec load collection cua N tour thanh 1 query "WHERE tour_id IN (?,?,...)" -> het N+1,
+    // khong sinh tich Descartes, va ap dung cho MOI duong dan truy van (ke ca findAll(spec, pageable)
+    // cua JpaSpecificationExecutor - noi @EntityGraph khong the voi toi).
+
+    java.util.Optional<Tour> findBySlug(String slug);
+
+    /**
+     * Slug da bi chiem chua - TINH CA TOUR TRONG THUNG RAC.
+     *
+     * Rang buoc uk_slug UNIQUE (slug) tren bang tours ap dung cho moi dong,
+     * ke ca dong is_deleted = true. Cau derived query existsBySlug truoc day di
+     * qua @SQLRestriction("is_deleted = false") nen khong nhin thay tour da xoa:
+     * tao mot tour trung ten voi mot tour dang nam trong thung rac thi slug
+     * sinh ra "con trong", INSERT dung uk_slug, va admin nhan 409 "Du lieu vua
+     * duoc thay doi boi mot giao dich khac" - bam lai bao nhieu lan cung vay.
+     *
+     * Native query de lach @SQLRestriction, giong findDeletedTours ben duoi.
+     */
+    @Query(value = "SELECT COUNT(*) FROM tours WHERE slug = :slug", nativeQuery = true)
+    long countBySlugIncludingDeleted(@org.springframework.data.repository.query.Param("slug") String slug);
+
+    default boolean isSlugTaken(String slug) {
+        return countBySlugIncludingDeleted(slug) > 0;
+    }
+
+    List<Tour> findByStatus(String status);
+    List<Tour> findByTitleContainingIgnoreCaseAndStatusNot(String keyword, String status);
+    List<Tour> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
+    List<Tour> findByAvailableSlotsGreaterThan(Integer slots);
+
+    @Query("SELECT new myproject.booking_tour.dto.response.PopularDestinationResponse(t.destination, COUNT(t.id), MAX(t.imageUrl)) " +
+           "FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND t.status = 'ACTIVE' " +
+           "GROUP BY t.destination ORDER BY COUNT(t.id) DESC")
+    List<PopularDestinationResponse> findPopularDestinations(Pageable pageable);
+
+    @Query("SELECT DISTINCT t.destination FROM Tour t WHERE t.destination IS NOT NULL AND t.destination != '' AND t.status = 'ACTIVE'")
+    List<String> findDistinctDestinations();
+
+    @Query("SELECT DISTINCT t.tourType FROM Tour t WHERE t.tourType IS NOT NULL AND t.tourType != '' AND t.status = 'ACTIVE'")
+    List<String> findDistinctTourTypes();
+
+    @Query("SELECT DISTINCT t.transport FROM Tour t WHERE t.transport IS NOT NULL AND t.transport != '' AND t.status = 'ACTIVE'")
+    List<String> findDistinctTransports();
+
+    List<Tour> findByAccommodations_Id(Long accommodationId);
+
+    // Hai phep kiem tra "con tour nao dung khong" duoi day dem truc tiep tren
+    // bang noi, KE CA tour trong thung rac. Tour xoa mem van giu noi luu tru va
+    // tien ich cua no (xem softDelete) de khoi phuc ve nguyen ven; neu kiem tra
+    // di qua @SQLRestriction thi:
+    //   - tien ich: tour_utilities.utility_id khong co ON DELETE CASCADE, lenh
+    //     DELETE dung khoa ngoai va admin nhan 500 thay vi ly do;
+    //   - noi luu tru: tour_accommodations co ON DELETE CASCADE, noi luu tru bi
+    //     go lang le khoi tour trong thung rac, khoi phuc ve thi thieu.
+    @Query(value = "SELECT COUNT(*) FROM tour_accommodations WHERE accommodation_id = :accommodationId", nativeQuery = true)
+    long countToursUsingAccommodationIncludingDeleted(@org.springframework.data.repository.query.Param("accommodationId") Long accommodationId);
+
+    default boolean existsByAccommodations_Id(Long accommodationId) {
+        return countToursUsingAccommodationIncludingDeleted(accommodationId) > 0;
+    }
+
+    @Query(value = "SELECT COUNT(*) FROM tour_utilities WHERE utility_id = :utilityId", nativeQuery = true)
+    long countToursUsingUtilityIncludingDeleted(@org.springframework.data.repository.query.Param("utilityId") Long utilityId);
+
+    default boolean existsByUtilityId(Long utilityId) {
+        return countToursUsingUtilityIncludingDeleted(utilityId) > 0;
+    }
+
+    // Native query de lach @SQLRestriction("is_deleted = false") tren entity Tour.
+    // Vi Hibernate KHONG viet lai SQL cua native query, no cung khong tu chen 3
+    // field @Formula (bookedCount, reviewCount, rating) vao SELECT nhu voi JPQL
+    // -> phai tu viet ra day, neu khong se loi "column bookedCount not found".
+    // Alias dat trong dau nhay kep de PostgreSQL giu nguyen camelCase, khop dung
+    // ten property. Khong trich dan thi Postgres ha thanh bookedcount va phai
+    // trong cay vao viec ResultSet.findColumn cua driver tra cuu khong phan biet
+    // hoa thuong - dung duoc nhung mong manh, khong nen dua vao.
+    @Query(value = """
+            SELECT t.*,
+              (SELECT COALESCE(SUM(b.number_of_people), 0) FROM bookings b WHERE b.tour_id = t.id AND COALESCE(b.status, '') <> 'CANCELLED') AS "bookedCount",
+              (SELECT COUNT(r.id) FROM reviews r WHERE r.tour_id = t.id) AS "reviewCount",
+              (SELECT COALESCE(AVG(CAST(r.rating AS DOUBLE PRECISION)), 0) FROM reviews r WHERE r.tour_id = t.id) AS "rating"
+            FROM tours t
+            WHERE t.is_deleted = true
+            """, nativeQuery = true)
+    List<Tour> findDeletedTours();
+
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "UPDATE tours SET is_deleted = false WHERE id = :tourId", nativeQuery = true)
+    void restoreTour(@org.springframework.data.repository.query.Param("tourId") Long tourId);
+
+    /**
+     * Dua tour vao thung rac ma KHONG dung toi cac bang noi.
+     *
+     * repository.delete(tour) chay @SQLDelete, nhung TRUOC do Hibernate van don
+     * sach cac collection ma entity so huu: "delete from tour_accommodations
+     * where tour_id=?" va "delete from tour_utilities where tour_id=?". Xoa mem
+     * vi the lai xoa that noi luu tru va tien ich, va khoi phuc tu thung rac tra
+     * ve mot tour trong tron - khong noi luu tru, khong tien ich - trong khi admin
+     * tuong minh vua hoan tac. Cau UPDATE truc tiep chi lat co is_deleted.
+     */
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "UPDATE tours SET is_deleted = true WHERE id = :tourId", nativeQuery = true)
+    void softDelete(@org.springframework.data.repository.query.Param("tourId") Long tourId);
+}

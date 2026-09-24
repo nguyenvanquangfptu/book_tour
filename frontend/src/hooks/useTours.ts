@@ -1,0 +1,72 @@
+import { useQuery } from '@tanstack/react-query';
+import api from '../api/axiosConfig';
+
+export interface Tour {
+  id: number;
+  slug?: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  destination: string;
+  tourType: string;
+  transport: string;
+  duration: number;
+  maxPeople: number;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface ToursResponse {
+  content: Tour[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+}
+
+export interface FetchToursParams {
+  page?: number;
+  size?: number;
+  keyword?: string;
+  destination?: string;
+  durationDays?: number;
+  guests?: number;
+  tourType?: string;
+  transport?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: string;
+  sortDir?: string;
+  status?: string;
+}
+
+export const fetchTours = async (params: FetchToursParams): Promise<ToursResponse> => {
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined) queryParams.append('page', params.page.toString());
+  if (params.size !== undefined) queryParams.append('size', params.size.toString());
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.destination) queryParams.append('destination', params.destination);
+  if (params.durationDays) queryParams.append('durationDays', params.durationDays.toString());
+  if (params.guests) queryParams.append('guests', params.guests.toString());
+  if (params.tourType) queryParams.append('tourTypes', params.tourType);
+  if (params.transport) queryParams.append('transports', params.transport);
+  if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
+  if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params.sortDir) queryParams.append('sortDir', params.sortDir);
+  if (params.status) queryParams.append('status', params.status);
+  else queryParams.append('status', 'ACTIVE');
+
+  const response = await api.get(`/tours/search?${queryParams.toString()}`);
+  return response.data?.data || response.data;
+};
+
+export const useTours = (params: FetchToursParams) => {
+  return useQuery({
+    queryKey: ['tours', params],
+    queryFn: () => fetchTours(params),
+    // Keep previous data while fetching new pages to avoid UI flickering
+    placeholderData: (previousData) => previousData,
+  });
+};

@@ -1,0 +1,373 @@
+/* home.css */
+
+.home-page {
+  width: 100%;
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  height: 80vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('https://images.unsplash.com/photo-1555921015-5532091f6026?auto=format&fit=crop&w=1920&q=80'); /* Ha Long Bay / Beach */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin-top: -80px; /* Offset fixed navbar */
+  text-align: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6); /* Increased from 40% to 60% for better text readability */
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 50px;
+}
+
+.hero-title {
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #ffffff;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 48px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  color: #ffffff;
+}
+
+/* Search Box in Hero */
+.hero-search-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hero-search-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hero-search-tab {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.hero-search-tab.active {
+  background: #0ea5e9;
+  color: white;
+}
+
+.hero-search-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hero-search-box {
+  background: white;
+  border-radius: 40px;
+  padding: 8px 12px 8px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  text-align: left;
+  flex-wrap: nowrap;
+}
+
+.search-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.search-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.search-input-wrapper label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.search-input {
+  border: none;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  outline: none;
+  background: transparent;
+  width: 100%;
+  padding: 0;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-divider {
+  width: 1px;
+  height: 40px;
+  background: #e2e8f0;
+  margin: 0 12px;
+}
+
+.hero-search-btn-circular {
+  padding: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+  font-size: 1.2rem;
+}
+
+.hero-search-btn-circular:hover {
+  background: #0284c7;
+}
+
+.hero-dest-tags {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-dest-tags span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: color 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.hero-dest-tags span:hover {
+  color: white;
+}
+
+/* Popular Destinations */
+.destinations-section {
+  padding: 80px 0;
+  background-color: var(--bg-color);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  color: var(--primary-dark);
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.destination-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 300px;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+
+.destination-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.destination-card:hover .destination-img {
+  transform: scale(1.1);
+}
+
+.destination-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  padding: 24px;
+  color: white;
+  transition: padding-bottom 0.3s;
+}
+
+.destination-card:hover .destination-overlay {
+  padding-bottom: 32px;
+}
+
+.destination-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.destination-tours {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tours Grid */
+.tours-section {
+  padding: 80px 0;
+  background-color: var(--bg-alt);
+}
+
+.tours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.nav-arrow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: white;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-arrow-btn:hover {
+  background: var(--bg-alt);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Testimonials */
+.testimonials-section {
+  padding: 80px 0;
+  background-color: var(--bg-color);
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.testimonial-card {
+  background: var(--bg-alt);
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-8px);
+}
+
+.stars {
+  color: var(--warning);
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+}
+
+.quote {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.author {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  .hero-search-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+  .search-input-group {
+    width: 100%;
+  }
+  .search-divider {
+    display: none;
+  }
+  .search-btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+}

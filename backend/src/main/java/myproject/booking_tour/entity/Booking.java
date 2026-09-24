@@ -1,0 +1,83 @@
+package myproject.booking_tour.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "bookings")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class
+Booking {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Ref: bookings.user_id > users.id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // Ref: bookings.tour_id > tours.id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tour_id", nullable = false)
+    private Tour tour;
+
+    @CreationTimestamp
+    @Column(name = "booking_date")
+    private LocalDateTime bookingDate;
+
+    @Column(name = "travel_date")
+    private LocalDate travelDate;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "number_of_people", nullable = false)
+    private Integer numberOfPeople;
+
+    @Column(name = "total_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Column(length = 50)
+    private String status;
+
+    @Column(name = "customer_name", length = 100)
+    private String customerName;
+
+    @Column(name = "customer_email", length = 100)
+    private String customerEmail;
+
+    @Column(name = "customer_phone", length = 20)
+    private String customerPhone;
+
+    @Column(name = "note", columnDefinition = "text")
+    private String note;
+
+    /**
+     * Lich khoi hanh (ngay dau tien) ma booking nay chiem cho.
+     *
+     * LUU Y: mot booking thuc te chiem cho cua NHIEU dong tour_schedules - mot
+     * dong cho moi ngay trong suot thoi gian tour (xem
+     * BookingServiceImpl.validateAndDeductTourSchedule). Cot nay chi tro toi
+     * NGAY KHOI HANH, dung y nghia voi truong travelDate ben duoi, va ton tai
+     * de co khoa ngoai that thay vi lien ket ngam qua cap
+     * (tour_id, travel_date). Neu sau nay can theo doi day du ca N ngay thi
+     * phai them bang trung gian booking_schedules.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id")
+    private TourSchedule schedule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private Voucher voucher;
+}
