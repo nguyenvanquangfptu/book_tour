@@ -22,7 +22,7 @@ variables:
     # DEBUG TAM THOI: goi thang API bang wget de xem HTTP status/body that, khong qua lop
     # bao loi chung chung cua Terraform. Khong in ra gia tri token.
     - echo "TF_ADDRESS=${TF_ADDRESS}"
-    - echo "token length: ${#GITLAB_TF_STATE_TOKEN}"
+    - test -z "${GITLAB_TF_STATE_TOKEN}" && echo "GITLAB_TF_STATE_TOKEN is EMPTY" || echo "GITLAB_TF_STATE_TOKEN is set"
     - wget --http-user=gitlab-ci-token --http-password="${GITLAB_TF_STATE_TOKEN}" -O- -S "${TF_ADDRESS}" 2>&1 | tail -25 || true
     - >
       terraform init
