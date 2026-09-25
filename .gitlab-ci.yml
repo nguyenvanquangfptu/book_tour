@@ -1,3 +1,6 @@
+# Cac job chay tren ca "dev" va "main" de test truoc khi merge vao main. Rieng job
+# deploy-frontend dung OIDC voi IAM Role chi tin nhanh "main" (infra/gitlab_oidc.tf), nen
+# chay tu dev se bi AWS tu choi (AccessDenied) - do la co y, khong phai loi.
 stages:
   - infra
   - build
@@ -33,7 +36,7 @@ terraform-plan:
       - ${TF_ROOT}/tfplan
     expire_in: 1 week
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       when: manual
 
 # Chi apply that su khi ban tu bam Run trong GitLab Pipelines - khong bao gio tu dong,
@@ -46,7 +49,7 @@ terraform-apply:
   script:
     - terraform apply tfplan
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       when: manual
 
 # Doi ngu voi terraform-apply: dung khi muon dep bo toan bo ha tang (vi du xong buoi thuc hanh).
@@ -57,7 +60,7 @@ terraform-destroy:
   script:
     - terraform destroy -auto-approve
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       when: manual
 
 build-backend-image:
@@ -73,7 +76,7 @@ build-backend-image:
     - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
     - docker push "$BACKEND_IMAGE:latest"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
 
 build-frontend:
   stage: build
@@ -87,7 +90,7 @@ build-frontend:
       - frontend/dist
     expire_in: 1 hour
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
 
 # Chay truc tiep tren chinh EC2 (GitLab Runner tu cai, executor shell, tag "aws-ec2").
 # Khong SSH tu CI vao server - tranh phai mo port 22 ra Internet cho GitLab shared runner.
@@ -103,7 +106,7 @@ deploy-backend:
     - docker compose --env-file /opt/booking-tour/.env -f deploy/docker-compose.prod.yml pull
     - docker compose --env-file /opt/booking-tour/.env -f deploy/docker-compose.prod.yml up -d --remove-orphans
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
 
 # Dung GitLab OIDC de AWS CLI tu doi lay quyen tam thoi qua IAM Role (infra/gitlab-oidc.tf),
 # khong luu AWS access key/secret o dau ca. Bien AWS_ROLE_ARN, S3_BUCKET,
@@ -125,4 +128,4 @@ deploy-frontend:
     - aws s3 sync frontend/dist "s3://${S3_BUCKET}" --delete
     - aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
