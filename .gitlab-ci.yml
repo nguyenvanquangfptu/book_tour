@@ -19,7 +19,11 @@ variables:
 # an toan (bo qua neu bucket da ton tai).
 bootstrap-state-bucket:
   stage: infra
-  image: amazon/aws-cli:2.15.0
+  image:
+    name: amazon/aws-cli:2.15.0
+    # Image nay cung dat san ENTRYPOINT la "aws", giong het van de gap voi hashicorp/terraform -
+    # ghi de ve rong de GitLab chay duoc script bang shell binh thuong.
+    entrypoint: [""]
   script:
     - |
       if aws s3api head-bucket --bucket "${TF_STATE_BUCKET}" 2>/dev/null; then
@@ -135,7 +139,9 @@ deploy-backend:
 # tai GitLab > Settings > CI/CD > Variables.
 deploy-frontend:
   stage: deploy
-  image: amazon/aws-cli:2.15.0
+  image:
+    name: amazon/aws-cli:2.15.0
+    entrypoint: [""]
   id_tokens:
     GITLAB_OIDC_TOKEN:
       aud: https://gitlab.com
