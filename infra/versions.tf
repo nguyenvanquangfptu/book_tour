@@ -11,10 +11,12 @@ terraform {
     }
   }
 
-  # State luu tren GitLab (GitLab-managed Terraform state), khong phai file cuc bo -
-  # bat buoc vi terraform apply chay tren runner GitLab, moi lan job la 1 moi truong sach.
-  # Cac gia tri thuc te duoc truyen qua "terraform init -backend-config=..." trong .gitlab-ci.yml.
-  backend "http" {}
+  # State luu tren S3, khong phai file cuc bo - bat buoc vi terraform apply chay tren runner
+  # GitLab, moi lan job la 1 moi truong sach. Dung lai AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY
+  # da co san (khong can them token/bien nao khac). Cac gia tri thuc te (bucket/key/region)
+  # duoc truyen qua "terraform init -backend-config=..." trong .gitlab-ci.yml. Bucket phai
+  # duoc tao truoc 1 lan qua job "bootstrap-state-bucket".
+  backend "s3" {}
 }
 
 provider "aws" {

@@ -9,7 +9,29 @@ stages:
 variables:
   BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
   TF_ROOT: infra
-  TF_ADDRESS: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/booktour"
+  TF_STATE_BUCKET: "booktour-tfstate-${CI_PROJECT_ID}"
+  TF_STATE_KEY: "booktour.tfstate"
+  TF_STATE_REGION: "ap-southeast-1"
+
+# Chi can chay 1 LAN DUY NHAT, truoc job terraform-plan dau tien: tao bucket S3 rieng de
+# luu Terraform state (Terraform khong the tu tao bucket ma no se dung lam backend cua chinh
+# no). Dung lai AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY da co san. Chay lai cac lan sau van
+# an toan (bo qua neu bucket da ton tai).
+bootstrap-state-bucket:
+  stage: infra
+  image: amazon/aws-cli:2.15.0
+  script:
+    - |
+      if aws s3api head-bucket --bucket "${TF_STATE_BUCKET}" 2>/dev/null; then
+        echo "Bucket ${TF_STATE_BUCKET} da ton tai, bo qua."
+      else
+        aws s3api create-bucket --bucket "${TF_STATE_BUCKET}" --region "${TF_STATE_REGION}" --create-bucket-configuration LocationConstraint="${TF_STATE_REGION}"
+        aws s3api put-bucket-versioning --bucket "${TF_STATE_BUCKET}" --versioning-configuration Status=Enabled
+        aws s3api put-public-access-block --bucket "${TF_STATE_BUCKET}" --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      when: manual
 
 .terraform-base:
   image:
@@ -19,18 +41,11 @@ variables:
     entrypoint: [""]
   before_script:
     - cd "${TF_ROOT}"
-    # DEBUG TAM THOI: goi thang API bang wget de xem HTTP status/body that, khong qua lop
-    # bao loi chung chung cua Terraform. Khong in ra gia tri token.
-    - echo "TF_ADDRESS=${TF_ADDRESS}"
-    - test -z "${GITLAB_TF_STATE_TOKEN}" && echo "GITLAB_TF_STATE_TOKEN is EMPTY" || echo "GITLAB_TF_STATE_TOKEN is set"
-    - AUTH_HEADER=$(printf '%s' "gitlab-ci-token:${GITLAB_TF_STATE_TOKEN}" | base64 | tr -d '\n')
-    - wget --header="Authorization: Basic ${AUTH_HEADER}" -O- -S "${TF_ADDRESS}" 2>&1 | tail -30 || true
     - >
       terraform init
-      -backend-config="address=${TF_ADDRESS}"
-      -backend-config="username=gitlab-ci-token"
-      -backend-config="password=${GITLAB_TF_STATE_TOKEN}"
-      -backend-config="retry_wait_min=5"
+      -backend-config="bucket=${TF_STATE_BUCKET}"
+      -backend-config="key=${TF_STATE_KEY}"
+      -backend-config="region=${TF_STATE_REGION}"
 
 terraform-plan:
   extends: .terraform-base
