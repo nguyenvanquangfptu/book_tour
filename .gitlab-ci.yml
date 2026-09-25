@@ -90,6 +90,9 @@ terraform-destroy:
 
 build-backend-image:
   stage: build
+  # needs: [] bat che do DAG - chay ngay khi pipeline bat dau, khong cho stage "infra"
+  # hoan tat (cac job infra deu thu cong, de khong bam thi cho mai).
+  needs: []
   image: docker:24
   services:
     - docker:24-dind
@@ -105,6 +108,7 @@ build-backend-image:
 
 build-frontend:
   stage: build
+  needs: []
   image: node:20-alpine
   script:
     - cd frontend
