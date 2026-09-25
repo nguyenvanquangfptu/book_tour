@@ -12,7 +12,11 @@ variables:
   TF_ADDRESS: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/booktour"
 
 .terraform-base:
-  image: hashicorp/terraform:1.9
+  image:
+    name: hashicorp/terraform:1.9
+    # Image nay dat san ENTRYPOINT la "terraform", ghi de ve rong de GitLab chay duoc
+    # before_script/script bang shell binh thuong (neu khong se bi loi "no command named sh").
+    entrypoint: [""]
   before_script:
     - cd "${TF_ROOT}"
     - >
