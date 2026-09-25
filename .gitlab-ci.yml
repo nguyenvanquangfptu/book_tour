@@ -19,14 +19,17 @@ variables:
     entrypoint: [""]
   before_script:
     - cd "${TF_ROOT}"
-    # Khong khai bao lock_address/unlock_address: request xin khoa state bi GitLab tu choi
-    # xac thuc ("HTTP remote state endpoint requires auth"). Khong khai bao thi backend HTTP
-    # tu tat co che lock - chap nhan duoc vi chi minh ban chay cac job nay, tuan tu, thu cong.
+    # CI_JOB_TOKEN khong du quyen goi API Terraform State cua GitLab ("HTTP remote state
+    # endpoint requires auth"), du dung dung theo tai lieu. Dung Personal Access Token
+    # (scope "api", luu trong bien GITLAB_TF_STATE_TOKEN) de xac thuc thay the - luon co
+    # du quyen, khong phu thuoc gioi han cua job token.
+    # Khong khai bao lock_address/unlock_address: request xin khoa state cung bi tu choi
+    # tuong tu, tat han co che lock chap nhan duoc vi chi minh ban chay cac job nay.
     - >
       terraform init
       -backend-config="address=${TF_ADDRESS}"
       -backend-config="username=gitlab-ci-token"
-      -backend-config="password=${CI_JOB_TOKEN}"
+      -backend-config="password=${GITLAB_TF_STATE_TOKEN}"
       -backend-config="retry_wait_min=5"
 
 terraform-plan:
