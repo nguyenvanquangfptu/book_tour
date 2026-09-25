@@ -6,16 +6,11 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
 
 resource "aws_security_group" "ec2" {
   name        = "booktour-ec2-sg"
-  description = "SSH chi tu IP ca nhan; cong backend chi nhan traffic tu CloudFront"
+  description = "Khong mo port quan tri nao ra ngoai (dung SSM Session Manager); cong backend chi nhan traffic tu CloudFront"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description = "SSH tu IP ca nhan"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.admin_ip]
-  }
+  # Khong co ingress cho port 22: quan tri EC2 qua SSM Session Manager (infra/ssm.tf),
+  # khong can mo SSH ra Internet.
 
   ingress {
     description     = "Backend API - chi CloudFront (api-cdn) duoc goi vao, khong public truc tiep"

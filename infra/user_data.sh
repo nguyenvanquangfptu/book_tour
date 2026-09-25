@@ -15,6 +15,14 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 
 usermod -aG docker ubuntu
 
+# --- SSM Agent (de quan tri qua Session Manager, khong can mo SSH) ---
+# Ubuntu khong co san SSM Agent nhu Amazon Linux, phai cai qua snap.
+if ! snap list amazon-ssm-agent >/dev/null 2>&1; then
+  snap install amazon-ssm-agent --classic
+fi
+systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+
 # --- Swap 2GB: t3.micro chi co 1GB RAM, Postgres+Redis+JVM de bi OOM-kill neu khong co swap ---
 if [ ! -f /swapfile ]; then
   fallocate -l 2G /swapfile

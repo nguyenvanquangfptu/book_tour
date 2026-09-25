@@ -12,17 +12,12 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-resource "aws_key_pair" "admin" {
-  key_name   = "booktour-admin"
-  public_key = var.ssh_public_key
-}
-
 resource "aws_instance" "backend" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.ec2.id]
-  key_name                    = aws_key_pair.admin.key_name
+  iam_instance_profile        = aws_iam_instance_profile.ec2_ssm.name
   associate_public_ip_address = true
 
   root_block_device {

@@ -4,16 +4,6 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
-variable "admin_ip" {
-  description = "IP ca nhan duoc phep SSH vao EC2, dang CIDR /32 (vi du 203.0.113.10/32). Tra cuu tai whatismyip.com."
-  type        = string
-}
-
-variable "ssh_public_key" {
-  description = "Noi dung public key (vi du noi dung file ~/.ssh/id_ed25519_ec2.pub) de SSH vao EC2. Tao rieng, khong dung chung voi key GitLab."
-  type        = string
-}
-
 variable "budget_email" {
   description = "Email nhan canh bao AWS Budget"
   type        = string
