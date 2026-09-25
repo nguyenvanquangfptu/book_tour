@@ -1,0 +1,128 @@
+stages:
+  - infra
+  - build
+  - deploy
+
+variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  TF_ROOT: infra
+  TF_ADDRESS: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/booktour"
+
+.terraform-base:
+  image: hashicorp/terraform:1.9
+  before_script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init
+      -backend-config="address=${TF_ADDRESS}"
+      -backend-config="lock_address=${TF_ADDRESS}/lock"
+      -backend-config="unlock_address=${TF_ADDRESS}/lock"
+      -backend-config="username=gitlab-ci-token"
+      -backend-config="password=${CI_JOB_TOKEN}"
+      -backend-config="lock_method=POST"
+      -backend-config="unlock_method=DELETE"
+      -backend-config="retry_wait_min=5"
+
+terraform-plan:
+  extends: .terraform-base
+  stage: infra
+  script:
+    - terraform plan -out=tfplan
+  artifacts:
+    paths:
+      - ${TF_ROOT}/tfplan
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+
+# Chi apply that su khi ban tu bam Run trong GitLab Pipelines - khong bao gio tu dong,
+# vi day la thao tac co the tao/xoa tai nguyen that.
+terraform-apply:
+  extends: .terraform-base
+  stage: infra
+  needs:
+    - terraform-plan
+  script:
+    - terraform apply tfplan
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+
+# Doi ngu voi terraform-apply: dung khi muon dep bo toan bo ha tang (vi du xong buoi thuc hanh).
+# Luon phai tu bam Run, khong bao gio chay tu dong.
+terraform-destroy:
+  extends: .terraform-base
+  stage: infra
+  script:
+    - terraform destroy -auto-approve
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+
+build-backend-image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$BACKEND_IMAGE:latest" -f backend/Dockerfile backend
+    - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$BACKEND_IMAGE:latest"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+build-frontend:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist
+    expire_in: 1 hour
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Chay truc tiep tren chinh EC2 (GitLab Runner tu cai, executor shell, tag "aws-ec2").
+# Khong SSH tu CI vao server - tranh phai mo port 22 ra Internet cho GitLab shared runner.
+deploy-backend:
+  stage: deploy
+  tags:
+    - aws-ec2
+  variables:
+    BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend:latest
+  needs:
+    - build-backend-image
+  script:
+    - docker compose --env-file /opt/booking-tour/.env -f deploy/docker-compose.prod.yml pull
+    - docker compose --env-file /opt/booking-tour/.env -f deploy/docker-compose.prod.yml up -d --remove-orphans
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Dung GitLab OIDC de AWS CLI tu doi lay quyen tam thoi qua IAM Role (infra/gitlab-oidc.tf),
+# khong luu AWS access key/secret o dau ca. Bien AWS_ROLE_ARN, S3_BUCKET,
+# CLOUDFRONT_DISTRIBUTION_ID lay tu output cua "terraform apply", khai bao thu cong 1 lan
+# tai GitLab > Settings > CI/CD > Variables.
+deploy-frontend:
+  stage: deploy
+  image: amazon/aws-cli:2.15.0
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.com
+  needs:
+    - build-frontend
+  before_script:
+    - echo "$GITLAB_OIDC_TOKEN" > /tmp/gitlab_oidc_token
+    - export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/gitlab_oidc_token
+    - export AWS_ROLE_SESSION_NAME="gitlab-ci-${CI_PIPELINE_ID}"
+  script:
+    - aws s3 sync frontend/dist "s3://${S3_BUCKET}" --delete
+    - aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

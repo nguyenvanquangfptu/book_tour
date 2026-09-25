@@ -1,0 +1,10 @@
+# Tham khao: pipeline chinh chay Terraform qua GitLab CI (xem infra/README.md), nen cac gia
+# tri nay thuc te duoc khai bao thanh GitLab CI/CD Variables dang TF_VAR_<ten_bien>
+# (vi du TF_VAR_admin_ip), khong dung file .tfvars cuc bo. File nay chi de tham khao ten/dinh
+# dang gia tri, hoac dung neu ban muon chay terraform cuc bo (terraform plan/validate, khong
+# co AWS credentials cuc bo thi khong apply duoc).
+aws_region           = "ap-southeast-1"
+admin_ip             = "203.0.113.10/32" # thay bang IP that cua ban - xem tai whatismyip.com
+ssh_public_key       = "ssh-ed25519 AAAA... your-email@example.com" # noi dung 1 file .pub, tao rieng cho EC2
+budget_email         = "vanquangqn28@gmail.com"
+gitlab_project_path  = "personal-group4175339/booking_tour"

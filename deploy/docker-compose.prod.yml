@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16.2
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - app
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    restart: unless-stopped
+    # Toan bo bien nhay cam (JWT_SECRET, CLOUDINARY_*, PAYOS_*, BREVO_*, ADMIN_*, GOOGLE_CLIENT_ID,
+    # FRONTEND_URL...) den tu file nay tren host, khong nam trong git.
+    env_file:
+      - /opt/booking-tour/.env
+    environment:
+      # Ghi de gia tri dev trong .env bang hostname noi bo cua docker network.
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      # Publish thang ra host: an toan vi Security Group EC2 chi cho CloudFront (origin-facing
+      # prefix list) goi vao cong nay, khong mo cong nay ra Internet.
+      - "8082:8082"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app
+
+volumes:
+  pgdata:
+
+networks:
+  app:
